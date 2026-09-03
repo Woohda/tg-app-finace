@@ -79,11 +79,14 @@ export default defineEventHandler(async (event) => {
 
   const supabase = serverSupabaseServiceRole<Database>(event);
 
-  let { data: user, error: fetchError } = await supabase
+  const response = await supabase
     .from("users")
     .select("id, telegram_id, username")
     .eq("telegram_id", telegramId)
     .single();
+
+  let user = response.data;
+  const fetchError = response.error;
 
   if (fetchError && fetchError.code !== "PGRST116") {
     console.error("Ошибка БД при поиске пользователя:", fetchError);
