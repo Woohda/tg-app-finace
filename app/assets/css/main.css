@@ -1,0 +1,82 @@
+@import "tailwindcss";
+
+@theme {
+  /* Цвета */
+  --color-milky: #e8e5df; /* Матовая бежевая бумага */
+  --color-text-primary: #1c1c1e; /* Мягкий тёмно-серый */
+  --color-text-secondary: #7a7a7a;
+  --color-button-primary: #821530; /* Crimson Velvet — глубокий, ближе к ruby */
+
+  /* Тени — система Pure Neumorphism */
+  /* Для карточек и мягких кнопок (цвет фона = цвет элемента) */
+  --shadow-neu-flat:
+    6px 6px 12px rgba(180, 170, 160, 0.45),
+    -6px -6px 12px rgba(255, 255, 255, 0.8);
+  --shadow-neu-flat-hover:
+    10px 10px 20px rgba(180, 170, 160, 0.55),
+    -10px -10px 20px rgba(255, 255, 255, 0.8);
+  --shadow-neu-pressed:
+    inset 6px 6px 12px rgba(180, 170, 160, 0.5),
+    inset -6px -6px 12px rgba(255, 255, 255, 0.8);
+
+  /* Вдавленная тень (для полей ввода) */
+  --shadow-neu-inner:
+    inset 4px 4px 8px rgba(180, 170, 160, 0.4),
+    inset -4px -4px 8px rgba(255, 255, 255, 0.9);
+
+  /* Скругления */
+  --radius-pill: 999px;
+
+  /* Типографика */
+  --font-sans:
+    "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
+    Roboto, Helvetica, Arial, sans-serif;
+}
+
+@layer base {
+  body {
+    background-color: color-mix(in srgb, var(--color-milky) 55%, transparent);
+    color: var(--color-text-primary);
+    min-height: 100vh;
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+  }
+}
+
+@layer components {
+  /* Кнопка Crimson Velvet — неоморфизм + горизонтальный градиент */
+  .glass-crimson-velvet {
+    background: linear-gradient(90deg, #650a1ee5 0%, #6e1125 40%, #8d152b 100%);
+    position: relative;
+    overflow: hidden;
+    /* Неоморфные тени: тёмная справа-снизу + светлая слева-сверху + crimson glow */
+    box-shadow:
+      6px 6px 12px rgba(70, 10, 22, 0.6),
+      -6px -6px 12px rgba(170, 60, 80, 0.15),
+      inset 0 1px 0 rgba(255, 255, 255, 0.15),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.25);
+    transition:
+      box-shadow 0.2s ease,
+      filter 0.2s ease;
+  }
+
+  .glass-crimson-velvet:active {
+    box-shadow:
+      inset 4px 4px 10px rgba(0, 0, 0, 0.45),
+      inset -4px -4px 10px rgba(170, 50, 70, 0.15);
+  }
+
+  /* Тонкий световой блик на верхней грани */
+  .glass-crimson-velvet::before {
+    content: "";
+    position: absolute;
+    inset: 0;
+    border-radius: inherit;
+    background: linear-gradient(
+      180deg,
+      rgba(255, 255, 255, 0.1) 0%,
+      transparent 40%
+    );
+    pointer-events: none;
+  }
+}

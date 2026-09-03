@@ -12,70 +12,79 @@ const handleLogin = async () => {
 </script>
 
 <template>
-  <UContainer class="py-10 max-w-xl">
-    <UCard>
-      <template #header>
-        <h1 class="text-2xl font-bold">TG Finance App</h1>
-      </template>
-
-      <!-- Если НЕ авторизованы -->
-      <div v-if="!isAuthenticated" class="text-center py-6">
-        <p class="mb-6 text-gray-500">Вы не вошли в систему.</p>
-        <UButton
-          icon="i-heroicons-arrow-right-on-rectangle"
-          size="lg"
-          color="primary"
-          @click="handleLogin"
+  <div class="min-h-screen p-4 flex flex-col items-center justify-center">
+    <GlassCard class="w-full max-w-md">
+      <UiCardHeader class="p-5 pb-0">
+        <UiCardTitle class="text-2xl font-bold text-center text-text-primary"
+          >TG Finance</UiCardTitle
         >
-          Войти через Telegram (Mock)
-        </UButton>
-      </div>
+      </UiCardHeader>
 
-      <!-- Если АВТОРИЗОВАНЫ -->
-      <div v-else class="space-y-4">
-        <UAlert
-          icon="i-heroicons-check-circle"
-          color="success"
-          variant="subtle"
-          title="Авторизация успешна!"
-        />
-
-        <div>
-          <p class="text-sm text-gray-500">Telegram Username</p>
-          <p class="font-medium">@{{ user?.username }}</p>
-        </div>
-
-        <div>
-          <p class="text-sm text-gray-500">Telegram ID</p>
-          <p class="font-medium">{{ user?.telegram_id }}</p>
-        </div>
-
-        <div>
-          <p class="text-sm text-gray-500">
-            Внутренний ID в базе (Supabase UUID)
-          </p>
-          <p class="font-medium text-xs">{{ user?.id }}</p>
-        </div>
-
-        <div>
-          <p class="text-sm text-gray-500">Ваш статуслесс JWT-токен</p>
-          <p
-            class="font-mono text-xs break-all bg-gray-100 dark:bg-gray-800 p-2 rounded mt-1"
+      <UiCardContent class="p-5">
+        <!-- Если НЕ авторизованы -->
+        <div v-if="!isAuthenticated" class="text-center py-4">
+          <p class="mb-8 text-text-secondary">Вы не вошли в систему.</p>
+          <GlassButton
+            size="lg"
+            variant="primary"
+            class="w-full"
+            @click="handleLogin"
           >
-            {{ token }}
-          </p>
+            Войти через Telegram (Mock)
+          </GlassButton>
         </div>
 
-        <UButton
-          icon="i-heroicons-arrow-left-on-rectangle"
-          color="primary"
-          variant="soft"
-          class="mt-4"
-          @click="logout"
-        >
-          Выйти
-        </UButton>
-      </div>
-    </UCard>
-  </UContainer>
+        <!-- Если АВТОРИЗОВАНЫ -->
+        <div v-else class="space-y-6">
+          <UAlert
+            icon="i-heroicons-check-circle"
+            color="success"
+            variant="subtle"
+            title="Авторизация успешна!"
+          />
+
+          <div class="grid grid-cols-2 gap-4">
+            <div
+              class="bg-milky p-4 rounded-2xl border-[0.5px] border-white/50 border-b-transparent border-r-transparent shadow-neu-flat"
+            >
+              <p class="text-xs text-text-secondary mb-1">Telegram Username</p>
+              <p class="font-medium text-text-primary">@{{ user?.username }}</p>
+            </div>
+            <div
+              class="bg-milky p-4 rounded-2xl border-[0.5px] border-white/50 border-b-transparent border-r-transparent shadow-neu-flat"
+            >
+              <p class="text-xs text-text-secondary mb-1">Telegram ID</p>
+              <p class="font-medium text-text-primary">
+                {{ user?.telegram_id }}
+              </p>
+            </div>
+          </div>
+
+          <div
+            class="bg-milky p-4 rounded-2xl border-[0.5px] border-white/50 border-b-transparent border-r-transparent shadow-neu-flat"
+          >
+            <p class="text-xs text-text-secondary mb-1">Внутренний ID в базе</p>
+            <p class="font-medium text-xs break-all text-text-primary">
+              {{ user?.id }}
+            </p>
+          </div>
+
+          <div>
+            <p class="text-sm text-text-secondary mb-2 pl-2">
+              Статуслесс JWT-токен
+            </p>
+            <p
+              class="font-mono text-[10px] break-all bg-milky p-4 rounded-2xl shadow-neu-inner text-text-secondary"
+            >
+              {{ token }}
+            </p>
+          </div>
+
+          <GlassButton variant="soft" class="w-full mt-4" @click="logout">
+            Выйти
+          </GlassButton>
+        </div>
+      </UiCardContent>
+    </GlassCard>
+  </div>
 </template>
