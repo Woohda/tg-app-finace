@@ -8,15 +8,7 @@ const props = defineProps<{
 </script>
 
 <template>
-  <UiCard
-    :class="
-      cn(
-        'neu-panel',
-        'rounded-3xl',
-        props.class,
-      )
-    "
-  >
+  <UiCard :class="cn('neu-panel rounded-3xl border-0', props.class)">
     <slot />
   </UiCard>
 </template>
