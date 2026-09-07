@@ -22,13 +22,11 @@ const props = withDefaults(defineProps<Props>(), {
     :class="
       cn(
         'transition-all duration-200 ease-out active:scale-[0.97]',
-        // Основная (Crimson Velvet + неоморфизм)
+        // Основная (Sunset Glow + неоморфный глянец)
         variant === 'primary' && [
-          'text-white/90 font-medium tracking-wide text-xs',
-          'border-[0.5px] border-white/15 border-t-white/25 border-l-white/20',
-          'glass-crimson-velvet',
-          'hover:brightness-105',
-          'active:scale-[0.98]',
+          'text-white font-medium tracking-wide text-xs',
+          'border-[0.5px] border-white/25',
+          'neu-sunset-glow',
         ],
         // Мягкая (чистый неоморфизм)
         variant === 'soft' && [

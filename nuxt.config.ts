@@ -25,4 +25,8 @@ export default defineNuxtConfig({
     telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
     jwtSecret: process.env.JWT_SECRET,
   },
+  supabase: {
+    // Отключаем встроенный редирект на /login — авторизация через собственный JWT
+    redirect: false,
+  },
 });

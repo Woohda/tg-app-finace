@@ -11,10 +11,8 @@ const props = defineProps<{
   <UiCard
     :class="
       cn(
-        'bg-milky',
-        'border-[0.5px] border-white/50 border-b-transparent border-r-transparent',
-        'shadow-neu-flat',
-        'rounded-2xl',
+        'neu-panel',
+        'rounded-3xl',
         props.class,
       )
     "
