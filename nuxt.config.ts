@@ -8,9 +8,25 @@ export default defineNuxtConfig({
   nitro: {
     preset: "cloudflare-pages",
   },
-  modules: ["@nuxt/eslint", "@nuxt/image", "@nuxt/ui", "@nuxtjs/supabase"],
+  css: ["~/assets/css/main.css"],
+  modules: ["@nuxt/eslint", "@nuxt/image", "@nuxt/ui", "@nuxtjs/supabase", "@nuxt/fonts"],
+  fonts: {
+    families: [
+      { name: 'Inter', provider: 'google' }
+    ]
+  },
+  components: [
+    {
+      path: '~/components',
+      ignore: ['**/index.ts']
+    }
+  ],
   runtimeConfig: {
     telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
     jwtSecret: process.env.JWT_SECRET,
+  },
+  supabase: {
+    // Отключаем встроенный редирект на /login — авторизация через собственный JWT
+    redirect: false,
   },
 });
