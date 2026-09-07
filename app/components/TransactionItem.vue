@@ -25,29 +25,8 @@ interface Props {
 
 const props = defineProps<Props>();
 
-const formattedAmount = computed(() => {
-  const prefix = props.type === "expense" ? "−" : "+";
-  const formatted = new Intl.NumberFormat("ru-RU", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(props.amount);
-  return `${prefix} ${formatted} ₽`;
-});
-
-const formattedDate = computed(() => {
-  const date = new Date(props.date);
-  const today = new Date();
-  const yesterday = new Date();
-  yesterday.setDate(today.getDate() - 1);
-
-  if (date.toDateString() === today.toDateString()) return "Сегодня";
-  if (date.toDateString() === yesterday.toDateString()) return "Вчера";
-
-  return date.toLocaleDateString("ru-RU", {
-    day: "numeric",
-    month: "short",
-  });
-});
+const formattedAmount = computed(() => formatAmount(props.amount, props.type));
+const formattedDate = computed(() => formatDate(props.date));
 </script>
 
 <template>

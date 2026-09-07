@@ -2,8 +2,8 @@
 import { Home } from "@lucide/vue";
 
 /**
- * @module app/pages/goals
- * @fileoverview Экран финансовых целей и бюджета
+ * @module app/pages/index
+ * @fileoverview Главный экран (Dashboard)
  */
 </script>
 
