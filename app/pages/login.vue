@@ -3,15 +3,16 @@
  * @module app/pages/login
  * @fileoverview Страница авторизации через Telegram Mini App
  * @description
- * Отображает экран входа с кнопкой авторизации.
- * После успешного входа перенаправляет на Dashboard.
+ * Отображает экран входа. Внутри Telegram автоматически авторизует пользователя
+ * на основе `window.Telegram.WebApp.initData`. В обычном браузере выводит сообщение
+ * о необходимости запуска через Telegram бота.
  * ---
  * ### Логика работы:
  * 1. Проверяет наличие активной сессии — если уже авторизован, редиректит на `/`
- * 2. При нажатии кнопки отправляет `initData` на сервер через `useAuth`
- * 3. После успешной авторизации навигирует на главную страницу
+ * 2. При наличии `initData` пытается автоматически авторизоваться через `initTelegramAuth`
+ * 3. Если запуск вне Telegram, предлагает открыть приложение через Telegram бота
  */
-const { isAuthenticated, loginWithTelegram } = useAuth();
+const { isAuthenticated, getTelegramInitData, initTelegramAuth } = useAuth();
 const router = useRouter();
 
 if (isAuthenticated.value) {
@@ -22,21 +23,31 @@ definePageMeta({
   layout: false,
 });
 
-// Фейковые данные (мокаем то, что прислал бы реальный Telegram)
-const mockInitData =
-  "query_id=AAF...&user=%7B%22id%22%3A999111%2C%22username%22%3A%22test_investor%22%7D&auth_date=1690000000&hash=mockhash";
-
 const isLoading = ref(false);
+const errorMessage = ref<string | null>(null);
+const isInTelegram = ref(false);
 
 const handleLogin = async () => {
+  errorMessage.value = null;
   isLoading.value = true;
-  const success = await loginWithTelegram(mockInitData);
+  const success = await initTelegramAuth();
   isLoading.value = false;
 
   if (success) {
     router.replace("/");
+  } else {
+    errorMessage.value = "Не удалось авторизоваться через Telegram. Попробуйте еще раз.";
   }
 };
+
+onMounted(async () => {
+  const initData = getTelegramInitData();
+  isInTelegram.value = !!initData;
+
+  if (initData && !isAuthenticated.value) {
+    await handleLogin();
+  }
+});
 </script>
 
 <template>
@@ -52,16 +63,41 @@ const handleLogin = async () => {
 
       <UiCardContent class="p-5">
         <div class="text-center py-4">
-          <p class="mb-8 text-text-secondary">Вы не вошли в систему.</p>
-          <NeuButton
-            size="lg"
-            variant="primary"
-            class="w-full"
-            :disabled="isLoading"
-            @click="handleLogin"
-          >
-            {{ isLoading ? "Вход..." : "Войти через Telegram (Mock)" }}
-          </NeuButton>
+          <div v-if="isInTelegram">
+            <p class="mb-6 text-text-secondary text-sm">
+              Вход через Telegram Mini App...
+            </p>
+            <p v-if="errorMessage" class="mb-4 text-xs text-rose-500 font-medium">
+              {{ errorMessage }}
+            </p>
+            <NeuButton
+              size="lg"
+              variant="primary"
+              class="w-full"
+              :disabled="isLoading"
+              @click="handleLogin"
+            >
+              {{ isLoading ? "Авторизация..." : "Войти через Telegram" }}
+            </NeuButton>
+          </div>
+
+          <div v-else class="flex flex-col items-center gap-3">
+            <p class="text-sm text-text-secondary">
+              Это приложение разработано для работы внутри Telegram.
+            </p>
+            <p class="text-xs text-text-secondary/70">
+              Пожалуйста, откройте бота в Telegram и запустите Mini App через кнопку «Открыть трекер 📊».
+            </p>
+            <NeuButton
+              size="lg"
+              variant="primary"
+              class="w-full mt-4"
+              :disabled="isLoading"
+              @click="handleLogin"
+            >
+              {{ isLoading ? "Проверка..." : "Повторить попытку" }}
+            </NeuButton>
+          </div>
         </div>
       </UiCardContent>
     </NeuCard>

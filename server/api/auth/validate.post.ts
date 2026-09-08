@@ -49,18 +49,12 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  if (botToken === "12345:mock_token") {
-    console.warn(
-      "ВНИМАНИЕ: Используется тестовый токен, валидация подписи пропущена!",
-    );
-  } else {
-    const isValid = await verifyTelegramWebAppData(initData, botToken);
-    if (!isValid) {
-      throw createError({
-        statusCode: 401,
-        statusMessage: "Неверная подпись Telegram (данные подделаны)",
-      });
-    }
+  const isValid = await verifyTelegramWebAppData(initData, botToken);
+  if (!isValid) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Неверная подпись Telegram (данные подделаны)",
+    });
   }
 
   const urlParams = new URLSearchParams(initData);
