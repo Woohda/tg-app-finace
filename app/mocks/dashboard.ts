@@ -156,6 +156,53 @@ export const mockTotalExpense = mockTransactions
 /** Текущий баланс */
 export const mockBalance = mockTotalIncome - mockTotalExpense;
 
+/** Сумма одного зачисления зарплаты (2 раза в месяц) */
+export const mockSalaryAmount = 110000;
+/** Средние ежедневные траты */
+export const mockDailyExpense = 7000;
+
+/**
+ * Имитация истории баланса за последние 3 месяца (90 дней)
+ * Строим мягкий, "дизайнерский" тренд с плавными волнами без резких скачков.
+ */
+export const mockBalanceHistory = (() => {
+  const history: number[] = [];
+  const pointsCount = 30; // 30 плавных точек
+
+  // Допустим, 3 месяца назад баланс был на 30% меньше
+  const startVal = mockBalance * 0.9;
+
+  for (let i = 0; i < pointsCount; i++) {
+    const progress = i / (pointsCount - 1); // от 0 до 1
+
+    // Линейный тренд
+    let val = startVal + (mockBalance - startVal) * progress;
+
+    // Накладываем пару мягких волн для красоты
+    val += Math.sin(progress * Math.PI * 2) * (mockBalance * 0.05);
+    val += Math.cos(progress * Math.PI * 4) * (mockBalance * 0.02);
+
+    history.push(Math.round(val));
+  }
+
+  // Гарантируем, что последняя точка в точности совпадает с текущим балансом
+  history[pointsCount - 1] = mockBalance;
+
+  return history;
+})();
+
+/**
+ * Процентная разница между текущим балансом и балансом месяц назад
+ */
+export const mockPercentChange = (() => {
+  const currentVal = mockBalanceHistory[mockBalanceHistory.length - 1];
+  // 30 точек = 3 месяца. 1 месяц назад = 10 точек назад (индекс 19)
+  const prevMonthVal = mockBalanceHistory[19];
+
+  if (prevMonthVal === 0) return 0;
+  return ((currentVal - prevMonthVal) / Math.abs(prevMonthVal)) * 100;
+})();
+
 /** Бюджет на месяц */
 export const mockBudget = 60000;
 

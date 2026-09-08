@@ -41,14 +41,14 @@ export const useTransactions = () => {
       const dayStart = new Date();
       dayStart.setDate(dayStart.getDate() - 1);
       return mockTransactions.filter(
-        (t) => t.date >= dayStart.toISOString().split("T")[0],
+        (t) => t.date >= dayStart.toISOString().split("T")[0]!,
       );
     }
     if (activePeriod.value === "week") {
       const weekStart = new Date();
       weekStart.setDate(weekStart.getDate() - 7);
       return mockTransactions.filter(
-        (t) => t.date >= weekStart.toISOString().split("T")[0],
+        (t) => t.date >= weekStart.toISOString().split("T")[0]!,
       );
     }
     return mockTransactions;

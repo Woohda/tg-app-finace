@@ -22,6 +22,13 @@ export function formatAmount(
   return `${formatted} ₽`;
 }
 
+export function formatPercent(percent: number): string {
+  const prefix = percent > 0 ? "+" : "";
+  // Округление до десятых (убираем лишние нули в конце, если число целое)
+  const rounded = Number(percent.toFixed(1));
+  return `${prefix}${rounded}% к прошлому месяцу`;
+}
+
 export function formatDate(str: string): string {
   const date = new Date(str);
   const today = new Date();
@@ -35,4 +42,12 @@ export function formatDate(str: string): string {
     day: "numeric",
     month: "short",
   });
+}
+
+export function getGreeting(): string {
+  const hour = new Date().getHours();
+  if (hour >= 5 && hour < 12) return "Доброе утро,";
+  if (hour >= 12 && hour < 18) return "Добрый день,";
+  if (hour >= 18 && hour < 23) return "Добрый вечер,";
+  return "Доброй ночи,";
 }
