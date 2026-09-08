@@ -19,9 +19,12 @@
  */
 import { Bot } from "grammy";
 
-const token = process.env.TELEGRAM_BOT_TOKEN || "";
-export const bot = new Bot(token);
+let botInstance: Bot | null = null;
+let configuredToken: string | null = null;
 
+/**
+ * Получить валидный URL для кнопки Web App
+ */
 function getWebAppUrl(): string {
   const isDev = import.meta.dev;
   const rawUrl =
@@ -36,16 +39,49 @@ function getWebAppUrl(): string {
   return `https://${rawUrl}`;
 }
 
-// Базовая обработка команды /start
-bot.command("start", async (ctx) => {
-  const webAppUrl = getWebAppUrl();
+/**
+ * Фабрика инстанса бота с поддержкой динамического runtimeConfig в Cloudflare Workers
+ */
+export function getBot(customToken?: string): Bot {
+  let token = customToken;
 
-  await ctx.reply(
-    "Привет! 👋 Я, FINO, твой финансовый помощник.\nНажми кнопку ниже, чтобы открыть приложение.",
-    {
-      reply_markup: {
-        inline_keyboard: [[{ text: "Открыть", web_app: { url: webAppUrl } }]],
+  if (!token) {
+    try {
+      token = useRuntimeConfig().telegramBotToken;
+    } catch {
+      // Игнорируем ошибку контекста вне запроса
+    }
+  }
+
+  if (!token) {
+    token = process.env.TELEGRAM_BOT_TOKEN || "";
+  }
+
+  // Если инстанс уже настроен с актуальным токеном — переиспользуем
+  if (botInstance && configuredToken === token && token !== "") {
+    return botInstance;
+  }
+
+  const newBot = new Bot(token);
+
+  // Базовая обработка команды /start
+  newBot.command("start", async (ctx) => {
+    const webAppUrl = getWebAppUrl();
+
+    await ctx.reply(
+      "Привет! 👋 Я, FINO, твой финансовый помощник.\nНажми кнопку ниже, чтобы открыть приложение.",
+      {
+        reply_markup: {
+          inline_keyboard: [[{ text: "Открыть", web_app: { url: webAppUrl } }]],
+        },
       },
-    },
-  );
-});
+    );
+  });
+
+  botInstance = newBot;
+  configuredToken = token;
+  return newBot;
+}
+
+// Экспорт по умолчанию
+export const bot = getBot();

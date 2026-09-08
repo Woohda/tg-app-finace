@@ -23,10 +23,12 @@ export default defineEventHandler(async (event) => {
 
   try {
     const telegramResponse = await $fetch(tgUrl);
+    const webhookInfo = await $fetch(`https://api.telegram.org/bot${token}/getWebhookInfo`).catch(() => null);
     return {
       success: true,
       webhookUrl,
       telegramResponse,
+      webhookInfo,
     };
   } catch (error: unknown) {
     const err = error as { data?: unknown; message?: string };

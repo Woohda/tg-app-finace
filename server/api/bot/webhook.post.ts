@@ -13,14 +13,25 @@
  * - Полностью совместимо с Cloudflare Workers (Edge Runtime).
  * - Ошибки перехватываются, чтобы Telegram не спамил повторными запросами при разовых сбоях.
  */
-import { bot } from "../../utils/bot";
+import { getBot } from "../../utils/bot";
 
 export default defineEventHandler(async (event) => {
   try {
     const update = await readBody(event);
-    if (update) {
-      await bot.handleUpdate(update);
+    if (!update) {
+      return { ok: true };
     }
+
+    const config = useRuntimeConfig(event);
+    const token = config.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN;
+
+    if (!token) {
+      console.error("[Telegram Webhook Error] Токен бота не найден в конфигурации!");
+      return { ok: false, error: "Missing token" };
+    }
+
+    const botInstance = getBot(token);
+    await botInstance.handleUpdate(update);
   } catch (error) {
     console.error("[Telegram Webhook Error]", error);
   }
