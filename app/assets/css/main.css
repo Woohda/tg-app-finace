@@ -2,7 +2,8 @@
 
 @theme {
   /* Цвета: Классический Неоморфизм по референсу */
-  --color-milky: #ebf0f5; /* Чистая светло-серо-голубая база */
+  --color-milky: #ebf0f5; /* Чистая светло-серо-голубая база карточек */
+  --color-bg-milky: #ebedf5; /* Мягкая контрастная серо-голубая подложка под карточки */
   --color-sunset-start: #f97f57; /* Светло-оранжевый (коралловый) акцент */
   --color-sunset-mid: #e75642; /* Переходный кораллово-красный */
   --color-sunset-orange: #db3b35; /* Красный акцент */
@@ -43,7 +44,7 @@
 
 @layer base {
   body {
-    background-color: var(--color-milky);
+    background-color: var(--color-bg-milky);
     color: var(--color-text-primary);
     min-height: 100vh;
     font-family: var(--font-sans);
