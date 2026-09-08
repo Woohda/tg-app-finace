@@ -21,7 +21,7 @@ const {
 </script>
 
 <template>
-  <div class="flex flex-col gap-3">
+  <div class="flex flex-col gap-5">
     <div class="relative flex items-center justify-center">
       <NuxtLink to="/" class="w-7 absolute top-px -left-1 text-text-secondary">
         <ChevronLeft class="size-7" :stroke-width="1.75" />
@@ -32,7 +32,7 @@ const {
     </div>
 
     <!-- Центральный Датчик (Бюджет рассчитывается ТОЛЬКО на месяц) -->
-    <div class="flex-1 flex flex-col items-center justify-center relative mb-5">
+    <div class="flex-1 flex flex-col items-center justify-center relative mb-3">
       <BudgetGauge
         :percent="monthlyBudgetPercent"
         :budget="monthlyBudget"
@@ -41,7 +41,7 @@ const {
     </div>
 
     <!-- Финансовый раздел: Список операций -->
-    <NeuCard class="relative z-10 p-5">
+    <NeuCard class="relative z-10">
       <div class="flex flex-col gap-4 mb-5">
         <h2 class="text-base font-bold text-text-primary tracking-tight">
           Записанные транзакции
