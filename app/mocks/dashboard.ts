@@ -195,9 +195,9 @@ export const mockBalanceHistory = (() => {
  * Процентная разница между текущим балансом и балансом месяц назад
  */
 export const mockPercentChange = (() => {
-  const currentVal = mockBalanceHistory[mockBalanceHistory.length - 1];
+  const currentVal = mockBalanceHistory[mockBalanceHistory.length - 1] ?? 0;
   // 30 точек = 3 месяца. 1 месяц назад = 10 точек назад (индекс 19)
-  const prevMonthVal = mockBalanceHistory[19];
+  const prevMonthVal = mockBalanceHistory[19] ?? 0;
 
   if (prevMonthVal === 0) return 0;
   return ((currentVal - prevMonthVal) / Math.abs(prevMonthVal)) * 100;
