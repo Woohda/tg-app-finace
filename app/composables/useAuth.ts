@@ -35,15 +35,26 @@
  * - Endpoint `/api/auth/validate` для валидации подписи и выпуска JWT
  */
 
-interface User {
+export interface User {
   id: string;
   telegram_id: number;
   username: string | null;
 }
 
 export const useAuth = () => {
-  const token = useState<string | null>("auth:token", () => null);
-  const user = useState<User | null>("auth:user", () => null);
+  const tokenCookie = useCookie<string | null>("auth_token", {
+    maxAge: 60 * 60 * 24 * 7,
+    sameSite: "lax",
+    secure: true,
+  });
+  const userCookie = useCookie<User | null>("auth_user", {
+    maxAge: 60 * 60 * 24 * 7,
+    sameSite: "lax",
+    secure: true,
+  });
+
+  const token = useState<string | null>("auth:token", () => tokenCookie.value ?? null);
+  const user = useState<User | null>("auth:user", () => userCookie.value ?? null);
 
   const isAuthenticated = computed(() => !!token.value && !!user.value);
 
@@ -58,19 +69,40 @@ export const useAuth = () => {
       );
       token.value = response.token;
       user.value = response.user;
+      tokenCookie.value = response.token;
+      userCookie.value = response.user;
 
       return true;
     } catch (error) {
       console.error("Ошибка авторизации:", error);
       token.value = null;
       user.value = null;
+      tokenCookie.value = null;
+      userCookie.value = null;
       return false;
     }
+  };
+
+  const getTelegramInitData = (): string => {
+    if (import.meta.client && window.Telegram?.WebApp?.initData) {
+      return window.Telegram.WebApp.initData;
+    }
+    return "";
+  };
+
+  const initTelegramAuth = async (): Promise<boolean> => {
+    const initData = getTelegramInitData();
+    if (!initData) {
+      return false;
+    }
+    return await loginWithTelegram(initData);
   };
 
   const logout = () => {
     token.value = null;
     user.value = null;
+    tokenCookie.value = null;
+    userCookie.value = null;
   };
 
   return {
@@ -78,6 +110,8 @@ export const useAuth = () => {
     user,
     isAuthenticated,
     loginWithTelegram,
+    getTelegramInitData,
+    initTelegramAuth,
     logout,
   };
 };

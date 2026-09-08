@@ -23,9 +23,14 @@ import ExpensesDonut from "~/components/dashboard/ExpensesDonut.vue";
 import TransactionItem from "~/components/TransactionItem.vue";
 import { Bell, ReceiptText } from "@lucide/vue";
 
+const { user } = useAuth();
 const greeting = getGreeting();
-// В будущем будем получать из Telegram WebApp API
-const userName = "Пользователь";
+const userName = computed(() => {
+  if (user.value?.username) {
+    return `@${user.value.username}`;
+  }
+  return "Пользователь";
+});
 
 // 1. Balance Data
 const balanceHistory = mockBalanceHistory; // История за последние 3 месяца (90 дней)

@@ -8,6 +8,16 @@ export default defineNuxtConfig({
   nitro: {
     preset: "cloudflare-pages",
   },
+  app: {
+    head: {
+      script: [
+        {
+          src: "https://telegram.org/js/telegram-web-app.js",
+          defer: true,
+        },
+      ],
+    },
+  },
   css: ["~/assets/css/main.css"],
   modules: ["@nuxt/eslint", "@nuxt/image", "@nuxt/ui", "@nuxtjs/supabase", "@nuxt/fonts"],
   fonts: {
