@@ -11,17 +11,31 @@
 interface Props {
   percent: number;
   budget: number;
+  spent?: number;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  spent: 0,
+});
+
+type ViewMode = "budget" | "spent";
+const viewMode = ref<ViewMode>("budget");
+
+const currentAmount = computed(() =>
+  viewMode.value === "budget" ? props.budget : props.spent,
+);
+
+const currentLabel = computed(() =>
+  viewMode.value === "budget" ? "Бюджет" : "Потрачено",
+);
 
 // --- Константы геометрии ---
 const TOTAL_TILES = 20;
 const TILE_STEP_DEG = 183 / (TOTAL_TILES - 1);
-const TILE_RADIUS = 130;
+const TILE_RADIUS = 120;
 const TILE_OUTER_RADIUS = TILE_RADIUS + 20; // 150px (внешний торец плашки)
-const MARKER_TOP_OFFSET = 20; // Зазор над плашкой при 50%
-const MARKER_SIDE_OFFSET = 27; // Вынос по бокам при 0%..5% и 100%
+const MARKER_TOP_OFFSET = 35; // Зазор над плашкой при 50%
+const MARKER_SIDE_OFFSET = 22; // Вынос по бокам при 0%..5% и 100%
 
 // Ограничиваем количество заполненных плиток строго от 0 до TOTAL_TILES (20)
 const filledCount = computed(() => {
@@ -66,7 +80,7 @@ const markerStyle = computed(() => {
   const radius = TILE_OUTER_RADIUS + radialOffset;
 
   const x = (radius * Math.sin(rad)).toFixed(2);
-  const y = (-radius * Math.cos(rad)).toFixed(2);
+  const y = Math.min(0, -radius * Math.cos(rad)).toFixed(2);
 
   return {
     left: `calc(50% + ${x}px)`,
@@ -91,25 +105,18 @@ function getTileColor(index: number) {
   const mid: RGBA = [231, 86, 66, 1]; // --color-sunset-mid (#e75642)
   const end: RGBA = [219, 59, 53, 1]; // --color-sunset-orange (#db3b35)
 
-  if (t < 0.65) {
-    return interpolateColor(start, mid, t / 0.65);
+  if (t < 0.75) {
+    return interpolateColor(start, mid, t / 0.75);
   } else {
-    return interpolateColor(mid, end, (t - 0.65) / 0.35);
+    return interpolateColor(mid, end, (t - 0.75) / 0.25);
   }
-}
-
-function formatMoney(value: number): string {
-  return value.toLocaleString("en-US", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  });
 }
 </script>
 
 <template>
-  <div class="flex flex-col items-center">
-    <div class="relative w-104 h-80 overflow-visible">
-      <div class="absolute w-full h-85 left-0 top-0">
+  <div class="flex flex-col items-center pointer-events-none">
+    <div class="relative w-90 h-45 overflow-visible">
+      <div class="absolute w-full h-75 -left-1.5 top-0">
         <div
           v-for="(_, i) in TOTAL_TILES"
           :key="i"
@@ -117,7 +124,7 @@ function formatMoney(value: number): string {
           :style="{ transform: tileTransform(i) }"
         >
           <div
-            class="w-3.75 h-10 ml-[-7.5px] -mt-5 rounded-[5px] transition-all duration-500 ease-out"
+            class="w-3.75 h-10 -ml-2 -mt-5 rounded-[5px] transition-all duration-500 ease-out"
             :class="i < filledCount ? 'shadow-none' : 'bg-milky'"
             :style="
               i < filledCount
@@ -132,25 +139,40 @@ function formatMoney(value: number): string {
 
         <div
           v-if="markerStyle"
-          class="absolute -translate-x-1/5 z-20 transition-all duration-500 ease-out pointer-events-none"
+          class="absolute -translate-x-1/5 translate-y-3.5 z-20 transition-all duration-500 ease-out pointer-events-none"
           :style="markerStyle"
         >
-          <span class="text-sm font-extrabold text-text-accent">
+          <span class="text-xs font-extrabold text-text-accent">
             {{ displayPercent }}%
           </span>
         </div>
 
-        <div class="flex flex-col items-center mt-25">
+        <div
+          class="flex flex-col items-center mt-24 ml-2.5 pointer-events-auto"
+        >
           <span
-            class="text-text-accent text-xs font-bold uppercase tracking-wider mb-1"
+            class="text-text-accent text-xs font-bold uppercase tracking-wider cursor-pointer select-none"
+            @click="viewMode = viewMode === 'budget' ? 'spent' : 'budget'"
           >
-            Бюджет
+            {{ currentLabel }}
           </span>
           <span
-            class="text-text-primary text-4xl font-extrabold tracking-tight"
+            class="text-text-primary text-3xl font-extrabold tracking-tight cursor-pointer select-none transition-all duration-200"
+            @click="viewMode = viewMode === 'budget' ? 'spent' : 'budget'"
           >
-            ${{ formatMoney(budget) }}
+            {{ formatAmount(currentAmount) }}
           </span>
+
+          <!-- Переключатель режима: Бюджет / Потрачено -->
+          <NeuSegmentedControl
+            v-model="viewMode"
+            :options="[
+              { id: 'budget', label: 'Бюджет' },
+              { id: 'spent', label: 'Потрачено' },
+            ]"
+            size="sm"
+            class="mt-2"
+          />
         </div>
       </div>
     </div>

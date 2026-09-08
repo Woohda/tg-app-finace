@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/**
+ * @module app/components/NeuButton
+ * @fileoverview Базовая кнопка в стиле неоморфизм
+ * @description
+ * Кнопка с мягкими тенями, поддерживающая несколько вариантов (primary, soft, outline)
+ * и размеров (sm, default, lg, icon). Имеет тактильную отдачу (pressed state).
+ */
 import type { HTMLAttributes } from "vue";
 import { cn } from "~/utils";
 
