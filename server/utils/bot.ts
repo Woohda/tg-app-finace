@@ -27,13 +27,20 @@ let configuredToken: string | null = null;
  */
 function getWebAppUrl(): string {
   const isDev = import.meta.dev;
-  const rawUrl =
+  let rawUrl =
     (isDev && process.env.DEV_APP_URL) ||
     process.env.WEB_APP_URL ||
-    process.env.DEV_APP_URL ||
     "https://tg-app-finace.pages.dev";
 
-  if (rawUrl.startsWith("http://") || rawUrl.startsWith("https://")) {
+  // Telegram требует обязательного наличия HTTPS для Web App.
+  // Если указан локальный http (например, http://localhost:3000), 
+  // используем продакшен URL в качестве фолбэка, чтобы бот не падал с ошибкой 400.
+  if (rawUrl.startsWith("http://")) {
+    console.warn(`⚠️ [Telegram Bot] DEV_APP_URL ${rawUrl} использует HTTP, но Telegram требует HTTPS. Использую фолбэк на продакшен URL.`);
+    rawUrl = process.env.WEB_APP_URL || "https://tg-app-finace.pages.dev";
+  }
+
+  if (rawUrl.startsWith("https://")) {
     return rawUrl;
   }
   return `https://${rawUrl}`;
@@ -76,6 +83,11 @@ export function getBot(customToken?: string): Bot {
         },
       },
     );
+  });
+
+  // Глобальный обработчик ошибок
+  newBot.catch((err) => {
+    console.error("❌ [Telegram Bot Error]", err.message || err);
   });
 
   botInstance = newBot;

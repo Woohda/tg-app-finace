@@ -89,8 +89,8 @@ const segments = computed(() => {
       ...cat,
       strokeDasharray,
       strokeDashoffset,
-      iconX: (pxX / 160) * 100,
-      iconY: (pxY / 160) * 100,
+      iconX: Number(((pxX / 160) * 100).toFixed(2)),
+      iconY: Number(((pxY / 160) * 100).toFixed(2)),
       IconComponent: getCategoryIcon(cat.name),
     };
   });
