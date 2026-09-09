@@ -1,6 +1,6 @@
 <script setup lang="ts">
 /**
- * @module app/components/NeuButton
+ * @module app/components/GlassButton
  * @fileoverview Базовая кнопка в стиле неоморфизм
  * @description
  * Кнопка с мягкими тенями, поддерживающая несколько вариантов (primary, soft, outline)
@@ -33,23 +33,23 @@ const props = withDefaults(defineProps<Props>(), {
         variant === 'primary' && [
           'text-white font-medium tracking-wide text-xs',
           'border-[0.5px] border-white/25',
-          'neu-sunset-glow',
+          'glass-glow',
         ],
         // Мягкая (чистый неоморфизм)
         variant === 'soft' && [
-          'bg-milky text-text-primary font-medium',
+          'glass-milky text-text-primary font-medium',
           'border-[0.5px] border-white/50 border-b-transparent border-r-transparent',
-          'shadow-neu-flat',
-          'hover:shadow-neu-flat-hover',
-          'active:shadow-neu-pressed active:scale-[0.98]',
+          'shadow-glass-flat',
+          'hover:shadow-glass-flat-hover',
+          'active:shadow-glass-pressed active:scale-[0.98]',
         ],
         // Контурная (чистый неоморфизм — идентична мягкой)
         variant === 'outline' && [
-          'bg-milky text-text-primary font-medium',
+          'glass-milky text-text-primary font-medium',
           'border-[0.5px] border-white/50 border-b-transparent border-r-transparent',
-          'shadow-neu-flat',
-          'hover:shadow-neu-flat-hover',
-          'active:shadow-neu-pressed active:scale-[0.98]',
+          'shadow-glass-flat',
+          'hover:shadow-glass-flat-hover',
+          'active:shadow-glass-pressed active:scale-[0.98]',
         ],
         // Размеры (Mobile First — приоритет мобильных)
         size === 'default' && 'h-12 px-6 rounded-pill text-base',

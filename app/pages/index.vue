@@ -10,20 +10,17 @@
  * - Список последних транзакций
  */
 import { computed } from "vue";
-import {
-  mockBalance,
-  mockBalanceHistory,
-  mockPercentChange,
-  mockTransactions,
-  mockCategories,
-} from "~/mocks/dashboard";
 import { getGreeting } from "~/utils";
 import BalanceCard from "~/components/dashboard/BalanceCard.vue";
 import ExpensesDonut from "~/components/dashboard/ExpensesDonut.vue";
 import TransactionItem from "~/components/TransactionItem.vue";
 import { Bell, ReceiptText } from "@lucide/vue";
+// Импорт моков для истории баланса (пока не реализован расчет исторического баланса)
+import { mockBalanceHistory, mockPercentChange } from "~/mocks/dashboard";
 
 const { user } = useAuth();
+const { balance, transactions, pending } = useTransactions();
+
 const greeting = getGreeting();
 const userName = computed(() => {
   if (user.value?.username) {
@@ -33,29 +30,29 @@ const userName = computed(() => {
 });
 
 // 1. Balance Data
-const balanceHistory = mockBalanceHistory; // История за последние 3 месяца (90 дней)
-const percentChange = mockPercentChange;
+const balanceHistory = mockBalanceHistory; // TODO: Реализовать расчет на бэкенде
+const percentChange = mockPercentChange; // TODO: Реализовать расчет на бэкенде
 
 // 2. Budget Data
 // Aggregate expenses by category
 const expensesByCategory = computed(() => {
-  const expenseMap = new Map<string, number>();
+  const expenseMap = new Map<string, { amount: number; name: string }>();
 
-  mockTransactions
+  transactions.value
     .filter((t) => t.type === "expense")
     .forEach((t) => {
-      const current = expenseMap.get(t.categoryId) || 0;
-      expenseMap.set(t.categoryId, current + t.amount);
+      const current = expenseMap.get(t.categoryId) || { amount: 0, name: t.categoryName };
+      current.amount += t.amount;
+      expenseMap.set(t.categoryId, current);
     });
 
   // Sort and take top 5
   const sorted = Array.from(expenseMap.entries())
-    .map(([id, amount]) => {
-      const cat = mockCategories.find((c) => c.id === id);
+    .map(([id, data]) => {
       return {
         id,
-        name: cat?.name || "Неизвестно",
-        amount,
+        name: data.name,
+        amount: data.amount,
       };
     })
     .sort((a, b) => b.amount - a.amount)
@@ -63,11 +60,11 @@ const expensesByCategory = computed(() => {
 
   // Assign neumorphic/sunset colors
   const colors = [
-    "#db3b35", // sunset-orange
-    "#e75642", // sunset-mid
-    "#f97f57", // sunset-start
-    "#afbecd", // darker milky
-    "#8393ab", // text-secondary
+    "#ef4530", // accent-end
+    "#fc5c47", // accent-mid
+    "#ff7e67", // accent-start
+    "#c6bcb5", // warm dark cream
+    "#9a948f", // text-secondary
   ];
 
   return sorted.map((cat, index) => ({
@@ -77,7 +74,7 @@ const expensesByCategory = computed(() => {
 });
 
 // 3. Transactions Data
-const recentTransactions = computed(() => mockTransactions.slice(0, 5));
+const recentTransactions = computed(() => transactions.value.slice(0, 5));
 </script>
 
 <template>
@@ -86,8 +83,8 @@ const recentTransactions = computed(() => mockTransactions.slice(0, 5));
       <div class="flex items-center gap-3">
         <!-- Avatar mock -->
         <div
-          class="w-10 h-10 rounded-full bg-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50"
-          style="box-shadow: var(--shadow-neu-flat)"
+          class="w-10 h-10 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50"
+          style="box-shadow: var(--shadow-glass-flat)"
         >
           👱‍♀️
         </div>
@@ -96,8 +93,8 @@ const recentTransactions = computed(() => mockTransactions.slice(0, 5));
 
       <!-- Bell Icon -->
       <div
-        class="w-10 h-10 rounded-full bg-milky flex items-center justify-center text-text-primary shrink-0"
-        style="box-shadow: var(--shadow-neu-flat)"
+        class="w-10 h-10 rounded-full glass-milky flex items-center justify-center text-text-primary shrink-0"
+        style="box-shadow: var(--shadow-glass-flat)"
       >
         <Bell class="w-5 h-5 text-text-secondary" />
       </div>
@@ -115,36 +112,46 @@ const recentTransactions = computed(() => mockTransactions.slice(0, 5));
 
     <!-- 1. Balance Section -->
     <BalanceCard
-      :balance="mockBalance"
+      :balance="balance"
       :percent-change="percentChange"
       :history="balanceHistory"
     />
 
-    <!-- 2. Budget Section -->
-    <ExpensesDonut :categories="expensesByCategory" />
-
-    <!-- 3. Recent Activity Section -->
-    <div class="flex flex-col gap-4 mt-2 px-5">
-      <div class="flex justify-between items-end px-1">
-        <h3 class="text-lg font-extrabold text-text-primary">
-          Последнии операции
-        </h3>
-        <NuxtLink to="/finreports" class="text-text-secondary">
-          <ReceiptText :stroke-width="1.5" />
-        </NuxtLink>
-      </div>
-
-      <div class="flex flex-col gap-4">
-        <TransactionItem
-          v-for="item in recentTransactions"
-          :key="item.id"
-          :icon="item.categoryIcon"
-          :name="item.categoryName"
-          :amount="item.amount"
-          :type="item.type"
-          :date="item.date"
-        />
-      </div>
+    <!-- Loading State -->
+    <div v-if="pending" class="flex justify-center items-center py-10 text-text-secondary">
+      Загрузка...
     </div>
+    
+    <template v-else>
+      <!-- 2. Budget Section -->
+      <ExpensesDonut :categories="expensesByCategory" />
+
+      <!-- 3. Recent Activity Section -->
+      <div class="flex flex-col gap-4 mt-2 px-5">
+        <div class="flex justify-between items-end px-1">
+          <h3 class="text-lg font-extrabold text-text-primary">
+            Последние операции
+          </h3>
+          <NuxtLink to="/finreports" class="text-text-secondary">
+            <ReceiptText :stroke-width="1.5" />
+          </NuxtLink>
+        </div>
+
+        <div v-if="recentTransactions.length === 0" class="text-center py-4 text-text-secondary">
+          Пока нет транзакций
+        </div>
+        <div v-else class="flex flex-col gap-4">
+          <TransactionItem
+            v-for="item in recentTransactions"
+            :key="item.id"
+            :icon="item.categoryIcon"
+            :name="item.categoryName"
+            :amount="item.amount"
+            :type="item.type"
+            :date="item.date"
+          />
+        </div>
+      </div>
+    </template>
   </div>
 </template>

@@ -9,7 +9,7 @@
 
 <template>
   <div class="mx-auto relative min-h-screen overflow-hidden">
-    <main class="min-h-screen p-6 pb-25 bg-bg-milky">
+    <main class="min-h-screen p-6 pb-25 bg-glass-milky">
       <slot />
     </main>
     <BottomNav />

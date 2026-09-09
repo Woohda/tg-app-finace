@@ -8,7 +8,7 @@
  * ---
  * ### Особенности:
  * - Стиль Pure Neumorphism: выдавленная карточка с мягкими тенями
- * - Тактильная обратная связь при нажатии (active:shadow-neu-pressed + scale)
+ * - Тактильная обратная связь при нажатии (active:shadow-glass-pressed + scale)
  * - Форматирование суммы в рубли через Intl.NumberFormat
  */
 import type { HTMLAttributes } from "vue";
@@ -40,7 +40,7 @@ const formattedDate = computed(() => formatDate(props.date));
   >
     <!-- Иконка категории (как отдельная ячейка) -->
     <div
-      class="shrink-0 size-12 rounded-2xl bg-milky shadow-neu-flat flex items-center justify-center text-xl border-[0.5px] border-white/50 border-b-transparent border-r-transparent"
+      class="shrink-0 size-12 rounded-2xl glass-milky shadow-glass-flat flex items-center justify-center text-xl border-[0.5px] border-white/50 border-b-transparent border-r-transparent"
     >
       {{ icon }}
     </div>

@@ -52,9 +52,9 @@ onMounted(async () => {
 
 <template>
   <div
-    class="max-w-md mx-auto relative min-h-screen p-4 flex flex-col items-center justify-center bg-sunset-ambient shadow-2xl"
+    class="max-w-md mx-auto relative min-h-screen p-4 flex flex-col items-center justify-center bg-glass-ambient shadow-2xl"
   >
-    <NeuCard class="w-full">
+    <GlassCard class="w-full">
       <UiCardHeader class="p-5 pb-0">
         <UiCardTitle class="text-2xl font-bold text-center text-text-primary">
           TG Finance
@@ -70,7 +70,7 @@ onMounted(async () => {
             <p v-if="errorMessage" class="mb-4 text-xs text-rose-500 font-medium">
               {{ errorMessage }}
             </p>
-            <NeuButton
+            <GlassButton
               size="lg"
               variant="primary"
               class="w-full"
@@ -78,7 +78,7 @@ onMounted(async () => {
               @click="handleLogin"
             >
               {{ isLoading ? "Авторизация..." : "Войти через Telegram" }}
-            </NeuButton>
+            </GlassButton>
           </div>
 
           <div v-else class="flex flex-col items-center gap-3">
@@ -88,7 +88,7 @@ onMounted(async () => {
             <p class="text-xs text-text-secondary/70">
               Пожалуйста, откройте бота в Telegram и запустите Mini App через кнопку «Открыть трекер 📊».
             </p>
-            <NeuButton
+            <GlassButton
               size="lg"
               variant="primary"
               class="w-full mt-4"
@@ -96,10 +96,10 @@ onMounted(async () => {
               @click="handleLogin"
             >
               {{ isLoading ? "Проверка..." : "Повторить попытку" }}
-            </NeuButton>
+            </GlassButton>
           </div>
         </div>
       </UiCardContent>
-    </NeuCard>
+    </GlassCard>
   </div>
 </template>

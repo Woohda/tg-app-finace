@@ -57,7 +57,7 @@ function isItemActive(to: string): boolean {
     class="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-sm px-7 z-50 pointer-events-none"
   >
     <nav
-      class="relative h-16 bg-milky rounded-full shadow-neu-flat px-7 flex items-center justify-between pointer-events-auto"
+      class="relative h-16 glass-milky rounded-full shadow-glass-flat px-7 flex items-center justify-between pointer-events-auto"
     >
       <!-- Левый блок навигации -->
       <div class="flex items-center gap-6.5">
@@ -68,7 +68,7 @@ function isItemActive(to: string): boolean {
           class="flex flex-col items-center gap-1 transition-all duration-200"
           :class="
             isItemActive(item.to)
-              ? 'text-sunset-mid scale-110'
+              ? 'text-accent-mid scale-110'
               : 'text-text-secondary hover:text-text-primary'
           "
           :aria-label="item.label"
@@ -81,7 +81,7 @@ function isItemActive(to: string): boolean {
       <div class="absolute left-1/2 -top-5 -translate-x-1/2">
         <NuxtLink
           to="/add"
-          class="size-17 rounded-full neu-sunset-glow flex items-center justify-center text-white text-3xl font-light pb-0.5 active:scale-95 transition-transform"
+          class="size-17 rounded-full glass-glow flex items-center justify-center text-white text-3xl font-light pb-0.5 active:scale-95 transition-transform"
           aria-label="Добавить операцию"
         >
           +
@@ -97,7 +97,7 @@ function isItemActive(to: string): boolean {
           class="flex flex-col items-center gap-1 transition-all duration-200"
           :class="
             isItemActive(item.to)
-              ? 'text-sunset-mid scale-110'
+              ? 'text-accent-mid scale-110'
               : 'text-text-secondary hover:text-text-primary'
           "
           :aria-label="item.label"

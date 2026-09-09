@@ -16,11 +16,11 @@ import { BarChart3 } from "@lucide/vue";
       <p class="text-text-secondary text-sm">Отчеты и графики расходов</p>
     </div>
 
-    <NeuCard
+    <GlassCard
       class="p-6 flex flex-col items-center justify-center gap-4 text-center mt-8"
     >
       <div
-        class="size-16 rounded-full bg-milky shadow-neu-inner flex items-center justify-center text-sunset-mid"
+        class="size-16 rounded-full glass-milky shadow-glass-inner flex items-center justify-center text-accent-mid"
       >
         <BarChart3 class="size-8" :stroke-width="1.75" />
       </div>
@@ -31,6 +31,6 @@ import { BarChart3 } from "@lucide/vue";
           фильтры по периодам.
         </p>
       </div>
-    </NeuCard>
+    </GlassCard>
   </div>
 </template>

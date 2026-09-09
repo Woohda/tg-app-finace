@@ -41,14 +41,14 @@ const {
     </div>
 
     <!-- Финансовый раздел: Список операций -->
-    <NeuCard class="relative z-10">
+    <GlassCard class="relative z-10">
       <div class="flex flex-col gap-4 mb-5">
         <h2 class="text-base font-bold text-text-primary tracking-tight">
           Записанные транзакции
         </h2>
 
         <!-- Переключатель периодов -->
-        <NeuSegmentedControl
+        <GlassSegmentedControl
           v-model="activePeriod"
           :options="periods"
           size="md"
@@ -74,6 +74,6 @@ const {
           {{ emptyMessage }}
         </p>
       </div>
-    </NeuCard>
+    </GlassCard>
   </div>
 </template>

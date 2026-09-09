@@ -1,37 +1,31 @@
 @import "tailwindcss";
 
 @theme {
-  /* Цвета: Классический Неоморфизм по референсу */
-  --color-milky: #ebf0f5; /* Чистая светло-серо-голубая база карточек */
-  --color-bg-milky: #ebedf5; /* Мягкая контрастная серо-голубая подложка под карточки */
-  --color-sunset-start: #f97f57; /* Светло-оранжевый (коралловый) акцент */
-  --color-sunset-mid: #e75642; /* Переходный кораллово-красный */
-  --color-sunset-orange: #db3b35; /* Красный акцент */
+  /* Цвета: Glassmorphism (Стекломорфизм) */
+  --color-accent-start: #ff7e67; /* Светло-коралловый */
+  --color-accent-mid: #fc5c47; /* Коралловый */
+  --color-accent-end: #ef4530; /* Насыщенный красный/оранжевый акцент */
 
-  --color-text-primary: #1f2a37; /* Темный серо-синий текст */
-  --color-text-accent: #db3b35; /* Красный цвет для акцентного текста */
-  --color-text-secondary: #8393ab; /* Мягкий серый для подписей */
+  --color-text-primary: #2d2a26; /* Очень темный серо-коричневый */
+  --color-text-accent: #ef4530; /* Красный цвет для акцентного текста */
+  --color-text-secondary: #8c857f; /* Мягкий тепло-серый */
 
-  /* Тени — Идеальный Neumorphism */
-  --shadow-neu-flat:
-    8px 8px 16px rgba(175, 190, 205, 0.55),
-    -8px -8px 16px rgba(255, 255, 255, 1);
-  --shadow-neu-flat-hover:
-    10px 10px 20px rgba(175, 190, 205, 0.65),
-    -10px -10px 20px rgba(255, 255, 255, 1);
-  --shadow-neu-pressed:
-    inset 6px 6px 12px rgba(175, 190, 205, 0.5),
-    inset -6px -6px 12px rgba(255, 255, 255, 1);
+  /* Тени — Glassmorphism (Парящее стекло) */
+  --shadow-glass: 0 8px 32px 0 rgba(130, 115, 105, 0.15); /* Мягкая тень под стеклом */
 
-  /* Вдавленная тень (для полей ввода и треков прогресса) */
-  --shadow-neu-inner:
-    inset 4px 4px 8px rgba(175, 190, 205, 0.5),
-    inset -4px -4px 8px rgba(255, 255, 255, 1);
+  --shadow-glass-hover: 0 12px 40px 0 rgba(130, 115, 105, 0.2);
 
-  /* Свечение для активных/градиентных кнопок */
-  --shadow-sunset-glow:
-    0 10px 24px -4px rgba(255, 90, 130, 0.4),
-    0 4px 10px -2px rgba(255, 90, 130, 0.2);
+  --shadow-glass-pressed: inset 0 4px 10px rgba(130, 115, 105, 0.15);
+
+  /* Вдавленная тень (для полей ввода) - гибрид со стеклом */
+  --shadow-glass-inner:
+    inset 2px 2px 8px rgba(130, 115, 105, 0.15),
+    inset -2px -2px 8px rgba(255, 255, 255, 0.6);
+
+  /* Мощное свечение для градиентной кнопки (+) */
+  --shadow-accent-glow:
+    0 12px 30px -4px rgba(239, 69, 48, 0.5),
+    0 4px 15px -2px rgba(239, 69, 48, 0.4);
 
   /* Скругления */
   --radius-pill: 999px;
@@ -43,8 +37,35 @@
 }
 
 @layer base {
+  @keyframes gentleWave {
+    0% {
+      background-position: 100% 100%;
+    }
+    50% {
+      background-position: 0% 0%;
+    }
+    100% {
+      background-position: 100% 100%;
+    }
+  }
+
   body {
-    background-color: var(--color-bg-milky);
+    /* Голографический (Iridescent) градиент прямыми линиями по диагонали */
+    background-color: #f7f9fa;
+    background-image: linear-gradient(
+      to bottom right,
+      /* Мягкий кремовый */ #fdf4dc 5%,
+      /* Нежный персиковый */ #f6e0d3 20%,
+      /* Нежный розовый */ #fae0e3 25%,
+      /* Светящийся голубой */ #cbeef1 42%,
+      /* Мягкий лавандовый */ #ded7f5 55%,
+      /* Нежный розовый */ #fae0e3 68%,
+      /* Нежный персиковый */ #f6e0d3 82%,
+      /* Мягкий кремовый */ #fdf4dc 100%
+    );
+    background-size: 120% 120%;
+    animation: gentleWave 12s ease-in-out infinite;
+    background-attachment: fixed;
     color: var(--color-text-primary);
     min-height: 100vh;
     font-family: var(--font-sans);
@@ -53,32 +74,50 @@
 }
 
 @layer components {
-  /* Фон экрана (Строгий Неоморфизм без градиентов) */
-  .bg-sunset-ambient {
-    background-color: var(--color-milky);
+  /* Фон экрана (убираем монотонный цвет, чтобы просвечивал градиент body) */
+  .bg-glass-ambient {
+    background-color: transparent;
   }
 
-  /* Неоморфная карточка (вместо стекла) */
-  .neu-panel {
-    background-color: var(--color-milky);
+  /* Класс glass-milky используется в навигации и аватаре, делаем их стеклянными */
+  .glass-milky {
+    background-color: rgba(255, 255, 255, 0.4) !important;
+    backdrop-filter: blur(24px);
+    -webkit-backdrop-filter: blur(24px);
+    border: 1px solid rgba(255, 255, 255, 0.5);
+    box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.7);
+  }
+
+  /* Настоящее матовое стекло для карточек */
+  .glass-panel {
+    background: linear-gradient(
+      135deg,
+      rgba(255, 255, 255, 0.4) 0%,
+      rgba(255, 255, 255, 0.1) 100%
+    );
     border-radius: 32px;
-    box-shadow: var(--shadow-neu-flat);
-    border: none;
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+    box-shadow:
+      var(--shadow-glass),
+      inset 0 1px 1px rgba(255, 255, 255, 0.8),
+      inset 1px 0 1px rgba(255, 255, 255, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.4);
+    border-right: 1px solid rgba(255, 255, 255, 0.9);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+    backdrop-filter: blur(32px);
+    -webkit-backdrop-filter: blur(32px);
   }
 
-  /* Кнопка с ярким градиентом из референса */
-  .neu-sunset-glow {
+  /* Кнопка с градиентом */
+  .glass-glow {
     background: linear-gradient(
       145deg,
-      var(--color-sunset-start) 10%,
-      var(--color-sunset-mid) 60%,
-      var(--color-sunset-orange) 100%
+      var(--color-accent-start) 0%,
+      var(--color-accent-mid) 50%,
+      var(--color-accent-end) 100%
     );
     position: relative;
     overflow: hidden;
-    box-shadow: var(--shadow-sunset-glow);
+    box-shadow: var(--shadow-accent-glow);
     color: white;
     border: none;
     transition:
@@ -86,11 +125,11 @@
       box-shadow 0.15s ease;
   }
 
-  .neu-sunset-glow:hover {
+  .glass-glow:hover {
     transform: scale(1.02);
   }
 
-  .neu-sunset-glow:active {
+  .glass-glow:active {
     transform: scale(0.97);
   }
 }
