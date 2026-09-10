@@ -1,87 +1,152 @@
 /**
  * @module app/composables/useTransactions
- * @fileoverview Composable для работы с транзакциями, фильтрацией по периодам и месячным бюджетом
+ * @fileoverview Composable для CRUD-операций с транзакциями
  * @description
- * Предоставляет реактивное состояние для списка транзакций с фильтрацией по периодам
- * (день, неделя, месяц), а также расчет показателей общего месячного бюджета.
- * ---
- * ### Логика:
- * 1. `activePeriod`: Текущий выбранный период ('day' | 'week' | 'month')
- * 2. `filteredTransactions`: Список транзакций, отфильтрованный по выбранному периоду
- * 3. `monthlyExpense` / `monthlyBudget` / `monthlyBudgetPercent`: Месячные показатели
- *    (бюджет рассчитывается строго на месяц и не меняется от фильтра периода)
+ * Загружает список транзакций и предоставляет методы создания, обновления, удаления.
+ * Все запросы защищены заголовком `Authorization: Bearer <token>`.
  */
-import { ref, computed } from "vue";
-import {
-  mockTransactions,
-  mockBudget,
-  mockTotalExpense,
-  type MockTransaction,
-} from "~/mocks/dashboard";
+import { computed } from "vue";
 
-export type PeriodType = "day" | "week" | "month";
-
-export interface PeriodOption {
-  id: PeriodType;
-  label: string;
+export interface Transaction {
+  id: string;
+  categoryId: string;
+  categoryName: string;
+  categoryIcon: string;
+  amount: number;
+  type: "income" | "expense";
+  description: string | null;
+  date: string;
 }
 
 export const useTransactions = () => {
-  const activePeriod = ref<PeriodType>("week");
+  const { token } = useAuth();
 
-  const periods: PeriodOption[] = [
-    { id: "day", label: "День" },
-    { id: "week", label: "Неделя" },
-    { id: "month", label: "Месяц" },
-  ];
+  // Реактивные заголовки авторизации
+  const authHeaders = computed(() => ({
+    Authorization: `Bearer ${token.value}`,
+  }));
 
-  // Фильтрация транзакций по периоду (траты отображаются под выбранный фильтр)
-  const filteredTransactions = computed<MockTransaction[]>(() => {
-    if (activePeriod.value === "day") {
-      const dayStart = new Date();
-      dayStart.setDate(dayStart.getDate() - 1);
-      return mockTransactions.filter(
-        (t) => t.date >= dayStart.toISOString().split("T")[0]!,
-      );
-    }
-    if (activePeriod.value === "week") {
-      const weekStart = new Date();
-      weekStart.setDate(weekStart.getDate() - 7);
-      return mockTransactions.filter(
-        (t) => t.date >= weekStart.toISOString().split("T")[0]!,
-      );
-    }
-    return mockTransactions;
+  // Загружаем транзакции с сервера
+  const {
+    data: rawTransactions,
+    pending,
+    error,
+    refresh,
+  } = useFetch<Transaction[]>("/api/transactions", {
+    headers: authHeaders,
   });
 
-  // Сообщение для пустого списка в зависимости от периода
-  const emptyMessage = computed<string>(() => {
-    switch (activePeriod.value) {
-      case "day":
-        return "За этот день трат нет";
-      case "week":
-        return "За эту неделю трат нет";
-      case "month":
-        return "За этот месяц трат нет";
+  const transactions = computed(() => rawTransactions.value || []);
+
+  // --- CRUD ---
+
+  const addTransaction = async (data: {
+    amount: number;
+    category_id: string;
+    type: "income" | "expense";
+    date: string;
+    description?: string;
+  }) => {
+    try {
+      const newTx = await $fetch<Transaction>("/api/transactions", {
+        method: "POST",
+        headers: authHeaders.value,
+        body: data,
+      });
+      if (rawTransactions.value) {
+        rawTransactions.value.unshift(newTx);
+      }
+      return { success: true };
+    } catch (e: unknown) {
+      console.error("Ошибка при добавлении:", e);
+      const fetchError = e as {
+        data?: { statusMessage?: string };
+        message?: string;
+      };
+      return {
+        success: false,
+        error:
+          fetchError.data?.statusMessage ||
+          fetchError.message ||
+          "Ошибка сервера",
+      };
     }
-  });
+  };
 
-  // Показатели месячного бюджета (фиксированы на месяц)
-  const monthlyBudget = ref(mockBudget);
-  const monthlyExpense = ref(mockTotalExpense);
+  const updateTransaction = async (
+    id: string,
+    data: {
+      amount?: number;
+      category_id?: string;
+      type?: "income" | "expense";
+      date?: string;
+      description?: string;
+    },
+  ) => {
+    try {
+      const updated = await $fetch<Transaction>(`/api/transactions/${id}`, {
+        method: "PATCH",
+        headers: authHeaders.value,
+        body: data,
+      });
+      if (rawTransactions.value) {
+        const index = rawTransactions.value.findIndex((t) => t.id === id);
+        if (index !== -1) {
+          rawTransactions.value[index] = updated;
+        }
+      }
+      return { success: true };
+    } catch (e: unknown) {
+      console.error("Ошибка при обновлении:", e);
+      const fetchError = e as {
+        data?: { statusMessage?: string };
+        message?: string;
+      };
+      return {
+        success: false,
+        error:
+          fetchError.data?.statusMessage ||
+          fetchError.message ||
+          "Ошибка сервера",
+      };
+    }
+  };
 
-  const monthlyBudgetPercent = computed(() => {
-    if (monthlyBudget.value <= 0) return 0;
-    return Math.round((monthlyExpense.value / monthlyBudget.value) * 100);
-  });
+  const deleteTransaction = async (id: string) => {
+    try {
+      await $fetch(`/api/transactions/${id}`, {
+        method: "DELETE",
+        headers: authHeaders.value,
+      });
+      if (rawTransactions.value) {
+        rawTransactions.value = rawTransactions.value.filter(
+          (t) => t.id !== id,
+        );
+      }
+      return { success: true };
+    } catch (e: unknown) {
+      console.error("Ошибка при удалении:", e);
+      const fetchError = e as {
+        data?: { statusMessage?: string };
+        message?: string;
+      };
+      return {
+        success: false,
+        error:
+          fetchError.data?.statusMessage ||
+          fetchError.message ||
+          "Ошибка сервера",
+      };
+    }
+  };
 
   return {
-    activePeriod,
-    periods,
-    filteredTransactions,
-    emptyMessage,
-    monthlyBudget,
-    monthlyExpense,
-    monthlyBudgetPercent,
+    transactions,
+    pending,
+    error,
+    refresh,
+    addTransaction,
+    updateTransaction,
+    deleteTransaction,
   };
 };

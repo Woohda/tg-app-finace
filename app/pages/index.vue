@@ -19,7 +19,8 @@ import { Bell, ReceiptText } from "@lucide/vue";
 import { mockBalanceHistory, mockPercentChange } from "~/mocks/dashboard";
 
 const { user } = useAuth();
-const { balance, transactions, pending } = useTransactions();
+const { transactions, pending } = useTransactions();
+const { balance } = useTransactionView(transactions);
 
 const greeting = getGreeting();
 const userName = computed(() => {
