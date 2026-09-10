@@ -7,13 +7,13 @@
  * сглаженный график (d3-shape curveMonotoneX) истории баланса.
  * ---
  * ### Особенности:
- * - Стилистика: Neumorphism (использует NeuCard)
+ * - Стилистика: Neumorphism (использует GlassCard)
  * - График использует SVG linearGradient и mask-image для создания эффекта свечения и плавного появления.
  * - История масштабируется автоматически (min/max).
  */
 import { computed } from "vue";
 import { formatAmount, formatPercent } from "~/utils";
-import NeuCard from "~/components/NeuCard.vue";
+import GlassCard from "~/components/GlassCard.vue";
 import { line, curveMonotoneX } from "d3-shape";
 
 const props = defineProps<{
@@ -59,7 +59,7 @@ const areaPathData = computed(() => {
 </script>
 
 <template>
-  <NeuCard class="flex flex-col gap-1 relative overflow-hidden h-45">
+  <GlassCard class="flex flex-col gap-1 relative overflow-hidden h-45">
     <div class="z-10 flex justify-between items-start">
       <div>
         <p class="text-text-secondary text-md font-semibold mb-1">
@@ -99,19 +99,19 @@ const areaPathData = computed(() => {
       >
         <defs>
           <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-            <stop offset="0%" stop-color="var(--color-sunset-start)" />
-            <stop offset="100%" stop-color="var(--color-sunset-orange)" />
+            <stop offset="0%" stop-color="var(--color-accent-start)" />
+            <stop offset="100%" stop-color="var(--color-accent-end)" />
           </linearGradient>
 
           <linearGradient id="areaGrad" x1="0%" y1="0%" x2="0%" y2="100%">
             <stop
               offset="0%"
-              stop-color="var(--color-sunset-start)"
+              stop-color="var(--color-accent-start)"
               stop-opacity="0.6"
             />
             <stop
               offset="50%"
-              stop-color="var(--color-sunset-start)"
+              stop-color="var(--color-accent-start)"
               stop-opacity="0.25"
             />
             <stop
@@ -136,5 +136,5 @@ const areaPathData = computed(() => {
         />
       </svg>
     </div>
-  </NeuCard>
+  </GlassCard>
 </template>

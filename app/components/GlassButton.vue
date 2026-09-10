@@ -1,9 +1,10 @@
 <script setup lang="ts">
 /**
- * @module app/components/NeuButton
- * @fileoverview Базовая кнопка в стиле неоморфизм
+ * @module app/components/GlassButton
+ * @fileoverview Базовая кнопка в стиле Glassmorphism
  * @description
- * Кнопка с мягкими тенями, поддерживающая несколько вариантов (primary, soft, outline)
+ * Кнопка с объёмными стеклянными тенями, поддерживающая несколько вариантов
+ * (primary — акцентный градиент, soft — матовое стекло, outline — прозрачная)
  * и размеров (sm, default, lg, icon). Имеет тактильную отдачу (pressed state).
  */
 import type { HTMLAttributes } from "vue";
@@ -28,28 +29,24 @@ const props = withDefaults(defineProps<Props>(), {
     :disabled="disabled"
     :class="
       cn(
-        'transition-all duration-200 ease-out active:scale-[0.97]',
-        // Основная (Sunset Glow + неоморфный глянец)
+        'transition-all duration-200 ease-out',
+        // Основная (акцентный градиент + стеклянный объём)
         variant === 'primary' && [
           'text-white font-medium tracking-wide text-xs',
-          'border-[0.5px] border-white/25',
-          'neu-sunset-glow',
+          'glass-glow',
+          'active:scale-[0.97]',
         ],
-        // Мягкая (чистый неоморфизм)
+        // Мягкая (матовое стекло)
         variant === 'soft' && [
-          'bg-milky text-text-primary font-medium',
-          'border-[0.5px] border-white/50 border-b-transparent border-r-transparent',
-          'shadow-neu-flat',
-          'hover:shadow-neu-flat-hover',
-          'active:shadow-neu-pressed active:scale-[0.98]',
+          'glass-milky text-text-primary font-medium',
+          'active:scale-[0.97]',
         ],
-        // Контурная (чистый неоморфизм — идентична мягкой)
+        // Контурная (прозрачная с тонкой рамкой)
         variant === 'outline' && [
-          'bg-milky text-text-primary font-medium',
-          'border-[0.5px] border-white/50 border-b-transparent border-r-transparent',
-          'shadow-neu-flat',
-          'hover:shadow-neu-flat-hover',
-          'active:shadow-neu-pressed active:scale-[0.98]',
+          'text-text-primary font-medium',
+          'bg-white/20 backdrop-blur-lg',
+          'border border-white/40',
+          'active:scale-[0.97]',
         ],
         // Размеры (Mobile First — приоритет мобильных)
         size === 'default' && 'h-12 px-6 rounded-pill text-base',

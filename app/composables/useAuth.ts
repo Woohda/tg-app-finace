@@ -105,6 +105,27 @@ export const useAuth = () => {
     userCookie.value = null;
   };
 
+  const devLogin = async () => {
+    try {
+      const response = await $fetch<{ token: string; user: User }>(
+        "/api/auth/dev-login",
+        { method: "POST" },
+      );
+      token.value = response.token;
+      user.value = response.user;
+      tokenCookie.value = response.token;
+      userCookie.value = response.user;
+      return true;
+    } catch (error) {
+      console.error("Ошибка dev-авторизации:", error);
+      token.value = null;
+      user.value = null;
+      tokenCookie.value = null;
+      userCookie.value = null;
+      return false;
+    }
+  };
+
   return {
     token,
     user,
@@ -112,6 +133,7 @@ export const useAuth = () => {
     loginWithTelegram,
     getTelegramInitData,
     initTelegramAuth,
+    devLogin,
     logout,
   };
 };

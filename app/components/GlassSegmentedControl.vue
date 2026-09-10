@@ -2,7 +2,7 @@
 import { cn } from "~/utils";
 
 /**
- * @module app/components/NeuSegmentedControl
+ * @module app/components/GlassSegmentedControl
  * @fileoverview Неоморфный переключатель сегментов (Segmented Control / Pill Switcher)
  * @description
  * Вдавленная неоморфная плашка с кнопками UiButton.
@@ -45,7 +45,7 @@ function selectOption(id: T) {
 
 <template>
   <div
-    class="flex items-center p-1.25 justify-between bg-milky rounded-full shadow-neu-inner"
+    class="flex items-center p-1.25 justify-between glass-milky rounded-full shadow-glass-inner"
     :class="size === 'sm' ? '' : 'w-full'"
   >
     <UiButton
@@ -58,7 +58,7 @@ function selectOption(id: T) {
           'font-bold rounded-full transition-all duration-200 cursor-pointer text-center select-none shadow-none h-auto focus-visible:ring-0',
           size === 'sm' ? 'px-3 py-1 text-xs' : 'flex-1 py-1.5 text-sm',
           modelValue === getOptionId(opt)
-            ? 'neu-sunset-glow text-white hover:text-white'
+            ? 'glass-glow text-white hover:text-white'
             : 'text-text-secondary hover:text-text-primary hover:bg-transparent bg-transparent',
         )
       "

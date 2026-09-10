@@ -5,10 +5,13 @@
  * @description
  * Отображает полукольцевой датчик бюджета (всегда за месяц) и список транзакций,
  * который фильтруется через Segmented Control (День, Неделя, Месяц).
+ * Транзакции интерактивны: swipe-to-delete, tap-to-edit.
  */
 import { ChevronLeft } from "@lucide/vue";
-import { useTransactions } from "~/composables/useTransactions";
 
+const router = useRouter();
+
+const { transactions, deleteTransaction } = useTransactions();
 const {
   activePeriod,
   periods,
@@ -17,7 +20,19 @@ const {
   monthlyBudget,
   monthlyExpense,
   monthlyBudgetPercent,
-} = useTransactions();
+} = useTransactionView(transactions);
+
+const deletingId = ref<string | null>(null);
+
+async function handleDelete(id: string) {
+  deletingId.value = id;
+  await deleteTransaction(id);
+  deletingId.value = null;
+}
+
+function handleEdit(id: string) {
+  router.push(`/add?edit=${id}`);
+}
 </script>
 
 <template>
@@ -41,14 +56,14 @@ const {
     </div>
 
     <!-- Финансовый раздел: Список операций -->
-    <NeuCard class="relative z-10">
+    <GlassCard class="relative z-10">
       <div class="flex flex-col gap-4 mb-5">
         <h2 class="text-base font-bold text-text-primary tracking-tight">
           Записанные транзакции
         </h2>
 
         <!-- Переключатель периодов -->
-        <NeuSegmentedControl
+        <GlassSegmentedControl
           v-model="activePeriod"
           :options="periods"
           size="md"
@@ -65,6 +80,10 @@ const {
           :amount="tx.amount"
           :type="tx.type"
           :date="tx.date"
+          interactive
+          :class="{ 'opacity-50 pointer-events-none': deletingId === tx.id }"
+          @click="handleEdit(tx.id)"
+          @delete="handleDelete(tx.id)"
         />
       </div>
 
@@ -74,6 +93,6 @@ const {
           {{ emptyMessage }}
         </p>
       </div>
-    </NeuCard>
+    </GlassCard>
   </div>
 </template>

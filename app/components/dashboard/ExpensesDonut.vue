@@ -27,7 +27,7 @@ import {
   Utensils,
   HelpCircle,
 } from "@lucide/vue";
-import NeuCard from "~/components/NeuCard.vue";
+import GlassCard from "~/components/GlassCard.vue";
 
 export interface CategoryBudgetData {
   id: string;
@@ -98,7 +98,7 @@ const segments = computed(() => {
 </script>
 
 <template>
-  <NeuCard>
+  <GlassCard>
     <div class="flex justify-between items-center mb-4">
       <h3 class="text-xl font-extrabold text-text-primary">Расходы</h3>
       <NuxtLink to="/finreports" class="text-text-secondary">
@@ -110,7 +110,7 @@ const segments = computed(() => {
       <div class="relative w-43 h-43 shrink-0">
         <div
           class="absolute inset-0 rounded-full"
-          style="box-shadow: var(--shadow-neu-inner)"
+          style="box-shadow: var(--shadow-glass-inner)"
         />
 
         <svg
@@ -154,7 +154,7 @@ const segments = computed(() => {
         </div>
 
         <div
-          class="absolute inset-0 flex flex-col items-center justify-center rounded-full m-8 bg-milky"
+          class="absolute inset-0 flex flex-col items-center justify-center rounded-full m-8 glass-milky"
         >
           <span class="text-xs text-text-secondary font-bold tracking-wider"
             >Потрачено</span
@@ -191,5 +191,5 @@ const segments = computed(() => {
         </div>
       </div>
     </div>
-  </NeuCard>
+  </GlassCard>
 </template>

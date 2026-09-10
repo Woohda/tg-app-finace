@@ -4,7 +4,7 @@ import { Home, ChartColumn, ReceiptText, Settings } from "@lucide/vue";
 
 /**
  * @module app/components/BottomNav
- * @fileoverview Нижняя панель навигации (Floating Neumorphic Bottom Navigation)
+ * @fileoverview Нижняя панель навигации (Floating Glassmorphism Bottom Navigation)
  * @description
  * Закрепленная плавающая панель навигации на базе NuxtLink и иконок Lucide.
  * Включает левый блок (Главная, Аналитика), центральную кнопку «+» и правый блок (История, Настройки).
@@ -34,7 +34,7 @@ const rightItems: NavItem[] = [
     name: "finreports",
     to: "/finreports",
     icon: ReceiptText,
-    label: "Финансовый отчет",
+    label: "Транзакции",
   },
   {
     name: "settings",
@@ -54,55 +54,97 @@ function isItemActive(to: string): boolean {
 
 <template>
   <div
-    class="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-sm px-7 z-50 pointer-events-none"
+    class="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-97 px-4 z-50 pointer-events-none"
   >
     <nav
-      class="relative h-16 bg-milky rounded-full shadow-neu-flat px-7 flex items-center justify-between pointer-events-auto"
+      class="relative h-19 glass-milky rounded-[38px] px-4 flex items-center justify-between pointer-events-auto"
     >
       <!-- Левый блок навигации -->
-      <div class="flex items-center gap-6.5">
+      <div class="flex items-center gap-1">
         <NuxtLink
           v-for="item in leftItems"
           :key="item.name"
           :to="item.to"
-          class="flex flex-col items-center gap-1 transition-all duration-200"
+          class="relative flex flex-col items-center justify-center w-15 h-15 transition-all duration-300 rounded-3xl"
           :class="
             isItemActive(item.to)
-              ? 'text-sunset-mid scale-110'
+              ? 'text-accent-end'
               : 'text-text-secondary hover:text-text-primary'
           "
           :aria-label="item.label"
         >
-          <component :is="item.icon" class="size-6.5" :stroke-width="2" />
+          <!-- Активный фон (овал) -->
+          <div
+            v-if="isItemActive(item.to)"
+            class="absolute inset-0 bg-white/40 rounded-3xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] border border-white/50 -z-10"
+          />
+
+          <component
+            :is="item.icon"
+            class="size-5.5 mb-1"
+            :stroke-width="isItemActive(item.to) ? 2.5 : 2"
+          />
+          <span class="text-[10px] font-medium leading-none">{{
+            item.label
+          }}</span>
         </NuxtLink>
       </div>
 
       <!-- Центральная кнопка (Добавить транзакцию) -->
       <div class="absolute left-1/2 -top-5 -translate-x-1/2">
+        <!-- Выпуклая матовая кнопка с блюром -->
         <NuxtLink
           to="/add"
-          class="size-17 rounded-full neu-sunset-glow flex items-center justify-center text-white text-3xl font-light pb-0.5 active:scale-95 transition-transform"
+          class="size-17 rounded-full flex items-center justify-center text-accent-end text-4xl font-light active:scale-90 transition-transform"
+          style="
+            background: linear-gradient(
+              180deg,
+              rgba(238, 238, 238, 1) 30%,
+              rgba(238, 238, 238, 0.6) 40%,
+              rgba(238, 238, 238, 0) 100%
+            );
+            backdrop-filter: blur(35px);
+            -webkit-backdrop-filter: blur(35px);
+
+            box-shadow:
+              8px 8px 16px rgba(130, 115, 105, 0.25),
+              inset 3px 3px 8px rgba(255, 255, 255, 1),
+              inset -4px -4px 10px rgba(130, 115, 105, 0.15);
+          "
           aria-label="Добавить операцию"
         >
-          +
+          <span class="mb-1.5">+</span>
         </NuxtLink>
       </div>
 
       <!-- Правый блок навигации -->
-      <div class="flex items-center gap-6.5">
+      <div class="flex items-center gap-1">
         <NuxtLink
           v-for="item in rightItems"
           :key="item.name"
           :to="item.to"
-          class="flex flex-col items-center gap-1 transition-all duration-200"
+          class="relative flex flex-col items-center justify-center w-15 h-15 transition-all duration-300 rounded-3xl"
           :class="
             isItemActive(item.to)
-              ? 'text-sunset-mid scale-110'
+              ? 'text-accent-end'
               : 'text-text-secondary hover:text-text-primary'
           "
           :aria-label="item.label"
         >
-          <component :is="item.icon" class="size-6.5" :stroke-width="2" />
+          <!-- Активный фон (овал) -->
+          <div
+            v-if="isItemActive(item.to)"
+            class="absolute inset-0 bg-white/40 rounded-3xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] border border-white/50 -z-10"
+          />
+
+          <component
+            :is="item.icon"
+            class="size-5.5 mb-1"
+            :stroke-width="isItemActive(item.to) ? 2.5 : 2"
+          />
+          <span class="text-[10px] font-medium leading-none">{{
+            item.label
+          }}</span>
         </NuxtLink>
       </div>
     </nav>

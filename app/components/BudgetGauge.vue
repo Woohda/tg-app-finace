@@ -102,8 +102,8 @@ function getTileColor(index: number) {
   const t = index / (TOTAL_TILES - 1);
 
   const start: RGBA = [245, 195, 145, 1];
-  const mid: RGBA = [231, 86, 66, 1]; // --color-sunset-mid (#e75642)
-  const end: RGBA = [219, 59, 53, 1]; // --color-sunset-orange (#db3b35)
+  const mid: RGBA = [231, 86, 66, 1]; // --color-accent-mid (#e75642)
+  const end: RGBA = [219, 59, 53, 1]; // --color-accent-end (#db3b35)
 
   if (t < 0.75) {
     return interpolateColor(start, mid, t / 0.75);
@@ -125,14 +125,14 @@ function getTileColor(index: number) {
         >
           <div
             class="w-3.75 h-10 -ml-2 -mt-5 rounded-[5px] transition-all duration-500 ease-out"
-            :class="i < filledCount ? 'shadow-none' : 'bg-milky'"
+            :class="i < filledCount ? 'shadow-none' : 'glass-milky'"
             :style="
               i < filledCount
                 ? {
                     backgroundColor: getTileColor(i),
-                    boxShadow: 'var(--shadow-sunset-glow)',
+                    boxShadow: 'var(--shadow-accent-glow)',
                   }
-                : { boxShadow: 'var(--shadow-neu-inner)' }
+                : { boxShadow: 'var(--shadow-glass-inner)' }
             "
           />
         </div>
@@ -164,7 +164,7 @@ function getTileColor(index: number) {
           </span>
 
           <!-- Переключатель режима: Бюджет / Потрачено -->
-          <NeuSegmentedControl
+          <GlassSegmentedControl
             v-model="viewMode"
             :options="[
               { id: 'budget', label: 'Бюджет' },

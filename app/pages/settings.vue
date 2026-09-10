@@ -17,11 +17,11 @@ const { user, logout } = useAuth();
       <p class="text-text-secondary text-sm">Профиль и параметры приложения</p>
     </div>
 
-    <NeuCard
+    <GlassCard
       class="p-6 flex flex-col items-center justify-center gap-4 text-center mt-4"
     >
       <div
-        class="size-16 rounded-full bg-milky shadow-neu-inner flex items-center justify-center text-text-primary"
+        class="size-16 rounded-full glass-milky shadow-glass-inner flex items-center justify-center text-text-primary"
       >
         <User class="size-8" :stroke-width="1.75" />
       </div>
@@ -34,9 +34,9 @@ const { user, logout } = useAuth();
         </p>
       </div>
 
-      <NeuButton variant="soft" class="w-full mt-4" @click="logout">
+      <GlassButton variant="soft" class="w-full mt-4" @click="logout">
         Выйти из аккаунта
-      </NeuButton>
-    </NeuCard>
+      </GlassButton>
+    </GlassCard>
   </div>
 </template>
