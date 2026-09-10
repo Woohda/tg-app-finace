@@ -8,6 +8,11 @@ export default defineNuxtConfig({
   nitro: {
     preset: "cloudflare-pages",
   },
+  vite: {
+    server: {
+      allowedHosts: true,
+    },
+  },
   app: {
     head: {
       script: [

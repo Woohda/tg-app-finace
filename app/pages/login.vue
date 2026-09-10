@@ -4,16 +4,12 @@
  * @fileoverview Страница авторизации через Telegram Mini App
  * @description
  * Отображает экран входа. Внутри Telegram автоматически авторизует пользователя
- * на основе `window.Telegram.WebApp.initData`. В обычном браузере выводит сообщение
- * о необходимости запуска через Telegram бота.
- * ---
- * ### Логика работы:
- * 1. Проверяет наличие активной сессии — если уже авторизован, редиректит на `/`
- * 2. При наличии `initData` пытается автоматически авторизоваться через `initTelegramAuth`
- * 3. Если запуск вне Telegram, предлагает открыть приложение через Telegram бота
+ * на основе `window.Telegram.WebApp.initData`. В обычном браузере в dev-режиме
+ * авторизует через dev-endpoint автоматически.
  */
-const { isAuthenticated, getTelegramInitData, initTelegramAuth } = useAuth();
+const { isAuthenticated, getTelegramInitData, initTelegramAuth, devLogin } = useAuth();
 const router = useRouter();
+const isDev = import.meta.dev;
 
 if (isAuthenticated.value) {
   router.replace("/");
@@ -40,12 +36,29 @@ const handleLogin = async () => {
   }
 };
 
+const handleDevLogin = async () => {
+  errorMessage.value = null;
+  isLoading.value = true;
+
+  const success = await devLogin();
+  isLoading.value = false;
+
+  if (success) {
+    router.replace("/");
+  } else {
+    errorMessage.value = "Ошибка dev-авторизации";
+  }
+};
+
 onMounted(async () => {
   const initData = getTelegramInitData();
   isInTelegram.value = !!initData;
 
   if (initData && !isAuthenticated.value) {
     await handleLogin();
+  } else if (isDev && !isAuthenticated.value) {
+    // Dev-режим: автоматический вход без Telegram
+    await handleDevLogin();
   }
 });
 </script>
@@ -82,10 +95,16 @@ onMounted(async () => {
           </div>
 
           <div v-else class="flex flex-col items-center gap-3">
-            <p class="text-sm text-text-secondary">
-              Это приложение разработано для работы внутри Telegram.
+            <p v-if="isDev" class="text-sm text-text-accent font-medium">
+              🛠 Dev Mode
             </p>
-            <p class="text-xs text-text-secondary/70">
+            <p class="text-sm text-text-secondary">
+              {{ isDev ? 'Автоматическая авторизация...' : 'Это приложение разработано для работы внутри Telegram.' }}
+            </p>
+            <p v-if="errorMessage" class="text-xs text-rose-500 font-medium">
+              {{ errorMessage }}
+            </p>
+            <p v-if="!isDev" class="text-xs text-text-secondary/70">
               Пожалуйста, откройте бота в Telegram и запустите Mini App через кнопку «Открыть трекер 📊».
             </p>
             <GlassButton
@@ -93,9 +112,9 @@ onMounted(async () => {
               variant="primary"
               class="w-full mt-4"
               :disabled="isLoading"
-              @click="handleLogin"
+              @click="isDev ? handleDevLogin() : handleLogin()"
             >
-              {{ isLoading ? "Проверка..." : "Повторить попытку" }}
+              {{ isLoading ? "Проверка..." : (isDev ? "Dev Login" : "Повторить попытку") }}
             </GlassButton>
           </div>
         </div>
