@@ -54,7 +54,7 @@ function isItemActive(to: string): boolean {
 
 <template>
   <div
-    class="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-95 px-4 z-50 pointer-events-none"
+    class="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-97 px-4 z-50 pointer-events-none"
   >
     <nav
       class="relative h-19 glass-milky rounded-[38px] px-4 flex items-center justify-between pointer-events-auto"
@@ -100,7 +100,7 @@ function isItemActive(to: string): boolean {
             background: linear-gradient(
               180deg,
               rgba(238, 238, 238, 1) 30%,
-              rgba(238, 238, 238, 0.3) 40%,
+              rgba(238, 238, 238, 0.6) 40%,
               rgba(238, 238, 238, 0) 100%
             );
             backdrop-filter: blur(35px);

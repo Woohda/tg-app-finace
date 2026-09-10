@@ -70,7 +70,7 @@
       /* Мягкий кремовый */ #fdf4dc 100%
     );
     background-size: 120% 120%;
-    animation: gentleWave 12s ease-in-out infinite;
+    animation: gentleWave 10s ease-in-out infinite;
     background-attachment: fixed;
     color: var(--color-text-primary);
     min-height: 100vh;
@@ -118,29 +118,18 @@
     -webkit-backdrop-filter: blur(35px);
   }
 
-  /* Кнопка с градиентом */
+  /* Акцентная кнопка — глянцевое стекло с accent-градиентом */
   .glass-glow {
-    background: linear-gradient(
-      145deg,
-      var(--color-accent-start) 0%,
-      var(--color-accent-mid) 50%,
-      var(--color-accent-end) 100%
-    );
-    position: relative;
-    overflow: hidden;
-    box-shadow: var(--shadow-accent-glow);
+    background: linear-gradient(342deg, #f78b50 0%, #ff4838 60%, #b52d1e 100%);
     color: white;
     border: none;
+    box-shadow:
+      0 12px 32px -4px rgba(224, 64, 48, 0.5),
+      0 6px 14px -2px rgba(208, 56, 40, 0.35),
+      inset 0 -3px 6px rgba(0, 0, 0, 0.18),
+      inset 0 3px 6px rgba(255, 150, 130, 0.3);
     transition:
-      transform 0.15s ease,
-      box-shadow 0.15s ease;
-  }
-
-  .glass-glow:hover {
-    transform: scale(1.02);
-  }
-
-  .glass-glow:active {
-    transform: scale(0.97);
+      transform 0.2s ease,
+      box-shadow 0.2s ease;
   }
 }
