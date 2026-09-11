@@ -42,7 +42,10 @@ const expensesByCategory = computed(() => {
   transactions.value
     .filter((t) => t.type === "expense")
     .forEach((t) => {
-      const current = expenseMap.get(t.categoryId) || { amount: 0, name: t.categoryName };
+      const current = expenseMap.get(t.categoryId) || {
+        amount: 0,
+        name: t.categoryName,
+      };
       current.amount += t.amount;
       expenseMap.set(t.categoryId, current);
     });
@@ -119,10 +122,13 @@ const recentTransactions = computed(() => transactions.value.slice(0, 5));
     />
 
     <!-- Loading State -->
-    <div v-if="pending" class="flex justify-center items-center py-10 text-text-secondary">
+    <div
+      v-if="pending"
+      class="flex justify-center items-center py-10 text-text-secondary"
+    >
       Загрузка...
     </div>
-    
+
     <template v-else>
       <!-- 2. Budget Section -->
       <ExpensesDonut :categories="expensesByCategory" />
@@ -138,10 +144,13 @@ const recentTransactions = computed(() => transactions.value.slice(0, 5));
           </NuxtLink>
         </div>
 
-        <div v-if="recentTransactions.length === 0" class="text-center py-4 text-text-secondary">
+        <div
+          v-if="recentTransactions.length === 0"
+          class="text-center py-4 text-text-secondary"
+        >
           Пока нет транзакций
         </div>
-        <div v-else class="flex flex-col gap-4">
+        <div v-else class="flex flex-col gap-3">
           <TransactionItem
             v-for="item in recentTransactions"
             :key="item.id"
