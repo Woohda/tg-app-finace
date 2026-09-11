@@ -12,10 +12,11 @@
     "typecheck": "nuxi typecheck"
   },
   "dependencies": {
-    "@lucide/vue": "^1.39.0",
+    "@lucide/vue": "^1.44.0",
     "@nuxt/eslint": "1.17.0",
     "@nuxt/image": "2.1.0",
     "@nuxt/ui": "4.11.0",
+    "@vueuse/core": "^14.4.0",
     "chart.js": "^4.5.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
