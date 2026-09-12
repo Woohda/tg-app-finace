@@ -4,29 +4,18 @@
  * @fileoverview Кольцевой график расходов с распределением по категориям (Top 5)
  * @description
  * Отображает общие расходы за месяц и пропорциональное кольцо по главным категориям трат.
- * Иконки (Lucide) накладываются автоматически на каждый сегмент графика.
+ * Иконки (эмодзи) накладываются автоматически на каждый сегмент графика.
  * Общая сумма берется из мока (mockTotalExpense), но доли строятся локально (localTotal), чтобы всегда замыкать круг.
  * ---
  * ### Особенности:
- * - Стилистика: Neumorphism (объемные тени, отсутствие жестких граней)
+ * - Стилистика: 3D Gummy/Plastic (эффект леденцов, цветные объемные тени)
  * - Резиновая (прогрессивная) ширина легенды с обрезанием длинного текста.
- * - Индивидуальные gap-отступы между SVG-кривыми.
+ * - Индивидуальные gap-отступы между SVG-кривыми с минимальной длиной сегмента.
  */
 import { computed } from "vue";
 import { formatAmount } from "~/utils";
 import { mockTotalExpense } from "~/mocks/dashboard";
-import {
-  ChartColumn,
-  ShoppingBag,
-  Coffee,
-  Car,
-  HeartPulse,
-  Sparkles,
-  Receipt,
-  GraduationCap,
-  Utensils,
-  HelpCircle,
-} from "@lucide/vue";
+import { ChartColumn } from "@lucide/vue";
 import GlassCard from "~/components/GlassCard.vue";
 
 export interface CategoryBudgetData {
@@ -34,50 +23,42 @@ export interface CategoryBudgetData {
   name: string;
   amount: number;
   color: string;
+  icon: string | null;
 }
 
 const props = defineProps<{
   categories: CategoryBudgetData[];
 }>();
 
-const radius = 65;
+const radius = 67;
 const circumference = 2 * Math.PI * radius;
-const gap = 25;
 
-function getCategoryIcon(name: string) {
-  const n = name.toLowerCase();
-  if (
-    n.includes("продукт") ||
-    n.includes("еда") ||
-    n.includes("кафе") ||
-    n.includes("ресторан")
-  )
-    return Utensils;
-  if (n.includes("транспорт") || n.includes("авто") || n.includes("такси"))
-    return Car;
-  if (n.includes("здоров") || n.includes("аптек")) return HeartPulse;
-  if (n.includes("одежда") || n.includes("шопинг")) return ShoppingBag;
-  if (n.includes("жкх") || n.includes("счет") || n.includes("коммунал"))
-    return Receipt;
-  if (n.includes("развлеч") || n.includes("кино")) return Sparkles;
-  if (n.includes("образ") || n.includes("курс")) return GraduationCap;
-  if (n.includes("кофе")) return Coffee;
-  return HelpCircle;
-}
+const strokeWidth = 24;
+const visualGap = 0;
+const minDash = strokeWidth + visualGap;
 
 const localTotal = computed(() =>
   props.categories.reduce((acc, cat) => acc + cat.amount, 0),
 );
 
 const segments = computed(() => {
+  const numCats = props.categories.length;
+  if (numCats === 0) return [];
+
+  const totalMinDash = numCats * minDash;
+  const remainingCircumference = Math.max(0, circumference - totalMinDash);
+
   let accumulatedOffset = 0;
 
   return props.categories.map((cat) => {
-    const percentage = Math.min(cat.amount / Math.max(localTotal.value, 1), 1);
-    const dashLength = percentage * circumference;
-    const visibleLength = Math.max(0, dashLength - gap);
+    const fraction =
+      localTotal.value > 0 ? cat.amount / localTotal.value : 1 / numCats;
+    const dashLength = minDash + fraction * remainingCircumference;
+    const visibleLength = Math.max(0, dashLength - minDash);
+
     const strokeDasharray = `${visibleLength} ${circumference}`;
     const strokeDashoffset = -accumulatedOffset;
+
     const midAngle =
       ((accumulatedOffset + visibleLength / 2) / circumference) * 2 * Math.PI;
     const pxX = 80 + radius * Math.sin(midAngle);
@@ -91,7 +72,7 @@ const segments = computed(() => {
       strokeDashoffset,
       iconX: Number(((pxX / 160) * 100).toFixed(2)),
       iconY: Number(((pxY / 160) * 100).toFixed(2)),
-      IconComponent: getCategoryIcon(cat.name),
+      IconComponent: useCategoryIcon(cat.icon || "❔"),
     };
   });
 });
@@ -99,7 +80,7 @@ const segments = computed(() => {
 
 <template>
   <GlassCard>
-    <div class="flex justify-between items-center mb-4">
+    <div class="flex justify-between items-center mb-3">
       <h3 class="text-xl font-extrabold text-text-primary">Расходы</h3>
       <NuxtLink to="/finreports" class="text-text-secondary">
         <ChartColumn :stroke-width="1.5" />
@@ -107,16 +88,158 @@ const segments = computed(() => {
     </div>
 
     <div class="flex items-center justify-between gap-5">
-      <div class="relative w-43 h-43 shrink-0">
-        <div
-          class="absolute inset-0 rounded-full"
-          style="box-shadow: var(--shadow-glass-inner)"
-        />
-
+      <div class="relative w-40 h-40 shrink-0">
         <svg
           class="w-full h-full -rotate-90 transform overflow-visible"
           viewBox="0 0 160 160"
         >
+          <defs>
+            <filter
+              id="glossy-volumetric"
+              x="-30%"
+              y="-30%"
+              width="160%"
+              height="160%"
+            >
+              <!-- 1. Vibrant Colored Drop Shadow -->
+              <!-- Creates a beautiful glowing shadow using the graphic's own colors -->
+              <feGaussianBlur
+                in="SourceGraphic"
+                stdDeviation="6"
+                result="coloredBlur"
+              />
+              <feOffset dx="0" dy="2" in="coloredBlur" result="coloredOffset" />
+              <feComponentTransfer in="coloredOffset" result="coloredShadow">
+                <feFuncA type="linear" slope="0.3" />
+              </feComponentTransfer>
+
+              <!-- 2. Ambient Soft Drop Shadow (for depth) -->
+              <feDropShadow
+                in="SourceAlpha"
+                dx="0"
+                dy="1"
+                stdDeviation="6"
+                flood-color="rgba(0,0,0,0.1)"
+                result="drop"
+              />
+
+              <!-- 3. Soft Inner Shadow (Bottom-Right) for 3D Volume -->
+              <feGaussianBlur
+                in="SourceAlpha"
+                stdDeviation="5"
+                result="blurDark"
+              />
+              <feOffset dx="2" dy="2" in="blurDark" result="offsetBlurDark" />
+              <feComposite
+                in="SourceAlpha"
+                in2="offsetBlurDark"
+                operator="out"
+                result="shadowArea"
+              />
+              <feFlood
+                flood-color="#000000"
+                flood-opacity="0.15"
+                result="shadowColor"
+              />
+              <feComposite
+                in="shadowColor"
+                in2="shadowArea"
+                operator="in"
+                result="innerShadow"
+              />
+
+              <!-- 4. Soft Inner Highlight (Top-Left) for 3D Volume -->
+              <feGaussianBlur
+                in="SourceAlpha"
+                stdDeviation="4"
+                result="blurLight"
+              />
+              <feOffset
+                dx="-3"
+                dy="-3"
+                in="blurLight"
+                result="offsetBlurLight"
+              />
+              <feComposite
+                in="SourceAlpha"
+                in2="offsetBlurLight"
+                operator="out"
+                result="highlightArea"
+              />
+              <feFlood
+                flood-color="#ffffff"
+                flood-opacity="0.45"
+                result="highlightColor"
+              />
+              <feComposite
+                in="highlightColor"
+                in2="highlightArea"
+                operator="in"
+                result="highlight"
+              />
+
+              <!-- 5. Crisp Inner Rim Light (Top-Left) for Glassy Edge -->
+              <feGaussianBlur
+                in="SourceAlpha"
+                stdDeviation="0.9"
+                result="sharpBlur"
+              />
+              <feOffset dx="-1" dy="-1" in="sharpBlur" result="sharpOffset" />
+              <feComposite
+                in="SourceAlpha"
+                in2="sharpOffset"
+                operator="out"
+                result="sharpHighlightArea"
+              />
+              <feFlood
+                flood-color="#ffffff"
+                flood-opacity="0.4"
+                result="sharpHighlightColor"
+              />
+              <feComposite
+                in="sharpHighlightColor"
+                in2="sharpHighlightArea"
+                operator="in"
+                result="sharpHighlight"
+              />
+
+              <!-- 6. Thin Outline All Around (Very subtle) -->
+              <feMorphology
+                in="SourceAlpha"
+                operator="erode"
+                radius="0.7"
+                result="eroded"
+              />
+              <feComposite
+                in="SourceAlpha"
+                in2="eroded"
+                operator="out"
+                result="rimArea"
+              />
+              <feFlood
+                flood-color="#ffffff"
+                flood-opacity="0.6"
+                result="rimColor"
+              />
+              <feComposite
+                in="rimColor"
+                in2="rimArea"
+                operator="in"
+                result="rimHighlight"
+              />
+
+              <!-- Merge everything together -->
+              <feMerge>
+                <feMergeNode in="coloredShadow" />
+                <feMergeNode in="drop" />
+                <feMergeNode in="SourceGraphic" />
+                <feMergeNode in="innerShadow" />
+                <feMergeNode in="highlight" />
+                <feMergeNode in="sharpHighlight" />
+              </feMerge>
+            </filter>
+          </defs>
+
           <circle
             v-for="seg in segments"
             :key="seg.id"
@@ -125,12 +248,12 @@ const segments = computed(() => {
             :r="radius"
             fill="none"
             :stroke="seg.color"
-            stroke-width="25"
+            :stroke-width="strokeWidth"
             :stroke-dasharray="seg.strokeDasharray"
             :stroke-dashoffset="seg.strokeDashoffset"
             stroke-linecap="round"
             class="transition-all duration-1000 ease-out"
-            style="filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.15))"
+            filter="url(#glossy-volumetric)"
           />
         </svg>
 
@@ -145,18 +268,18 @@ const segments = computed(() => {
         >
           <component
             :is="seg.IconComponent"
-            class="w-3.5 h-3.5 text-white"
+            class="text-sm text-white"
             style="
-              filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.4));
-              opacity: 0.95;
+              filter: drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.3));
+              opacity: 1;
             "
           />
         </div>
 
         <div
-          class="absolute inset-0 flex flex-col items-center justify-center rounded-full m-8 glass-milky"
+          class="absolute inset-0 flex flex-col items-center justify-center rounded-full"
         >
-          <span class="text-xs text-text-secondary font-bold tracking-wider"
+          <span class="text-xs text-text-secondary tracking-wider"
             >Потрачено</span
           >
           <span class="text-md font-extrabold text-text-primary">{{
@@ -165,11 +288,11 @@ const segments = computed(() => {
         </div>
       </div>
 
-      <div class="flex flex-col gap-3 min-w-0">
+      <div class="flex flex-col gap-2.5 min-w-0">
         <div
           v-for="cat in categories"
           :key="cat.id"
-          class="flex items-start gap-3"
+          class="flex items-start gap-2.5"
         >
           <div
             class="w-2.5 h-2.5 rounded-full shrink-0 mt-1"
@@ -178,7 +301,7 @@ const segments = computed(() => {
               boxShadow: `0 0 8px ${cat.color}80`,
             }"
           />
-          <div class="flex flex-col gap-1 min-w-0">
+          <div class="flex flex-col gap-0.5 min-w-0">
             <span
               class="text-xs font-medium text-text-secondary truncate w-full"
             >

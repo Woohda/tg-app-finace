@@ -4,7 +4,6 @@
  * @fileoverview Главная страница приложения (Дашборд)
  * @description
  * Отображает сводную финансовую информацию пользователя:
- * - Приветствие пользователя
  * - Общий баланс и мини-график истории (BalanceCard)
  * - Распределение топ-5 расходов по категориям (ExpensesDonut)
  * - Список последних транзакций
@@ -37,7 +36,10 @@ const percentChange = mockPercentChange; // TODO: Реализовать рас�
 // 2. Budget Data
 // Aggregate expenses by category
 const expensesByCategory = computed(() => {
-  const expenseMap = new Map<string, { amount: number; name: string }>();
+  const expenseMap = new Map<
+    string,
+    { amount: number; name: string; icon: string | null }
+  >();
 
   transactions.value
     .filter((t) => t.type === "expense")
@@ -45,6 +47,7 @@ const expensesByCategory = computed(() => {
       const current = expenseMap.get(t.categoryId) || {
         amount: 0,
         name: t.categoryName,
+        icon: t.categoryIcon,
       };
       current.amount += t.amount;
       expenseMap.set(t.categoryId, current);
@@ -56,19 +59,20 @@ const expensesByCategory = computed(() => {
       return {
         id,
         name: data.name,
+        icon: data.icon,
         amount: data.amount,
       };
     })
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 5);
 
-  // Assign neumorphic/sunset colors
+  // Assign vivid gummy colors exactly matching the reference
   const colors = [
-    "#ef4530", // accent-end
-    "#fc5c47", // accent-mid
-    "#ff7e67", // accent-start
-    "#c6bcb5", // warm dark cream
-    "#9a948f", // text-secondary
+    "#FF514A", // Vibrant Red/Coral
+    "#F42B70", // Vibrant Pink/Magenta
+    "#9B44E3", // Vibrant Purple
+    "#FF9500", // Vibrant Orange
+    "#FFD075", // Light Yellow/Peach
   ];
 
   return sorted.map((cat, index) => ({
@@ -92,7 +96,7 @@ const recentTransactions = computed(() => transactions.value.slice(0, 5));
         >
           👱‍♀️
         </div>
-        <p class="text-text-primary font-bold">Привет, {{ userName }} 👋</p>
+        <p class="text-text-primary font-bold">{{ userName }}</p>
       </div>
 
       <!-- Bell Icon -->

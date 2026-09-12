@@ -3,11 +3,11 @@
  * @module app/components/dashboard/BalanceCard
  * @fileoverview Карточка общего баланса с мини-графиком (Sparkline)
  * @description
- * Отображает текущий баланс пользователя, процентное изменение за период и 
+ * Отображает текущий баланс пользователя, процентное изменение за период и
  * сглаженный график (d3-shape curveMonotoneX) истории баланса.
  * ---
  * ### Особенности:
- * - Стилистика: Neumorphism (использует GlassCard)
+ * - Стилистика: Glassmorphism (использует GlassCard)
  * - График использует SVG linearGradient и mask-image для создания эффекта свечения и плавного появления.
  * - История масштабируется автоматически (min/max).
  */
@@ -87,9 +87,9 @@ const areaPathData = computed(() => {
         -webkit-mask-image: linear-gradient(
           to right,
           transparent 1%,
-          black 25%
+          black 10%
         );
-        mask-image: linear-gradient(to right, transparent 1%, black 25%);
+        mask-image: linear-gradient(to right, transparent 1%, black 10%);
       "
     >
       <svg
@@ -107,17 +107,17 @@ const areaPathData = computed(() => {
             <stop
               offset="0%"
               stop-color="var(--color-accent-start)"
-              stop-opacity="0.6"
+              stop-opacity="0.5"
             />
             <stop
               offset="50%"
               stop-color="var(--color-accent-start)"
-              stop-opacity="0.25"
+              stop-opacity="0.15"
             />
             <stop
               offset="100%"
               stop-color="var(--color-milky)"
-              stop-opacity="0.0"
+              stop-opacity="0"
             />
           </linearGradient>
         </defs>
