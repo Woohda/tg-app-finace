@@ -34,13 +34,13 @@ const emit = defineEmits<{
 const formattedAmount = computed(() => formatAmount(props.amount, props.type));
 const formattedDate = computed(() => formatDate(props.date));
 
-// --- Swipe logic ---
+// --- Логика свайпа ---
 const offsetX = ref(0);
 const startX = ref(0);
 const isSwiping = ref(false);
 const isRevealed = ref(false);
 
-const DELETE_THRESHOLD = 72; // px — ширина кнопки удаления
+const DELETE_THRESHOLD = 72;
 
 function onTouchStart(e: TouchEvent) {
   if (!props.interactive) return;
@@ -69,11 +69,9 @@ function onTouchEnd() {
   isSwiping.value = false;
 
   if (offsetX.value < -DELETE_THRESHOLD / 2) {
-    // Открыть кнопку удаления
     offsetX.value = -DELETE_THRESHOLD;
     isRevealed.value = true;
   } else {
-    // Закрыть
     offsetX.value = 0;
     isRevealed.value = false;
   }
@@ -116,7 +114,7 @@ function onDeleteClick() {
       <div
         :class="
           cn(
-            'transaction-content w-full shrink-0 flex items-center gap-3 pb-3  bg-transparent z-10 border-b border-black/6',
+            'transaction-content w-full shrink-0 flex items-center gap-3 pb-3 bg-transparent z-10 border-b border-black/6',
             interactive && 'cursor-pointer active:opacity-80',
             props.class,
           )
