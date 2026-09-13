@@ -110,7 +110,7 @@ watch(type, () => {
 
 <template>
   <div>
-    <GlassCard class="flex flex-col gap-6">
+    <GlassCard class="flex flex-col gap-5">
       <div class="flex flex-col items-center">
         <h1 class="text-text-primary text-2xl font-bold tracking-tight">
           {{ isEditMode ? "Редактирование" : "Новая операция" }}
@@ -124,7 +124,7 @@ watch(type, () => {
         </p>
       </div>
 
-      <form class="flex flex-col gap-5 mt-2" @submit.prevent="submit">
+      <form class="flex flex-col gap-5" @submit.prevent="submit">
         <!-- Amount -->
         <GlassInput
           v-model="amount"
@@ -142,7 +142,7 @@ watch(type, () => {
           <div class="relative">
             <select
               v-model="categoryId"
-              class="w-full glass-milky rounded-3xl px-5 py-3 text-text-primary font-medium text-base outline-none shadow-glass transition-all focus:ring-2 focus:ring-accent-end/30 appearance-none disabled:opacity-50"
+              class="w-full glass-milky rounded-3xl px-5 py-3 text-text-primary font-medium text-base outline-none shadow-glass transition-all focus-visible:ring-2 focus-visible:ring-text-accent appearance-none disabled:opacity-50"
               :disabled="pending"
             >
               <option value="" disabled>Выберите категорию...</option>
@@ -176,7 +176,7 @@ watch(type, () => {
 
         <div
           v-if="errorMsg"
-          class="text-accent-end text-sm font-medium text-center"
+          class="text-text-accent text-sm font-medium text-center"
         >
           {{ errorMsg }}
         </div>
@@ -186,7 +186,8 @@ watch(type, () => {
         <!-- Submit Button -->
         <GlassButton
           type="submit"
-          class="mt-4 py-4 rounded-full"
+          variant="primary"
+          class="mt-px py-4 rounded-full"
           :disabled="isSubmitting || pending"
         >
           <span v-if="isSubmitting">Сохранение...</span>

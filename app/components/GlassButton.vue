@@ -12,7 +12,7 @@ import { cn } from "~/utils";
 
 interface Props {
   class?: HTMLAttributes["class"];
-  variant?: "primary" | "soft" | "outline";
+  variant?: "primary" | "soft" | "outline" | "glass-accent";
   size?: "sm" | "default" | "lg" | "icon";
   disabled?: boolean;
 }
@@ -29,7 +29,7 @@ const props = withDefaults(defineProps<Props>(), {
     :disabled="disabled"
     :class="
       cn(
-        'transition-all duration-200 ease-out',
+        'transition-all duration-200 ease-out outline-none focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
         // Основная (акцентный градиент + стеклянный объём)
         variant === 'primary' && [
           'text-white font-medium tracking-wide text-xs',
@@ -57,6 +57,12 @@ const props = withDefaults(defineProps<Props>(), {
       )
     "
   >
-    <slot />
+    <div
+      v-if="variant === 'glass-accent'"
+      class="glass-btn-accent-inner text-lg"
+    >
+      <slot />
+    </div>
+    <slot v-else />
   </UiButton>
 </template>

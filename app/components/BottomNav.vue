@@ -65,10 +65,10 @@ function isItemActive(to: string): boolean {
           v-for="item in leftItems"
           :key="item.name"
           :to="item.to"
-          class="relative flex flex-col items-center justify-center w-16 h-15 transition-all duration-300 rounded-3xl"
+          class="relative flex flex-col items-center justify-center w-16 h-15 transition-all duration-300 rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
           :class="
             isItemActive(item.to)
-              ? 'text-accent-end'
+              ? 'text-text-accent'
               : 'text-text-secondary hover:text-text-primary'
           "
           :aria-label="item.label"
@@ -95,15 +95,9 @@ function isItemActive(to: string): boolean {
         <!-- Выпуклая матовая кнопка с блюром -->
         <NuxtLink
           to="/add"
-          class="size-17 rounded-full flex items-center justify-center text-accent-end text-4xl font-light active:scale-90 transition-transform"
+          class="size-17 rounded-full flex items-center justify-center text-text-accent text-4xl font-light active:scale-90 transition-transform outline-none focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-4 focus-visible:ring-offset-transparent"
           style="
-            background: linear-gradient(
-              180deg,
-              rgba(238, 238, 238, 1) 30%,
-              rgba(238, 238, 238, 0.6) 33%,
-              rgba(238, 238, 238, 0) 100%
-            );
-
+            background: rgba(238, 238, 238, 1);
             box-shadow:
               8px 8px 16px rgba(130, 115, 105, 0.22),
               inset 3px 3px 8px rgba(255, 255, 255, 1),
@@ -111,7 +105,7 @@ function isItemActive(to: string): boolean {
           "
           aria-label="Добавить операцию"
         >
-          <span class="mb-1.5">+</span>
+          <span class="text-3xl mb-1.5">+</span>
         </NuxtLink>
       </div>
 
@@ -121,10 +115,10 @@ function isItemActive(to: string): boolean {
           v-for="item in rightItems"
           :key="item.name"
           :to="item.to"
-          class="relative flex flex-col items-center justify-center w-16 h-15 transition-all duration-300 rounded-3xl"
+          class="relative flex flex-col items-center justify-center w-16 h-15 transition-all duration-300 rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
           :class="
             isItemActive(item.to)
-              ? 'text-accent-end'
+              ? 'text-text-accent'
               : 'text-text-secondary hover:text-text-primary'
           "
           :aria-label="item.label"

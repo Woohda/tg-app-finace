@@ -86,14 +86,14 @@ function interpolateColor(color1: RGBA, color2: RGBA, factor: number) {
 function getTileColor(index: number) {
   const t = index / (TOTAL_TILES - 1);
 
-  const start: RGBA = [255, 210, 170, 1]; // Светло-персиковый
-  const mid: RGBA = [252, 120, 80, 1]; // Коралловый
-  const end: RGBA = [220, 50, 40, 1]; // Насыщенный красный
+  const start: RGBA = [233, 100, 82, 0.8];
+  const mid: RGBA = [217, 21, 69, 1];
+  const end: RGBA = [136, 19, 55, 1];
 
-  if (t < 0.35) {
-    return interpolateColor(start, mid, t / 0.35);
+  if (t < 0.7) {
+    return interpolateColor(start, mid, t / 0.7);
   } else {
-    return interpolateColor(mid, end, (t - 0.35) / 0.65);
+    return interpolateColor(mid, end, (t - 0.7) / 0.3);
   }
 }
 </script>

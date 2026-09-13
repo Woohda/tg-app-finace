@@ -21,7 +21,7 @@ const value = computed({
 </script>
 
 <template>
-  <div class="flex flex-col gap-2">
+  <div class="flex flex-col gap-1">
     <label v-if="label" class="text-sm font-bold text-text-primary pl-3">{{
       label
     }}</label>
@@ -46,7 +46,7 @@ const value = computed({
         :type="type"
         :placeholder="placeholder"
         :class="[
-          'bg-transparent glass-milky rounded-3xl px-5 py-6 text-text-primary font-medium text-base outline-none border-none',
+          'bg-transparent glass-milky rounded-3xl px-5 py-6 text-text-primary font-medium text-base outline-none border-none focus-visible:ring-2 focus-visible:ring-text-accent',
           $slots.icon || icon ? 'pl-11' : '',
         ]"
       />

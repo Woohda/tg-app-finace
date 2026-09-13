@@ -160,7 +160,7 @@ function onDeleteClick() {
       <!-- Кнопка удаления (сбоку, вне экрана) -->
       <div
         v-if="interactive"
-        class="w-18 shrink-0 flex items-center justify-center bg-accent-end rounded-r-3xl"
+        class="w-17 ml-1 pr-px shrink-0 flex items-center justify-center bg-accent-mid rounded-r-3xl"
         style="
           box-shadow:
             inset 3px 3px 8px rgba(255, 255, 255, 0.2),
@@ -168,7 +168,7 @@ function onDeleteClick() {
         "
         @click="onDeleteClick"
       >
-        <Trash2 class="size-6 text-white" :stroke-width="1.5" />
+        <Trash2 class="size-7 text-white" :stroke-width="1.5" />
       </div>
     </div>
   </div>

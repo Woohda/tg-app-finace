@@ -20,10 +20,10 @@ const emit = defineEmits<{
   >
     <RadioGroupItem
       value="income"
-      class="group flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-4xl glass-panel border-[0.5px] border-white/50 border-b-transparent border-r-transparent transition-all duration-300 outline-none data-[state=checked]:shadow-glass-inner data-[state=checked]:bg-white/40"
+      class="group flex-1 flex flex-col items-center justify-center gap-px py-2 rounded-4xl glass-panel border-[0.5px] border-white/50 border-b-transparent border-r-transparent transition-all duration-300 outline-none data-[state=checked]:shadow-glass-inner data-[state=checked]:bg-white/40 focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
     >
       <BanknoteArrowUp
-        class="size-10 transition-colors duration-300 group-data-[state=checked]:text-accent-end"
+        class="size-10 transition-colors duration-300 group-data-[state=checked]:text-text-accent"
         stroke-width="1.5"
       />
       <span class="text-sm text-text-secondary">Доход</span>
@@ -31,10 +31,10 @@ const emit = defineEmits<{
 
     <RadioGroupItem
       value="expense"
-      class="group flex-1 flex flex-col items-center justify-center gap-1 py-2 rounded-4xl glass-panel border-[0.5px] border-white/50 border-b-transparent border-r-transparent transition-all duration-300 outline-none data-[state=checked]:shadow-glass-inner data-[state=checked]:bg-white/40"
+      class="group flex-1 flex flex-col items-center justify-center gap-px py-2 rounded-4xl glass-panel border-[0.5px] border-white/50 border-b-transparent border-r-transparent transition-all duration-300 outline-none data-[state=checked]:shadow-glass-inner data-[state=checked]:bg-white/40 focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
     >
       <BanknoteArrowDown
-        class="size-10 transition-colors duration-300 group-data-[state=checked]:text-accent-end"
+        class="size-10 transition-colors duration-300 group-data-[state=checked]:text-text-accent"
         stroke-width="1.5"
       />
       <span class="text-sm text-text-secondary">Расход</span>

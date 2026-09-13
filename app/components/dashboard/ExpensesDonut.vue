@@ -127,14 +127,14 @@ const segments = computed(() => {
                   result="coloredOffset"
                 />
                 <feComponentTransfer in="coloredOffset" result="coloredShadow">
-                  <feFuncA type="linear" slope="0.3" />
+                  <feFuncA type="linear" slope="0.1" />
                 </feComponentTransfer>
 
                 <!-- 2. Мягкая внешняя тень (для глубины) -->
                 <feDropShadow
                   in="SourceAlpha"
                   dx="0"
-                  dy="1"
+                  dy="2"
                   stdDeviation="6"
                   flood-color="rgba(0,0,0,0.1)"
                   result="drop"
@@ -155,7 +155,7 @@ const segments = computed(() => {
                 />
                 <feFlood
                   flood-color="#000000"
-                  flood-opacity="0.15"
+                  flood-opacity="0.1"
                   result="shadowColor"
                 />
                 <feComposite
@@ -185,7 +185,7 @@ const segments = computed(() => {
                 />
                 <feFlood
                   flood-color="#ffffff"
-                  flood-opacity="0.45"
+                  flood-opacity="0.3"
                   result="highlightColor"
                 />
                 <feComposite
@@ -210,7 +210,7 @@ const segments = computed(() => {
                 />
                 <feFlood
                   flood-color="#ffffff"
-                  flood-opacity="0.4"
+                  flood-opacity="0.6"
                   result="sharpHighlightColor"
                 />
                 <feComposite
@@ -224,7 +224,7 @@ const segments = computed(() => {
                 <feMorphology
                   in="SourceAlpha"
                   operator="erode"
-                  radius="0.7"
+                  radius="0.9"
                   result="eroded"
                 />
                 <feComposite
@@ -235,7 +235,7 @@ const segments = computed(() => {
                 />
                 <feFlood
                   flood-color="#ffffff"
-                  flood-opacity="0.6"
+                  flood-opacity="0.9"
                   result="rimColor"
                 />
                 <feComposite
@@ -312,7 +312,7 @@ const segments = computed(() => {
       <div
         v-if="!isLoading"
         key="legend"
-        class="flex-1 flex flex-col justify-center gap-2.5 min-w-0"
+        class="flex-1 flex flex-col justify-center gap-2 min-w-0"
       >
         <div
           v-for="cat in categories"
