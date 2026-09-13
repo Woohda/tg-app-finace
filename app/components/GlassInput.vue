@@ -8,6 +8,7 @@ const props = defineProps<{
   placeholder?: string;
   type?: string;
   icon?: string | object;
+  step?: string | number;
 }>();
 
 const emits = defineEmits<{
@@ -44,6 +45,7 @@ const value = computed({
       <Input
         v-model="value"
         :type="type"
+        :step="step"
         :placeholder="placeholder"
         :class="[
           'bg-transparent glass-milky rounded-3xl px-5 py-6 text-text-primary font-medium text-base outline-none border-none focus-visible:ring-2 focus-visible:ring-text-accent',

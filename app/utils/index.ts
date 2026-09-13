@@ -14,10 +14,11 @@ export function formatAmount(
   type?: "income" | "expense",
 ): string {
   const prefix = type === "expense" ? "−" : "+";
+  const roundAmount = amount.toFixed(2);
   const formatted = new Intl.NumberFormat("ru-RU", {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 0,
-  }).format(amount);
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(Number(roundAmount));
   if (type) return `${prefix} ${formatted} ₽`;
   return `${formatted} ₽`;
 }

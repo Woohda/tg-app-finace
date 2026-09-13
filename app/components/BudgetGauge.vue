@@ -21,7 +21,7 @@ const props = withDefaults(defineProps<Props>(), {
 // --- Константы геометрии ---
 const TOTAL_TILES = 20;
 const TILE_STEP_DEG = 180 / (TOTAL_TILES - 1);
-const TILE_RADIUS = 105;
+const TILE_RADIUS = 100;
 
 // Ограничиваем количество заполненных плиток строго от 0 до TOTAL_TILES (20)
 const filledCount = computed(() => {
@@ -57,7 +57,7 @@ function tileTransform(index: number): string {
 }
 
 // Радиус для расположения маркера внутри кольца (чуть меньше TILE_RADIUS)
-const MARKER_INNER_RADIUS = TILE_RADIUS - 30;
+const MARKER_INNER_RADIUS = TILE_RADIUS - 27;
 
 const markerStyle = computed(() => {
   const angle = tileAngle(activeTileIndex.value);
@@ -109,7 +109,7 @@ function getTileColor(index: number) {
           :style="{ transform: tileTransform(i) }"
         >
           <div
-            class="w-2.5 h-10 -ml-1 -mt-3.5 rounded-full transition-all duration-500 ease-out"
+            class="w-2.5 h-9 -ml-1 -mt-3.5 rounded-full transition-all duration-500 ease-out"
             :style="
               i < filledCount
                 ? {

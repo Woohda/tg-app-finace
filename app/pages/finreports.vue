@@ -42,7 +42,7 @@ const currentAmount = computed(() =>
 );
 
 const currentLabel = computed(() =>
-  viewMode.value === "budget" ? "Бюджет" : "Потрачено",
+  viewMode.value === "budget" ? "Бюджет на этот месяц" : "Потрачено за месяц",
 );
 </script>
 
@@ -57,7 +57,7 @@ const currentLabel = computed(() =>
       </h1>
     </div>
 
-    <GlassCard class="flex flex-col gap-1 relative overflow-hidden h-50">
+    <GlassCard class="flex flex-col gap-1 relative overflow-hidden h-49">
       <div class="z-10 flex justify-between items-start">
         <!-- Состояние загрузки: Скелетоны текста -->
         <div v-if="pending" class="flex flex-col gap-2 py-1">
@@ -68,7 +68,7 @@ const currentLabel = computed(() =>
 
         <!-- Загруженное состояние: Текст баланса -->
         <div v-else class="fade-in">
-          <p class="text-text-secondary text-sm font-semibold mb-1">
+          <p class="text-text-secondary text-sm font-semibold mb-px">
             {{ currentLabel }}
           </p>
           <h2 class="text-3xl font-extrabold text-text-primary tracking-tight">
@@ -80,24 +80,24 @@ const currentLabel = computed(() =>
         :percent="monthlyBudgetPercent"
         :budget="monthlyBudget"
         :spent="monthlyExpense"
-        class="absolute top-16 left-12"
+        class="absolute top-15 left-13"
       />
       <!-- Переключатель режима: Бюджет / Потрачено -->
       <GlassSegmentedControl
         v-model="viewMode"
         :options="[
-          { id: 'spent', label: 'Потрачено' },
+          { id: 'spent', label: 'Траты' },
           { id: 'budget', label: 'Бюджет' },
         ]"
         size="sm"
-        class="w-45 h-8 mt-2 absolute left-27 bottom-5 -translate-x-1/2"
+        class="w-37 h-8 mt-2 absolute left-24 bottom-5 -translate-x-1/2"
       />
     </GlassCard>
 
     <!-- Финансовый раздел: Список операций -->
     <GlassCard class="relative z-10">
-      <div class="flex flex-col gap-4 mb-5">
-        <h2 class="text-base font-bold text-text-primary tracking-tight">
+      <div class="flex flex-col gap-3 mb-5">
+        <h2 class="text-lg font-bold text-text-primary tracking-tight">
           Записанные транзакции
         </h2>
 

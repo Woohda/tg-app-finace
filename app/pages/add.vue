@@ -129,6 +129,7 @@ watch(type, () => {
         <GlassInput
           v-model="amount"
           type="number"
+          step="0.01"
           label="Сумма"
           placeholder="0.00"
           icon="₽"
