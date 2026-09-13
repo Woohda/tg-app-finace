@@ -41,6 +41,14 @@ export interface User {
   username: string | null;
 }
 
+export interface TgUser {
+  id: number;
+  first_name: string;
+  username?: string;
+  photo_url?: string;
+  language_code?: string;
+}
+
 export const useAuth = () => {
   const tokenCookie = useCookie<string | null>("auth_token", {
     maxAge: 60 * 60 * 24 * 7,
@@ -55,8 +63,15 @@ export const useAuth = () => {
 
   const token = useState<string | null>("auth:token", () => tokenCookie.value ?? null);
   const user = useState<User | null>("auth:user", () => userCookie.value ?? null);
+  const tgUser = useState<TgUser | null>("auth:tgUser", () => null);
 
   const isAuthenticated = computed(() => !!token.value && !!user.value);
+
+  const initTelegramUser = () => {
+    if (import.meta.client && window.Telegram?.WebApp?.initDataUnsafe?.user) {
+      tgUser.value = window.Telegram.WebApp.initDataUnsafe.user;
+    }
+  };
 
   const loginWithTelegram = async (initData: string) => {
     try {
@@ -91,6 +106,7 @@ export const useAuth = () => {
   };
 
   const initTelegramAuth = async (): Promise<boolean> => {
+    initTelegramUser(); // Попробуем вытащить данные юзера при логине
     const initData = getTelegramInitData();
     if (!initData) {
       return false;
@@ -103,6 +119,7 @@ export const useAuth = () => {
     user.value = null;
     tokenCookie.value = null;
     userCookie.value = null;
+    tgUser.value = null;
   };
 
   const devLogin = async () => {
@@ -115,6 +132,16 @@ export const useAuth = () => {
       user.value = response.user;
       tokenCookie.value = response.token;
       userCookie.value = response.user;
+      
+      // Фейковые данные Telegram для разработки
+      tgUser.value = {
+        id: 12345678,
+        first_name: "Иван",
+        username: "dev_user",
+        // Используем картинку для разработки
+        photo_url: "https://i.pravatar.cc/150?u=a042581f4e29026704d", 
+      };
+
       return true;
     } catch (error) {
       console.error("Ошибка dev-авторизации:", error);
@@ -122,6 +149,7 @@ export const useAuth = () => {
       user.value = null;
       tokenCookie.value = null;
       userCookie.value = null;
+      tgUser.value = null;
       return false;
     }
   };
@@ -129,10 +157,12 @@ export const useAuth = () => {
   return {
     token,
     user,
+    tgUser,
     isAuthenticated,
     loginWithTelegram,
     getTelegramInitData,
     initTelegramAuth,
+    initTelegramUser,
     devLogin,
     logout,
   };

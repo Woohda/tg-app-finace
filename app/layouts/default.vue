@@ -5,6 +5,13 @@
  * @description
  * Обеспечивает отображение контента страниц и закрепленного нижнего меню.
  */
+import { onMounted } from "vue";
+
+const { initTelegramUser } = useAuth();
+
+onMounted(() => {
+  initTelegramUser();
+});
 </script>
 
 <template>

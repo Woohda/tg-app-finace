@@ -17,17 +17,22 @@ import { Bell, ReceiptText } from "@lucide/vue";
 // Импорт моков для истории баланса (пока не реализован расчет исторического баланса)
 import { mockBalanceHistory, mockPercentChange } from "~/mocks/dashboard";
 
-const { user } = useAuth();
+const { user, tgUser } = useAuth();
 const { transactions, pending } = useTransactions();
 const { balance } = useTransactionView(transactions);
 
 const greeting = getGreeting();
 const userName = computed(() => {
+  if (tgUser.value?.first_name) {
+    return tgUser.value.first_name;
+  }
   if (user.value?.username) {
     return `@${user.value.username}`;
   }
   return "Пользователь";
 });
+
+const avatarUrl = computed(() => tgUser.value?.photo_url || null);
 
 // 1. Данные баланса
 const balanceHistory = mockBalanceHistory; // TODO: Реализовать расчет на бэкенде
@@ -87,14 +92,20 @@ const recentTransactions = computed(() => transactions.value.slice(0, 5));
 
 <template>
   <div class="relative flex flex-col gap-5">
-    <div class="flex items-center justify-between mb-1">
+    <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <!-- Мок аватарки -->
+        <!-- Аватарка -->
         <div
-          class="w-10 h-10 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50"
+          class="w-10 h-10 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 overflow-hidden"
           style="box-shadow: var(--shadow-glass-flat)"
         >
-          👱‍♀️
+          <img
+            v-if="avatarUrl"
+            :src="avatarUrl"
+            alt="Avatar"
+            class="w-full h-full object-cover"
+          />
+          <span v-else>👱‍♀️</span>
         </div>
         <p class="text-text-primary font-bold">{{ userName }}</p>
       </div>
@@ -109,7 +120,7 @@ const recentTransactions = computed(() => transactions.value.slice(0, 5));
     </div>
 
     <!-- Текст приветствия -->
-    <div class="mb-2">
+    <div>
       <h1 class="text-3xl font-extrabold text-text-primary tracking-tight">
         {{ greeting.replace(",", "") }}!
       </h1>

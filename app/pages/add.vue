@@ -109,95 +109,91 @@ watch(type, () => {
 </script>
 
 <template>
-  <div>
-    <GlassCard class="flex flex-col gap-5">
-      <div class="flex flex-col items-center">
-        <h1 class="text-text-primary text-2xl font-bold tracking-tight">
-          {{ isEditMode ? "Редактирование" : "Новая операция" }}
-        </h1>
-        <p class="text-text-secondary text-sm">
-          {{
-            isEditMode
-              ? "Изменение данных транзакции"
-              : "Запись расхода или дохода"
-          }}
-        </p>
-      </div>
+  <GlassCard class="flex flex-col gap-5">
+    <div class="flex flex-col items-center">
+      <h1 class="text-text-primary text-2xl font-bold tracking-tight">
+        {{ isEditMode ? "Редактирование" : "Новая операция" }}
+      </h1>
+      <p class="text-text-secondary text-sm">
+        {{
+          isEditMode ? "Изменение данных транзакции" : "Запись трат или доходов"
+        }}
+      </p>
+    </div>
 
-      <form class="flex flex-col gap-5" @submit.prevent="submit">
-        <!-- Amount -->
-        <GlassInput
-          v-model="amount"
-          type="number"
-          step="0.01"
-          label="Сумма"
-          placeholder="0.00"
-          icon="₽"
-        />
+    <form class="flex flex-col gap-5" @submit.prevent="submit">
+      <!-- Amount -->
+      <GlassInput
+        v-model="amount"
+        type="number"
+        step="0.01"
+        label="Сумма"
+        placeholder="0.00"
+        icon="₽"
+      />
 
-        <!-- Category -->
-        <div class="flex flex-col gap-2">
-          <label class="text-sm font-bold text-text-primary pl-2"
-            >Категория</label
+      <!-- Category -->
+      <div class="flex flex-col gap-2">
+        <label class="text-sm font-bold text-text-primary pl-2"
+          >Категория</label
+        >
+        <div class="relative">
+          <select
+            v-model="categoryId"
+            class="w-full glass-milky rounded-3xl px-5 py-3 text-text-primary font-medium text-base outline-none shadow-glass transition-all focus-visible:ring-2 focus-visible:ring-text-accent appearance-none disabled:opacity-50"
+            :disabled="pending"
           >
-          <div class="relative">
-            <select
-              v-model="categoryId"
-              class="w-full glass-milky rounded-3xl px-5 py-3 text-text-primary font-medium text-base outline-none shadow-glass transition-all focus-visible:ring-2 focus-visible:ring-text-accent appearance-none disabled:opacity-50"
-              :disabled="pending"
+            <option value="" disabled>Выберите категорию...</option>
+            <option
+              v-for="cat in filteredCategories"
+              :key="cat.id"
+              :value="cat.id"
             >
-              <option value="" disabled>Выберите категорию...</option>
-              <option
-                v-for="cat in filteredCategories"
-                :key="cat.id"
-                :value="cat.id"
-              >
-                {{ cat.icon }} {{ cat.name }}
-              </option>
-            </select>
-            <!-- Custom arrow -->
-            <div
-              class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary"
-            >
-              ▼
-            </div>
+              {{ cat.icon }} {{ cat.name }}
+            </option>
+          </select>
+          <!-- Custom arrow -->
+          <div
+            class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary"
+          >
+            ▼
           </div>
         </div>
+      </div>
 
-        <!-- Date -->
-        <GlassInput v-model="date" type="date" label="Дата" :icon="Calendar" />
+      <!-- Date -->
+      <GlassInput v-model="date" type="date" label="Дата" :icon="Calendar" />
 
-        <!-- Description -->
-        <GlassInput
-          v-model="description"
-          type="text"
-          label="Комментарий"
-          placeholder="Например, Обед с коллегами"
-        />
+      <!-- Description -->
+      <GlassInput
+        v-model="description"
+        type="text"
+        label="Комментарий"
+        placeholder="Например, Обед с коллегами"
+      />
 
-        <div
-          v-if="errorMsg"
-          class="text-text-accent text-sm font-medium text-center"
+      <div
+        v-if="errorMsg"
+        class="text-text-accent text-sm font-medium text-center"
+      >
+        {{ errorMsg }}
+      </div>
+
+      <GlassTypeSelector v-model="type" />
+
+      <!-- Submit Button -->
+      <GlassButton
+        type="submit"
+        variant="primary"
+        class="mt-px py-4 rounded-full"
+        :disabled="isSubmitting || pending"
+      >
+        <span v-if="isSubmitting">Сохранение...</span>
+        <span v-else-if="isEditMode">Сохранить изменения</span>
+        <span v-else
+          >Добавить {{ type === "expense" ? "трату" : "доход" }}</span
         >
-          {{ errorMsg }}
-        </div>
-
-        <GlassTypeSelector v-model="type" />
-
-        <!-- Submit Button -->
-        <GlassButton
-          type="submit"
-          variant="primary"
-          class="mt-px py-4 rounded-full"
-          :disabled="isSubmitting || pending"
-        >
-          <span v-if="isSubmitting">Сохранение...</span>
-          <span v-else-if="isEditMode">Сохранить изменения</span>
-          <span v-else
-            >Добавить {{ type === "expense" ? "расход" : "доход" }}</span
-          >
-        </GlassButton>
-      </form>
-    </GlassCard>
-  </div>
+      </GlassButton>
+    </form>
+  </GlassCard>
 </template>

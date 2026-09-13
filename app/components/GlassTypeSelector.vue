@@ -37,7 +37,7 @@ const emit = defineEmits<{
         class="size-10 transition-colors duration-300 group-data-[state=checked]:text-text-accent"
         stroke-width="1.5"
       />
-      <span class="text-sm text-text-secondary">Расход</span>
+      <span class="text-sm text-text-secondary">Трата</span>
     </RadioGroupItem>
   </RadioGroupRoot>
 </template>
