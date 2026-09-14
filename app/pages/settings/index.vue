@@ -5,6 +5,9 @@ import { User } from "@lucide/vue";
 /**
  * @module app/pages/settings
  * @fileoverview Экран настроек профиля и приложения
+ * @description
+ * Отображает профиль Telegram, позволяет выйти из аккаунта и предоставляет
+ * навигацию к управлению бюджетом и категориями.
  */
 const { user, tgUser, logout } = useAuth();
 
@@ -23,11 +26,15 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
 
 <template>
   <div class="flex flex-col gap-5">
-    <div class="flex flex-col items-center">
-      <h1 class="text-text-primary text-2xl font-bold tracking-tight">
-        Настройки
-      </h1>
-      <p class="text-text-secondary text-sm">Профиль и параметры приложения</p>
+    <div class="flex items-center justify-center gap-3">
+      <div class="flex flex-col text-center">
+        <h1 class="text-text-primary text-xl font-bold tracking-tight">
+          Настройки
+        </h1>
+        <p class="text-text-secondary text-xs">
+          Профиль и параметры приложения
+        </p>
+      </div>
     </div>
 
     <GlassCard

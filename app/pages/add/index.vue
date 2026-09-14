@@ -108,15 +108,19 @@ watch(type, () => {
 
 <template>
   <GlassCard class="flex flex-col gap-5">
-    <div class="flex flex-col items-center">
-      <h1 class="text-text-primary text-2xl font-bold tracking-tight">
-        {{ isEditMode ? "Редактирование" : "Новая операция" }}
-      </h1>
-      <p class="text-text-secondary text-sm">
-        {{
-          isEditMode ? "Изменение данных транзакции" : "Запись трат или доходов"
-        }}
-      </p>
+    <div class="flex items-center justify-center gap-3">
+      <div class="flex flex-col text-center">
+        <h1 class="text-text-primary text-xl font-bold tracking-tight">
+          {{ isEditMode ? "Редактирование" : "Новая операция" }}
+        </h1>
+        <p class="text-text-secondary text-xs">
+          {{
+            isEditMode
+              ? "Изменение данных транзакции"
+              : "Запись трат или доходов"
+          }}
+        </p>
+      </div>
     </div>
 
     <form class="flex flex-col gap-5" @submit.prevent="submit">

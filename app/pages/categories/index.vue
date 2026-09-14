@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/**
+ * @module app/pages/categories
+ * @fileoverview Экран управления категориями транзакций
+ * @description
+ * Отображает списки доходов и расходов. Позволяет добавлять новые категории 
+ * через модальное окно и удалять существующие (если нет связанных транзакций).
+ */
 import { ref, computed, onMounted, watch } from "vue";
 import { ChevronLeft, Plus, Pencil, Trash2 } from "@lucide/vue";
 import { categorySchema } from "~/types/validate";
@@ -160,27 +167,28 @@ const executeDelete = async () => {
 <template>
   <div class="flex flex-col gap-5 pb-5 relative">
     <!-- Header -->
-    <div class="relative flex items-center justify-between">
+    <div class="flex items-center justify-center gap-3 relative">
       <NuxtLink
-        class="w-10 h-10 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 active:scale-95 transition-transform"
+        class="w-10 h-10 absolute left-0 top-1/2 -translate-y-1/2 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 active:scale-95 transition-transform"
         to="/settings"
       >
         <ChevronLeft class="text-text-primary -ml-px" :stroke-width="1.5" />
       </NuxtLink>
 
-      <div class="flex flex-col">
+      <div class="flex flex-col text-center">
         <h1 class="text-text-primary text-xl font-bold tracking-tight">
           Мои категории
         </h1>
         <p class="text-text-secondary text-xs">Управление списком</p>
       </div>
+
       <GlassButton
         variant="soft"
         size="sm"
-        class="px-2.75"
+        class="px-2.75 absolute right-0 top-1/2 -translate-y-1/2"
         @click="openCreateForm('expense')"
       >
-        <Plus class="text-text-primary" :stroke-width="1.5" />
+        <Plus class="w-4 h-4 text-text-primary" />
       </GlassButton>
     </div>
 

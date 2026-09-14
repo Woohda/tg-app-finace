@@ -7,7 +7,6 @@
  * который фильтруется через Segmented Control (День, Неделя, Месяц).
  * Транзакции интерактивны: swipe-to-delete, tap-to-edit.
  */
-import { ChevronLeft } from "@lucide/vue";
 
 const router = useRouter();
 
@@ -48,18 +47,14 @@ const currentLabel = computed(() =>
 
 <template>
   <div class="flex flex-col gap-5">
-    <div class="relative flex items-center justify-center">
-      <NuxtLink
-        class="w-10 h-10 absolute top-px -left-1 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 active:scale-95 transition-transform"
-        to="/"
-      >
-        <ChevronLeft class="text-text-primary -ml-px" :stroke-width="1.5" />
-      </NuxtLink>
-      <div class="flex flex-col">
+    <div class="flex items-center justify-center gap-3">
+      <div class="flex flex-col text-center">
         <h1 class="text-text-primary text-xl font-bold tracking-tight">
           Финансовый отчет
         </h1>
-        <p class="text-text-secondary text-xs">Все транзакции</p>
+        <p class="text-text-secondary text-xs">
+          Отчет о ваших тратах и всех транзакциях
+        </p>
       </div>
     </div>
 

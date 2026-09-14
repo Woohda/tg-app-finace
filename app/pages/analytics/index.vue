@@ -4,16 +4,21 @@ import { BarChart3 } from "@lucide/vue";
 /**
  * @module app/pages/analytics
  * @fileoverview Экран аналитики и отчетов
+ * @description
+ * Отображает графики и сводную статистику по тратам и доходам пользователя.
+ * Находится в разработке.
  */
 </script>
 
 <template>
   <div class="pt-12 px-6 pb-20 flex flex-col gap-6 min-h-screen">
-    <div class="flex flex-col items-center">
-      <h1 class="text-text-primary text-2xl font-bold tracking-tight">
-        Аналитика
-      </h1>
-      <p class="text-text-secondary text-sm">Отчеты и графики расходов</p>
+    <div class="flex items-center justify-center gap-3">
+      <div class="flex flex-col text-center">
+        <h1 class="text-text-primary text-xl font-bold tracking-tight">
+          Аналитика
+        </h1>
+        <p class="text-text-secondary text-xs">Отчеты и графики расходов</p>
+      </div>
     </div>
 
     <GlassCard
