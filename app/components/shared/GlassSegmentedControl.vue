@@ -48,7 +48,7 @@ function selectOption(id: T) {
     class="flex items-center p-1.25 justify-between glass-milky rounded-full shadow-glass-inner"
     :class="size === 'sm' ? '' : 'w-full'"
   >
-    <UiButton
+    <Button
       v-for="opt in options"
       :key="getOptionId(opt)"
       type="button"
@@ -65,6 +65,6 @@ function selectOption(id: T) {
       @click="selectOption(getOptionId(opt))"
     >
       {{ getOptionLabel(opt) }}
-    </UiButton>
+    </Button>
   </div>
 </template>

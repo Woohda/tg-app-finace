@@ -13,9 +13,7 @@
  */
 import { computed } from "vue";
 import { formatAmount, formatPercent } from "~/utils";
-import GlassCard from "~/components/GlassCard.vue";
 import { line, curveMonotoneX } from "d3-shape";
-import UiSkeleton from "../ui/Skeleton.vue";
 
 const props = defineProps<{
   balance: number;
@@ -76,9 +74,9 @@ const areaPathData = computed(() => {
     <div class="z-10 flex justify-between items-start">
       <!-- Состояние загрузки: Скелетоны текста -->
       <div v-if="isLoading" class="flex flex-col gap-2 py-1">
-        <UiSkeleton class="w-30 h-4" />
-        <UiSkeleton class="w-40 h-9 rounded-lg" />
-        <UiSkeleton class="w-20 h-3" />
+        <Skeleton class="w-30 h-4" />
+        <Skeleton class="w-40 h-9 rounded-lg" />
+        <Skeleton class="w-20 h-3" />
       </div>
 
       <!-- Загруженное состояние: Текст баланса -->

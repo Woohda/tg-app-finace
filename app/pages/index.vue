@@ -10,9 +10,6 @@
  */
 import { computed } from "vue";
 import { getGreeting } from "~/utils";
-import BalanceCard from "~/components/dashboard/BalanceCard.vue";
-import ExpensesDonut from "~/components/dashboard/ExpensesDonut.vue";
-import TransactionItem from "~/components/TransactionItem.vue";
 import { Bell, ReceiptText } from "@lucide/vue";
 // Импорт моков для истории баланса (пока не реализован расчет исторического баланса)
 import { mockBalanceHistory, mockPercentChange } from "~/mocks/dashboard";
@@ -144,8 +141,8 @@ const recentTransactions = computed(() => transactions.value.slice(0, 5));
     <div v-if="pending" class="flex flex-col gap-4 mt-2 px-5">
       <!-- Скелетон заголовка "Последние операции" -->
       <div class="flex justify-between items-end px-1 mb-2">
-        <UiSkeleton class="w-40 h-7" />
-        <UiSkeleton class="w-7 h-7" />
+        <Skeleton class="w-40 h-7" />
+        <Skeleton class="w-7 h-7" />
       </div>
       <!-- Скелетоны транзакций -->
       <div
@@ -153,12 +150,12 @@ const recentTransactions = computed(() => transactions.value.slice(0, 5));
         :key="i"
         class="flex items-center gap-3 bg-card-bg p-4 rounded-2xl"
       >
-        <UiSkeleton class="w-10 h-10 rounded-full shrink-0" />
+        <Skeleton class="w-10 h-10 rounded-full shrink-0" />
         <div class="flex-1 flex flex-col gap-2">
-          <UiSkeleton class="w-30 h-4" />
-          <UiSkeleton class="w-15 h-3" />
+          <Skeleton class="w-30 h-4" />
+          <Skeleton class="w-15 h-3" />
         </div>
-        <UiSkeleton class="w-16 h-5" />
+        <Skeleton class="w-16 h-5" />
       </div>
     </div>
     <div v-else class="flex flex-col gap-4 mt-2 px-5">

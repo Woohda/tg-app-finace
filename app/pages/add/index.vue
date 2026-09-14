@@ -7,9 +7,6 @@
  * Иначе — создание новой транзакции.
  */
 import { ref, computed, watch, onMounted } from "vue";
-import GlassTypeSelector from "~/components/GlassTypeSelector.vue";
-import GlassInput from "~/components/GlassInput.vue";
-import GlassMorphButton from "~/components/GlassMorphButton.vue";
 import { useRouter, useRoute } from "vue-router";
 import { Calendar, RussianRuble } from "@lucide/vue";
 import { transactionFrontendSchema } from "~/types/validate";
@@ -194,8 +191,10 @@ watch(type, () => {
         :disabled="pending"
       >
         <span v-if="isEditMode">💾 Сохранить изменения</span>
-        <span v-else>💸 Внести {{ type === "expense" ? "трату" : "доход" }}</span>
-        
+        <span v-else
+          >💸 Внести {{ type === "expense" ? "трату" : "доход" }}</span
+        >
+
         <template #success>
           <RussianRuble class="w-7 h-7" :stroke-width="2" />
         </template>

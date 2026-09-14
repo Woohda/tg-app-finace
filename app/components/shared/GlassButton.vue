@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <UiButton
+  <Button
     :disabled="disabled"
     :class="
       cn(
@@ -64,5 +64,5 @@ const props = withDefaults(defineProps<Props>(), {
       <slot />
     </div>
     <slot v-else />
-  </UiButton>
+  </Button>
 </template>

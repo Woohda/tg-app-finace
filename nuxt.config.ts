@@ -33,6 +33,7 @@ export default defineNuxtConfig({
   components: [
     {
       path: '~/components',
+      pathPrefix: false,
       ignore: ['**/index.ts']
     }
   ],

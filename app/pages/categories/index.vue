@@ -15,7 +15,6 @@ import {
   SquarePen,
   Trash2,
 } from "@lucide/vue";
-import GlassMorphButton from "~/components/GlassMorphButton.vue";
 import { categorySchema } from "~/types/validate";
 import { formatZodError } from "~/utils/zod";
 
@@ -241,12 +240,12 @@ const executeDelete = async () => {
             class="flex items-center justify-between px-3 py-2 border-b border-black/6 last:border-none animate-pulse"
           >
             <div class="flex items-center gap-3 w-full">
-              <UiSkeleton class="size-9" rounded="rounded-full" />
-              <UiSkeleton class="h-4 w-1/2" />
+              <Skeleton class="size-9" rounded="rounded-full" />
+              <Skeleton class="h-4 w-1/2" />
             </div>
             <div class="flex items-center gap-5 ml-2">
-              <UiSkeleton class="size-5" />
-              <UiSkeleton class="size-5" />
+              <Skeleton class="size-5" />
+              <Skeleton class="size-5" />
             </div>
           </div>
         </template>
