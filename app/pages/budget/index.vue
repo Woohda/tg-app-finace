@@ -3,19 +3,20 @@
  * @module app/pages/budget
  * @fileoverview Экран настройки ежемесячного бюджета
  * @description
- * Позволяет пользователю задать лимит трат на месяц. 
+ * Позволяет пользователю задать лимит трат на месяц.
  * Использует Zod для валидации ввода на стороне клиента.
  */
-import { ref, watch } from "vue";
+import { ref, watch, onMounted } from "vue";
 import { ChevronLeft, Target } from "@lucide/vue";
+import GlassInput from "~/components/GlassInput.vue";
+import GlassMorphButton from "~/components/GlassMorphButton.vue";
 import { budgetSchema } from "~/types/validate";
 import { formatZodError } from "~/utils/zod";
 
 const { budget, updateBudget, isLoading, error, fetchBudget } = useBudgets();
 
 const amount = ref<number | "">(budget.value || "");
-const isSubmitting = ref(false);
-const showSuccess = ref(false);
+const buttonState = ref<"idle" | "loading" | "success">("idle");
 
 watch(budget, (newVal) => {
   if (amount.value === "" && newVal > 0) {
@@ -36,19 +37,18 @@ const saveBudget = async () => {
   }
 
   error.value = "";
-
-  isSubmitting.value = true;
-  showSuccess.value = false;
+  buttonState.value = "loading";
 
   const success = await updateBudget(result.data.amount);
 
   if (success) {
-    showSuccess.value = true;
+    buttonState.value = "success";
     setTimeout(() => {
-      showSuccess.value = false;
-    }, 3000);
+      buttonState.value = "idle";
+    }, 1500);
+  } else {
+    buttonState.value = "idle";
   }
-  isSubmitting.value = false;
 };
 </script>
 
@@ -97,21 +97,15 @@ const saveBudget = async () => {
         <div v-if="error" class="text-text-accent text-sm text-center">
           {{ error }}
         </div>
-        <div
-          v-if="showSuccess"
-          class="text-[#00C48C] text-sm text-center font-medium"
-        >
-          Бюджет успешно обновлен!
-        </div>
 
-        <GlassButton
+        <GlassMorphButton
           type="submit"
           variant="primary"
-          class="w-full"
-          :disabled="isSubmitting || isLoading || amount === '' || amount <= 0"
+          :state="buttonState"
+          :disabled="isLoading || amount === '' || amount <= 0"
         >
-          {{ isSubmitting ? "Сохранение..." : "Сохранить" }}
-        </GlassButton>
+          <span>🎯 Зафиксировать лимит</span>
+        </GlassMorphButton>
       </form>
     </GlassCard>
 
