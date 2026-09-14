@@ -3,18 +3,25 @@
  * @module app/pages/categories
  * @fileoverview Экран управления категориями транзакций
  * @description
- * Отображает списки доходов и расходов. Позволяет добавлять новые категории 
+ * Отображает списки доходов и расходов. Позволяет добавлять новые категории
  * через модальное окно и удалять существующие (если нет связанных транзакций).
  */
 import { ref, computed, onMounted, watch } from "vue";
-import { ChevronLeft, Plus, Pencil, Trash2 } from "@lucide/vue";
+import {
+  ChevronLeft,
+  Flame,
+  Plus,
+  Pencil,
+  SquarePen,
+  Trash2,
+} from "@lucide/vue";
+import GlassMorphButton from "~/components/GlassMorphButton.vue";
 import { categorySchema } from "~/types/validate";
 import { formatZodError } from "~/utils/zod";
 
 const {
   categories,
   error,
-  isLoading,
   fetchCategories,
   createCategory,
   updateCategory,
@@ -55,8 +62,8 @@ const editingId = ref<string | null>(null);
 const formName = ref("");
 const formIcon = ref("");
 const formType = ref<"expense" | "income">("expense");
-const formError = ref("");
-const isSubmitting = ref(false);
+const formError = ref<string | null>(null);
+const formButtonState = ref<"idle" | "loading" | "success">("idle");
 
 // Оставляем только один эмодзи/символ при вводе
 watch(formIcon, (newVal) => {
@@ -75,7 +82,8 @@ const openCreateForm = (type: "expense" | "income" = "expense") => {
   formName.value = "";
   formIcon.value = "";
   formType.value = type;
-  formError.value = "";
+  formError.value = null;
+  formButtonState.value = "idle";
   isFormOpen.value = true;
 };
 
@@ -85,7 +93,8 @@ const openEditForm = (category: (typeof categories.value)[0]) => {
   formName.value = category.name;
   formIcon.value = category.icon || "";
   formType.value = category.type as "expense" | "income";
-  formError.value = "";
+  formError.value = null;
+  formButtonState.value = "idle";
   isFormOpen.value = true;
 };
 
@@ -105,8 +114,19 @@ const submitForm = async () => {
     return;
   }
 
-  isSubmitting.value = true;
-  formError.value = "";
+  const existingCategory = categories.value.find(
+    (c) => c.name.toLowerCase() === result.data.name.toLowerCase(),
+  );
+
+  if (existingCategory) {
+    if (!isEditMode.value || existingCategory.id !== editingId.value) {
+      formError.value = "Категория с таким именем уже существует";
+      return;
+    }
+  }
+
+  formError.value = null;
+  formButtonState.value = "loading";
 
   let success = false;
   if (isEditMode.value && editingId.value) {
@@ -124,17 +144,21 @@ const submitForm = async () => {
     success = !!newCat;
   }
 
-  isSubmitting.value = false;
-
   if (success) {
-    closeForm();
+    formButtonState.value = "success";
+    setTimeout(() => {
+      closeForm();
+      formButtonState.value = "idle";
+    }, 1200);
   } else {
+    formButtonState.value = "idle";
     formError.value = error.value || "Произошла ошибка";
   }
 };
 
 const isDeleteModalOpen = ref(false);
 const deletingCategoryId = ref<string | null>(null);
+const deleteButtonState = ref<"idle" | "loading" | "success">("idle");
 
 const confirmDelete = (id: string) => {
   deletingCategoryId.value = id;
@@ -152,14 +176,24 @@ const cancelDelete = () => {
   isDeleteModalOpen.value = false;
   deletingCategoryId.value = null;
   error.value = null;
+  deleteButtonState.value = "idle";
 };
 
 const executeDelete = async () => {
   if (!deletingCategoryId.value) return;
+
+  deleteButtonState.value = "loading";
   const success = await deleteCategory(deletingCategoryId.value);
+
   if (success) {
-    isDeleteModalOpen.value = false;
-    deletingCategoryId.value = null;
+    deleteButtonState.value = "success";
+    setTimeout(() => {
+      isDeleteModalOpen.value = false;
+      deletingCategoryId.value = null;
+      deleteButtonState.value = "idle";
+    }, 1200);
+  } else {
+    deleteButtonState.value = "idle";
   }
 };
 </script>
@@ -185,10 +219,10 @@ const executeDelete = async () => {
       <GlassButton
         variant="soft"
         size="sm"
-        class="px-2.75 absolute right-0 top-1/2 -translate-y-1/2"
+        class="px-2.25 absolute right-0 top-1/2 -translate-y-1/2"
         @click="openCreateForm('expense')"
       >
-        <Plus class="w-4 h-4 text-text-primary" />
+        <Plus class="text-text-primary" :stroke-width="1.5" />
       </GlassButton>
     </div>
 
@@ -258,101 +292,87 @@ const executeDelete = async () => {
       </GlassCard>
     </div>
 
-    <!-- Модалка формы (Overlays) -->
-    <div
-      v-if="isFormOpen"
-      class="fixed inset-0 z-50 flex items-end justify-center sm:items-center p-4 bg-black/40 backdrop-blur-sm"
-      @click.self="closeForm"
+    <!-- Модалка формы -->
+    <GlassModal
+      :is-open="isFormOpen"
+      :title="isEditMode ? 'Редактировать' : 'Новая категория'"
+      position="bottom"
+      @close="closeForm"
     >
-      <GlassCard
-        class="w-full max-w-95 px-6 flex flex-col gap-5 animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200 glass-milky"
-      >
-        <div class="flex justify-between items-center">
-          <h2 class="text-text-primary text-xl font-bold">
-            {{ isEditMode ? "Редактировать" : "Новая категория" }}
-          </h2>
-          <GlassButton
-            variant="soft"
-            size="sm"
-            class="px-2.75 text-text-secondary text-2xl leading-none"
-            @click="closeForm"
-          >
-            &times;
-          </GlassButton>
+      <form class="flex flex-col gap-4" @submit.prevent="submitForm">
+        <div class="flex gap-3">
+          <GlassInput
+            v-model="formName"
+            type="text"
+            label="Название"
+            placeholder="Например, Продукты"
+            class="w-full"
+          />
+          <GlassInput
+            v-model="formIcon"
+            type="text"
+            label="Эмодзи"
+            placeholder="💸"
+            maxlength="2"
+            class="w-15 mr-2"
+          />
         </div>
 
-        <form class="flex flex-col gap-4" @submit.prevent="submitForm">
-          <div class="flex gap-3">
-            <GlassInput
-              v-model="formName"
-              type="text"
-              label="Название"
-              placeholder="Например, Продукты"
-              class="w-full"
-            />
-            <GlassInput
-              v-model="formIcon"
-              type="text"
-              label="Эмодзи"
-              placeholder="💸"
-              maxlength="2"
-              class="w-15 mr-2"
-            />
-          </div>
+        <GlassTypeSelector v-if="!isEditMode" v-model="formType" />
 
-          <GlassTypeSelector v-if="!isEditMode" v-model="formType" />
+        <div v-if="formError" class="text-text-accent text-sm text-center">
+          {{ formError }}
+        </div>
 
-          <div v-if="formError" class="text-text-accent text-sm text-center">
-            {{ formError }}
-          </div>
-
-          <GlassButton
-            type="submit"
-            variant="primary"
-            class="w-full mt-2"
-            :disabled="isSubmitting"
-          >
-            {{ isSubmitting ? "Сохранение..." : "Сохранить" }}
-          </GlassButton>
-        </form>
-      </GlassCard>
-    </div>
+        <GlassMorphButton
+          type="submit"
+          variant="primary"
+          class="mt-2"
+          :state="formButtonState"
+        >
+          <span>{{
+            isEditMode ? "💾 Сохранить изменения" : "✨ Создать"
+          }}</span>
+          <template v-if="!isEditMode" #success>
+            <SquarePen class="w-7 h-7" :stroke-width="1.5" />
+          </template>
+        </GlassMorphButton>
+      </form>
+    </GlassModal>
 
     <!-- Модалка удаления -->
-    <div
-      v-if="isDeleteModalOpen"
-      class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
-      @click.self="cancelDelete"
+    <GlassModal
+      :is-open="isDeleteModalOpen"
+      :show-close="false"
+      position="center"
+      @close="cancelDelete"
     >
-      <GlassCard
-        class="w-full max-w-95 p-6 flex flex-col gap-5 animate-in zoom-in-95 duration-200 glass-milky text-center"
-      >
-        <div class="flex flex-col gap-2">
-          <h2 class="text-text-primary text-xl font-bold">
-            {{ error ? "Удаление невозможно" : "Удалить категорию?" }}
-          </h2>
-          <p class="text-text-secondary text-sm">
-            {{
-              error ? error : "Вы уверены, что хотите удалить эту категорию?"
-            }}
-          </p>
-        </div>
+      <div class="flex flex-col gap-2 text-center">
+        <h2 class="text-text-primary text-xl font-bold">
+          {{ error ? "Удаление невозможно" : "Удалить категорию?" }}
+        </h2>
+        <p class="text-text-secondary text-sm">
+          {{ error ? error : "Вы уверены, что хотите удалить эту категорию?" }}
+        </p>
+      </div>
 
-        <div class="flex gap-3 mt-2">
-          <GlassButton variant="soft" class="flex-1" @click="cancelDelete">
-            {{ error ? "Ок" : "Отмена" }}
-          </GlassButton>
-          <GlassButton
-            v-if="!error"
-            variant="primary"
-            class="flex-1 bg-text-accent text-white"
-            :disabled="isLoading"
+      <div class="flex gap-3 mt-2">
+        <GlassButton variant="soft" class="flex-1" @click="cancelDelete">
+          {{ error ? "Ок" : "Отмена" }}
+        </GlassButton>
+        <div v-if="!error" class="flex-1 flex justify-center">
+          <GlassMorphButton
+            variant="delete"
+            :state="deleteButtonState"
             @click="executeDelete"
           >
-            {{ isLoading ? "Удаление..." : "Удалить" }}
-          </GlassButton>
+            <span>🧨 Сжечь</span>
+            <template #success>
+              <Flame class="w-7 h-7" :stroke-width="1.5" />
+            </template>
+          </GlassMorphButton>
         </div>
-      </GlassCard>
-    </div>
+      </div>
+    </GlassModal>
   </div>
 </template>
