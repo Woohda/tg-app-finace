@@ -7,9 +7,6 @@
  * Иначе — создание новой транзакции.
  */
 import { ref, computed, watch, onMounted } from "vue";
-import GlassTypeSelector from "~/components/shared/GlassTypeSelector.vue";
-import GlassInput from "~/components/shared/GlassInput.vue";
-import GlassMorphButton from "~/components/shared/GlassMorphButton.vue";
 import { useRouter, useRoute } from "vue-router";
 import { Calendar, RussianRuble } from "@lucide/vue";
 import { transactionFrontendSchema } from "~/types/validate";

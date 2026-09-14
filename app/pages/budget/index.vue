@@ -8,8 +8,6 @@
  */
 import { ref, watch, onMounted } from "vue";
 import { ChevronLeft, Target } from "@lucide/vue";
-import GlassInput from "~/components/shared/GlassInput.vue";
-import GlassMorphButton from "~/components/shared/GlassMorphButton.vue";
 import { budgetSchema } from "~/types/validate";
 import { formatZodError } from "~/utils/zod";
 

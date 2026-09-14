@@ -7,7 +7,8 @@
  * на основе `window.Telegram.WebApp.initData`. В обычном браузере в dev-режиме
  * авторизует через dev-endpoint автоматически.
  */
-const { isAuthenticated, getTelegramInitData, initTelegramAuth, devLogin } = useAuth();
+const { isAuthenticated, getTelegramInitData, initTelegramAuth, devLogin } =
+  useAuth();
 const router = useRouter();
 const isDev = import.meta.dev;
 
@@ -32,7 +33,8 @@ const handleLogin = async () => {
   if (success) {
     router.replace("/");
   } else {
-    errorMessage.value = "Не удалось авторизоваться через Telegram. Попробуйте еще раз.";
+    errorMessage.value =
+      "Не удалось авторизоваться через Telegram. Попробуйте еще раз.";
   }
 };
 
@@ -68,19 +70,22 @@ onMounted(async () => {
     class="max-w-md mx-auto relative min-h-screen p-4 flex flex-col items-center justify-center bg-glass-ambient shadow-2xl"
   >
     <GlassCard class="w-full">
-      <UiCardHeader class="p-5 pb-0">
-        <UiCardTitle class="text-2xl font-bold text-center text-text-primary">
+      <CardHeader class="p-5 pb-0">
+        <CardTitle class="text-2xl font-bold text-center text-text-primary">
           TG Finance
-        </UiCardTitle>
-      </UiCardHeader>
+        </CardTitle>
+      </CardHeader>
 
-      <UiCardContent class="p-5">
+      <CardContent class="p-5">
         <div class="text-center py-4">
           <div v-if="isInTelegram">
             <p class="mb-6 text-text-secondary text-sm">
               Вход через Telegram Mini App...
             </p>
-            <p v-if="errorMessage" class="mb-4 text-xs text-rose-500 font-medium">
+            <p
+              v-if="errorMessage"
+              class="mb-4 text-xs text-rose-500 font-medium"
+            >
               {{ errorMessage }}
             </p>
             <GlassButton
@@ -99,13 +104,18 @@ onMounted(async () => {
               🛠 Dev Mode
             </p>
             <p class="text-sm text-text-secondary">
-              {{ isDev ? 'Автоматическая авторизация...' : 'Это приложение разработано для работы внутри Telegram.' }}
+              {{
+                isDev
+                  ? "Автоматическая авторизация..."
+                  : "Это приложение разработано для работы внутри Telegram."
+              }}
             </p>
             <p v-if="errorMessage" class="text-xs text-rose-500 font-medium">
               {{ errorMessage }}
             </p>
             <p v-if="!isDev" class="text-xs text-text-secondary/70">
-              Пожалуйста, откройте бота в Telegram и запустите Mini App через кнопку «Открыть трекер 📊».
+              Пожалуйста, откройте бота в Telegram и запустите Mini App через
+              кнопку «Открыть трекер 📊».
             </p>
             <GlassButton
               size="lg"
@@ -114,11 +124,17 @@ onMounted(async () => {
               :disabled="isLoading"
               @click="isDev ? handleDevLogin() : handleLogin()"
             >
-              {{ isLoading ? "Проверка..." : (isDev ? "Dev Login" : "Повторить попытку") }}
+              {{
+                isLoading
+                  ? "Проверка..."
+                  : isDev
+                    ? "Dev Login"
+                    : "Повторить попытку"
+              }}
             </GlassButton>
           </div>
         </div>
-      </UiCardContent>
+      </CardContent>
     </GlassCard>
   </div>
 </template>

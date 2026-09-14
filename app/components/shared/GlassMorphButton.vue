@@ -39,7 +39,7 @@ watch(
 </script>
 
 <template>
-  <button
+  <Button
     :disabled="disabled || state !== 'idle'"
     :class="
       cn(
@@ -123,5 +123,5 @@ watch(
         </slot>
       </div>
     </Transition>
-  </button>
+  </Button>
 </template>

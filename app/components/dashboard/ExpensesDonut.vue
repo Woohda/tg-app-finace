@@ -16,8 +16,6 @@ import { computed } from "vue";
 import { formatAmount } from "~/utils";
 import { mockTotalExpense } from "~/mocks/dashboard";
 import { ChartColumn } from "@lucide/vue";
-import GlassCard from "~/components/shared/GlassCard.vue";
-import DonutSkeleton from "./DonutSkeleton.vue";
 
 export interface CategoryBudgetData {
   id: string;
