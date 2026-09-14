@@ -1,15 +1,28 @@
 <script setup lang="ts">
+import { computed } from "vue";
 import { User } from "@lucide/vue";
 
 /**
  * @module app/pages/settings
  * @fileoverview Экран настроек профиля и приложения
  */
-const { user, logout } = useAuth();
+const { user, tgUser, logout } = useAuth();
+
+const userName = computed(() => {
+  if (tgUser.value?.first_name) {
+    return tgUser.value.first_name;
+  }
+  if (user.value?.username) {
+    return `@${user.value.username}`;
+  }
+  return "Пользователь";
+});
+
+const avatarUrl = computed(() => tgUser.value?.photo_url || null);
 </script>
 
 <template>
-  <div class="pt-12 px-6 pb-20 flex flex-col gap-6 min-h-screen">
+  <div class="flex flex-col gap-5">
     <div class="flex flex-col items-center">
       <h1 class="text-text-primary text-2xl font-bold tracking-tight">
         Настройки
@@ -18,20 +31,28 @@ const { user, logout } = useAuth();
     </div>
 
     <GlassCard
-      class="p-6 flex flex-col items-center justify-center gap-4 text-center mt-4"
+      class="p-6 flex flex-col items-center justify-center gap-3 text-center"
     >
-      <div
-        class="size-16 rounded-full glass-milky shadow-glass-inner flex items-center justify-center text-text-primary"
-      >
-        <User class="size-8" :stroke-width="1.75" />
-      </div>
-      <div class="space-y-1">
-        <h2 class="text-text-primary font-bold text-lg">
-          {{ user?.username ? `@${user.username}` : "Пользователь" }}
-        </h2>
-        <p class="text-text-secondary text-xs">
-          ID: {{ user?.telegram_id ?? "Не авторизован" }}
-        </p>
+      <div class="w-full flex gap-3 items-center justify-start">
+        <div
+          class="size-16 rounded-full glass-milky shadow-glass-inner flex items-center justify-center text-text-primary overflow-hidden"
+        >
+          <img
+            v-if="avatarUrl"
+            :src="avatarUrl"
+            alt="Avatar"
+            class="w-full h-full object-cover"
+          />
+          <User v-else class="size-8" :stroke-width="1.75" />
+        </div>
+        <div class="flex flex-col gap-0.5 items-start">
+          <h2 class="text-text-primary font-bold text-lg">
+            {{ userName }}
+          </h2>
+          <p class="text-text-secondary text-xs">
+            ID: {{ user?.telegram_id ?? "Не авторизован" }}
+          </p>
+        </div>
       </div>
 
       <GlassButton variant="soft" class="w-full mt-4" @click="logout">

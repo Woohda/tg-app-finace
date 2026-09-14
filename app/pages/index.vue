@@ -4,7 +4,6 @@
  * @fileoverview Главная страница приложения (Дашборд)
  * @description
  * Отображает сводную финансовую информацию пользователя:
- * - Приветствие пользователя
  * - Общий баланс и мини-график истории (BalanceCard)
  * - Распределение топ-5 расходов по категориям (ExpensesDonut)
  * - Список последних транзакций
@@ -18,54 +17,67 @@ import { Bell, ReceiptText } from "@lucide/vue";
 // Импорт моков для истории баланса (пока не реализован расчет исторического баланса)
 import { mockBalanceHistory, mockPercentChange } from "~/mocks/dashboard";
 
-const { user } = useAuth();
+const { user, tgUser } = useAuth();
 const { transactions, pending } = useTransactions();
 const { balance } = useTransactionView(transactions);
 
 const greeting = getGreeting();
 const userName = computed(() => {
+  if (tgUser.value?.first_name) {
+    return tgUser.value.first_name;
+  }
   if (user.value?.username) {
     return `@${user.value.username}`;
   }
   return "Пользователь";
 });
 
-// 1. Balance Data
+const avatarUrl = computed(() => tgUser.value?.photo_url || null);
+
+// 1. Данные баланса
 const balanceHistory = mockBalanceHistory; // TODO: Реализовать расчет на бэкенде
 const percentChange = mockPercentChange; // TODO: Реализовать расчет на бэкенде
 
-// 2. Budget Data
-// Aggregate expenses by category
+// 2. Данные бюджета
+// Агрегируем расходы по категориям
 const expensesByCategory = computed(() => {
-  const expenseMap = new Map<string, { amount: number; name: string }>();
+  const expenseMap = new Map<
+    string,
+    { amount: number; name: string; icon: string | null }
+  >();
 
   transactions.value
     .filter((t) => t.type === "expense")
     .forEach((t) => {
-      const current = expenseMap.get(t.categoryId) || { amount: 0, name: t.categoryName };
+      const current = expenseMap.get(t.categoryId) || {
+        amount: 0,
+        name: t.categoryName,
+        icon: t.categoryIcon,
+      };
       current.amount += t.amount;
       expenseMap.set(t.categoryId, current);
     });
 
-  // Sort and take top 5
+  // Сортируем и берем топ-5
   const sorted = Array.from(expenseMap.entries())
     .map(([id, data]) => {
       return {
         id,
         name: data.name,
+        icon: data.icon,
         amount: data.amount,
       };
     })
     .sort((a, b) => b.amount - a.amount)
     .slice(0, 5);
 
-  // Assign neumorphic/sunset colors
+  // Назначаем более контрастные и насыщенные цвета
   const colors = [
-    "#ef4530", // accent-end
-    "#fc5c47", // accent-mid
-    "#ff7e67", // accent-start
-    "#c6bcb5", // warm dark cream
-    "#9a948f", // text-secondary
+    "#E11D48", // Насыщенный красный/рубин (Rose 600)
+    "#C026D3", // Глубокий фуксия (Fuchsia 600)
+    "#7C3AED", // Яркий фиолетовый (Violet 600)
+    "#EA580C", // Насыщенный оранжевый (Orange 600)
+    "#D97706", // Яркий янтарный/золотой (Amber 600)
   ];
 
   return sorted.map((cat, index) => ({
@@ -74,25 +86,31 @@ const expensesByCategory = computed(() => {
   }));
 });
 
-// 3. Transactions Data
+// 3. Данные транзакций
 const recentTransactions = computed(() => transactions.value.slice(0, 5));
 </script>
 
 <template>
   <div class="relative flex flex-col gap-5">
-    <div class="flex items-center justify-between mb-1">
+    <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <!-- Avatar mock -->
+        <!-- Аватарка -->
         <div
-          class="w-10 h-10 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50"
+          class="w-10 h-10 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 overflow-hidden"
           style="box-shadow: var(--shadow-glass-flat)"
         >
-          👱‍♀️
+          <img
+            v-if="avatarUrl"
+            :src="avatarUrl"
+            alt="Avatar"
+            class="w-full h-full object-cover"
+          />
+          <span v-else>👱‍♀️</span>
         </div>
-        <p class="text-text-primary font-bold">Привет, {{ userName }} 👋</p>
+        <p class="text-text-primary font-bold">{{ userName }}</p>
       </div>
 
-      <!-- Bell Icon -->
+      <!-- Иконка колокольчика -->
       <div
         class="w-10 h-10 rounded-full glass-milky flex items-center justify-center text-text-primary shrink-0"
         style="box-shadow: var(--shadow-glass-flat)"
@@ -101,8 +119,8 @@ const recentTransactions = computed(() => transactions.value.slice(0, 5));
       </div>
     </div>
 
-    <!-- Greeting texts -->
-    <div class="mb-2">
+    <!-- Текст приветствия -->
+    <div>
       <h1 class="text-3xl font-extrabold text-text-primary tracking-tight">
         {{ greeting.replace(",", "") }}!
       </h1>
@@ -111,48 +129,65 @@ const recentTransactions = computed(() => transactions.value.slice(0, 5));
       </p>
     </div>
 
-    <!-- 1. Balance Section -->
+    <!-- 1. Секция баланса -->
     <BalanceCard
       :balance="balance"
       :percent-change="percentChange"
       :history="balanceHistory"
+      :is-loading="pending"
     />
 
-    <!-- Loading State -->
-    <div v-if="pending" class="flex justify-center items-center py-10 text-text-secondary">
-      Загрузка...
-    </div>
-    
-    <template v-else>
-      <!-- 2. Budget Section -->
-      <ExpensesDonut :categories="expensesByCategory" />
+    <!-- Главный контент: Топ-5 категорий расходов -->
+    <ExpensesDonut :categories="expensesByCategory" :is-loading="pending" />
 
-      <!-- 3. Recent Activity Section -->
-      <div class="flex flex-col gap-4 mt-2 px-5">
-        <div class="flex justify-between items-end px-1">
-          <h3 class="text-lg font-extrabold text-text-primary">
-            Последние операции
-          </h3>
-          <NuxtLink to="/finreports" class="text-text-secondary">
-            <ReceiptText :stroke-width="1.5" />
-          </NuxtLink>
-        </div>
-
-        <div v-if="recentTransactions.length === 0" class="text-center py-4 text-text-secondary">
-          Пока нет транзакций
-        </div>
-        <div v-else class="flex flex-col gap-4">
-          <TransactionItem
-            v-for="item in recentTransactions"
-            :key="item.id"
-            :icon="item.categoryIcon"
-            :name="item.categoryName"
-            :amount="item.amount"
-            :type="item.type"
-            :date="item.date"
-          />
-        </div>
+    <!-- 3. Секция последних операций -->
+    <div v-if="pending" class="flex flex-col gap-4 mt-2 px-5">
+      <!-- Скелетон заголовка "Последние операции" -->
+      <div class="flex justify-between items-end px-1 mb-2">
+        <UiSkeleton class="w-40 h-7" />
+        <UiSkeleton class="w-7 h-7" />
       </div>
-    </template>
+      <!-- Скелетоны транзакций -->
+      <div
+        v-for="i in 4"
+        :key="i"
+        class="flex items-center gap-3 bg-card-bg p-4 rounded-2xl"
+      >
+        <UiSkeleton class="w-10 h-10 rounded-full shrink-0" />
+        <div class="flex-1 flex flex-col gap-2">
+          <UiSkeleton class="w-30 h-4" />
+          <UiSkeleton class="w-15 h-3" />
+        </div>
+        <UiSkeleton class="w-16 h-5" />
+      </div>
+    </div>
+    <div v-else class="flex flex-col gap-4 mt-2 px-5">
+      <div class="flex justify-between items-end px-1">
+        <h3 class="text-lg font-extrabold text-text-primary">
+          Последние операции
+        </h3>
+        <NuxtLink to="/finreports" class="text-text-secondary">
+          <ReceiptText :stroke-width="1.5" />
+        </NuxtLink>
+      </div>
+
+      <div
+        v-if="recentTransactions.length === 0"
+        class="text-center py-4 text-text-secondary"
+      >
+        Пока нет транзакций
+      </div>
+      <div v-else class="flex flex-col gap-3">
+        <TransactionItem
+          v-for="item in recentTransactions"
+          :key="item.id"
+          :icon="item.categoryIcon"
+          :name="item.categoryName"
+          :amount="item.amount"
+          :type="item.type"
+          :date="item.date"
+        />
+      </div>
+    </div>
   </div>
 </template>

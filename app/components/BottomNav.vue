@@ -54,7 +54,7 @@ function isItemActive(to: string): boolean {
 
 <template>
   <div
-    class="fixed bottom-6 left-1/2 -translate-x-1/2 w-full max-w-97 px-4 z-50 pointer-events-none"
+    class="absolute bottom-5 left-1/2 -translate-x-1/2 w-full max-w-97 px-2.75 z-50 pointer-events-none"
   >
     <nav
       class="relative h-19 glass-milky rounded-[38px] px-4 flex items-center justify-between pointer-events-auto"
@@ -65,10 +65,10 @@ function isItemActive(to: string): boolean {
           v-for="item in leftItems"
           :key="item.name"
           :to="item.to"
-          class="relative flex flex-col items-center justify-center w-15 h-15 transition-all duration-300 rounded-3xl"
+          class="relative flex flex-col items-center justify-center w-16 h-15 transition-all duration-300 rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
           :class="
             isItemActive(item.to)
-              ? 'text-accent-end'
+              ? 'text-text-accent'
               : 'text-text-secondary hover:text-text-primary'
           "
           :aria-label="item.label"
@@ -76,15 +76,15 @@ function isItemActive(to: string): boolean {
           <!-- Активный фон (овал) -->
           <div
             v-if="isItemActive(item.to)"
-            class="absolute inset-0 bg-white/40 rounded-3xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] border border-white/50 -z-10"
+            class="absolute inset-0 bg-white/40 rounded-3xl shadow-[inset_0_2px_3px_rgba(255,255,255,0.8)] border border-white/50 -z-10"
           />
 
           <component
             :is="item.icon"
             class="size-5.5 mb-1"
-            :stroke-width="isItemActive(item.to) ? 2.5 : 2"
+            :stroke-width="isItemActive(item.to) ? 2 : 1.5"
           />
-          <span class="text-[10px] font-medium leading-none">{{
+          <span class="text-[9px] font-medium leading-none">{{
             item.label
           }}</span>
         </NuxtLink>
@@ -95,25 +95,17 @@ function isItemActive(to: string): boolean {
         <!-- Выпуклая матовая кнопка с блюром -->
         <NuxtLink
           to="/add"
-          class="size-17 rounded-full flex items-center justify-center text-accent-end text-4xl font-light active:scale-90 transition-transform"
+          class="size-17 rounded-full flex items-center justify-center text-text-accent text-4xl font-light active:scale-90 transition-transform outline-none focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-4 focus-visible:ring-offset-transparent"
           style="
-            background: linear-gradient(
-              180deg,
-              rgba(238, 238, 238, 1) 30%,
-              rgba(238, 238, 238, 0.6) 40%,
-              rgba(238, 238, 238, 0) 100%
-            );
-            backdrop-filter: blur(35px);
-            -webkit-backdrop-filter: blur(35px);
-
+            background: rgba(238, 238, 238, 1);
             box-shadow:
-              8px 8px 16px rgba(130, 115, 105, 0.25),
+              8px 8px 16px rgba(130, 115, 105, 0.22),
               inset 3px 3px 8px rgba(255, 255, 255, 1),
               inset -4px -4px 10px rgba(130, 115, 105, 0.15);
           "
           aria-label="Добавить операцию"
         >
-          <span class="mb-1.5">+</span>
+          <span class="text-3xl mb-1.5">+</span>
         </NuxtLink>
       </div>
 
@@ -123,10 +115,10 @@ function isItemActive(to: string): boolean {
           v-for="item in rightItems"
           :key="item.name"
           :to="item.to"
-          class="relative flex flex-col items-center justify-center w-15 h-15 transition-all duration-300 rounded-3xl"
+          class="relative flex flex-col items-center justify-center w-16 h-15 transition-all duration-300 rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
           :class="
             isItemActive(item.to)
-              ? 'text-accent-end'
+              ? 'text-text-accent'
               : 'text-text-secondary hover:text-text-primary'
           "
           :aria-label="item.label"
@@ -134,15 +126,15 @@ function isItemActive(to: string): boolean {
           <!-- Активный фон (овал) -->
           <div
             v-if="isItemActive(item.to)"
-            class="absolute inset-0 bg-white/40 rounded-3xl shadow-[inset_0_1px_2px_rgba(255,255,255,0.8)] border border-white/50 -z-10"
+            class="absolute inset-0 bg-white/40 rounded-3xl shadow-[inset_0_2px_3px_rgba(255,255,255,0.8)] border border-white/50 -z-10"
           />
 
           <component
             :is="item.icon"
             class="size-5.5 mb-1"
-            :stroke-width="isItemActive(item.to) ? 2.5 : 2"
+            :stroke-width="isItemActive(item.to) ? 2 : 1.5"
           />
-          <span class="text-[10px] font-medium leading-none">{{
+          <span class="text-[9px] font-medium leading-none">{{
             item.label
           }}</span>
         </NuxtLink>

@@ -18,29 +18,16 @@ const props = withDefaults(defineProps<Props>(), {
   spent: 0,
 });
 
-type ViewMode = "budget" | "spent";
-const viewMode = ref<ViewMode>("budget");
-
-const currentAmount = computed(() =>
-  viewMode.value === "budget" ? props.budget : props.spent,
-);
-
-const currentLabel = computed(() =>
-  viewMode.value === "budget" ? "Бюджет" : "Потрачено",
-);
-
 // --- Константы геометрии ---
 const TOTAL_TILES = 20;
-const TILE_STEP_DEG = 183 / (TOTAL_TILES - 1);
-const TILE_RADIUS = 120;
-const TILE_OUTER_RADIUS = TILE_RADIUS + 20; // 150px (внешний торец плашки)
-const MARKER_TOP_OFFSET = 35; // Зазор над плашкой при 50%
-const MARKER_SIDE_OFFSET = 22; // Вынос по бокам при 0%..5% и 100%
+const TILE_STEP_DEG = 180 / (TOTAL_TILES - 1);
+const TILE_RADIUS = 100;
 
 // Ограничиваем количество заполненных плиток строго от 0 до TOTAL_TILES (20)
 const filledCount = computed(() => {
   const safePercent = Number.isFinite(props.percent) ? props.percent : 0;
-  return Math.min(TOTAL_TILES, Math.max(0, Math.floor(safePercent / 5)));
+  const step = 100 / TOTAL_TILES;
+  return Math.min(TOTAL_TILES, Math.max(0, Math.floor(safePercent / step)));
 });
 
 // Процент для отображения: не выходит за пределы 0% и 100%
@@ -48,7 +35,8 @@ const displayPercent = computed(() => {
   const safePercent = Number.isFinite(props.percent) ? props.percent : 0;
   if (safePercent <= 0) return 0;
   if (safePercent >= 100) return 100;
-  return filledCount.value * 5;
+  const step = 100 / TOTAL_TILES;
+  return Math.round(filledCount.value * step);
 });
 
 // Индекс плитки, над которой расположен маркер:
@@ -61,30 +49,27 @@ const activeTileIndex = computed(() => {
 });
 
 function tileAngle(index: number): number {
-  return -90 + index * TILE_STEP_DEG;
+  return -78 + index * TILE_STEP_DEG;
 }
 
 function tileTransform(index: number): string {
   return `rotate(${tileAngle(index)}deg) translateY(-${TILE_RADIUS}px)`;
 }
 
+// Радиус для расположения маркера внутри кольца (чуть меньше TILE_RADIUS)
+const MARKER_INNER_RADIUS = TILE_RADIUS - 27;
+
 const markerStyle = computed(() => {
   const angle = tileAngle(activeTileIndex.value);
   const rad = (angle * Math.PI) / 180;
 
-  // Динамический радиальный вынос: плавно интерполируем между верхним и боковыми положениями
-  const radialOffset =
-    MARKER_TOP_OFFSET * Math.abs(Math.cos(rad)) +
-    MARKER_SIDE_OFFSET * Math.abs(Math.sin(rad));
-
-  const radius = TILE_OUTER_RADIUS + radialOffset;
-
-  const x = (radius * Math.sin(rad)).toFixed(2);
-  const y = Math.min(0, -radius * Math.cos(rad)).toFixed(2);
+  // Располагаем маркер на внутренней окружности
+  const x = (MARKER_INNER_RADIUS * Math.sin(rad)).toFixed(2);
+  const y = (-MARKER_INNER_RADIUS * Math.cos(rad)).toFixed(2);
 
   return {
     left: `calc(50% + ${x}px)`,
-    top: `calc(50% + ${y}px)`,
+    top: `calc(56% + ${y}px)`,
   };
 });
 
@@ -101,22 +86,22 @@ function interpolateColor(color1: RGBA, color2: RGBA, factor: number) {
 function getTileColor(index: number) {
   const t = index / (TOTAL_TILES - 1);
 
-  const start: RGBA = [245, 195, 145, 1];
-  const mid: RGBA = [231, 86, 66, 1]; // --color-accent-mid (#e75642)
-  const end: RGBA = [219, 59, 53, 1]; // --color-accent-end (#db3b35)
+  const start: RGBA = [233, 100, 82, 0.8];
+  const mid: RGBA = [217, 21, 69, 1];
+  const end: RGBA = [136, 19, 55, 1];
 
-  if (t < 0.75) {
-    return interpolateColor(start, mid, t / 0.75);
+  if (t < 0.7) {
+    return interpolateColor(start, mid, t / 0.7);
   } else {
-    return interpolateColor(mid, end, (t - 0.75) / 0.25);
+    return interpolateColor(mid, end, (t - 0.7) / 0.3);
   }
 }
 </script>
 
 <template>
   <div class="flex flex-col items-center pointer-events-none">
-    <div class="relative w-90 h-45 overflow-visible">
-      <div class="absolute w-full h-75 -left-1.5 top-0">
+    <div class="relative w-80 h-40 overflow-visible">
+      <div class="absolute w-full h-40">
         <div
           v-for="(_, i) in TOTAL_TILES"
           :key="i"
@@ -124,55 +109,28 @@ function getTileColor(index: number) {
           :style="{ transform: tileTransform(i) }"
         >
           <div
-            class="w-3.75 h-10 -ml-2 -mt-5 rounded-[5px] transition-all duration-500 ease-out"
-            :class="i < filledCount ? 'shadow-none' : 'glass-milky'"
+            class="w-2.5 h-9 -ml-1 -mt-3.5 rounded-full transition-all duration-500 ease-out"
             :style="
               i < filledCount
                 ? {
                     backgroundColor: getTileColor(i),
-                    boxShadow: 'var(--shadow-accent-glow)',
+                    boxShadow: `0 0 8px ${getTileColor(i)}`,
                   }
-                : { boxShadow: 'var(--shadow-glass-inner)' }
+                : {
+                    backgroundColor: 'rgba(0, 0, 0, 0.06)',
+                  }
             "
           />
         </div>
 
         <div
           v-if="markerStyle"
-          class="absolute -translate-x-1/5 translate-y-3.5 z-20 transition-all duration-500 ease-out pointer-events-none"
+          class="absolute -translate-x-1/2 -translate-y-1/2 z-20 transition-all duration-500 ease-out pointer-events-none"
           :style="markerStyle"
         >
-          <span class="text-xs font-extrabold text-text-accent">
+          <span class="text-xs font-bold text-text-accent">
             {{ displayPercent }}%
           </span>
-        </div>
-
-        <div
-          class="flex flex-col items-center mt-24 ml-2.5 pointer-events-auto"
-        >
-          <span
-            class="text-text-accent text-xs font-bold uppercase tracking-wider cursor-pointer select-none"
-            @click="viewMode = viewMode === 'budget' ? 'spent' : 'budget'"
-          >
-            {{ currentLabel }}
-          </span>
-          <span
-            class="text-text-primary text-3xl font-extrabold tracking-tight cursor-pointer select-none transition-all duration-200"
-            @click="viewMode = viewMode === 'budget' ? 'spent' : 'budget'"
-          >
-            {{ formatAmount(currentAmount) }}
-          </span>
-
-          <!-- Переключатель режима: Бюджет / Потрачено -->
-          <GlassSegmentedControl
-            v-model="viewMode"
-            :options="[
-              { id: 'budget', label: 'Бюджет' },
-              { id: 'spent', label: 'Потрачено' },
-            ]"
-            size="sm"
-            class="mt-2"
-          />
         </div>
       </div>
     </div>

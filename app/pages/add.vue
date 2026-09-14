@@ -6,10 +6,12 @@
  * Если query-параметр `?edit=<id>` присутствует — работает в режиме редактирования.
  * Иначе — создание новой транзакции.
  */
-import { ref, computed, watch } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
+import GlassTypeSelector from "~/components/GlassTypeSelector.vue";
+import GlassInput from "~/components/GlassInput.vue";
 import GlassButton from "~/components/GlassButton.vue";
-import GlassSegmentedControl from "~/components/GlassSegmentedControl.vue";
 import { useRouter, useRoute } from "vue-router";
+import { Calendar } from "@lucide/vue";
 
 const router = useRouter();
 const route = useRoute();
@@ -99,7 +101,6 @@ const submit = async () => {
   }
 };
 
-// Reset category when type changes (only in create mode)
 watch(type, () => {
   if (!isEditMode.value) {
     categoryId.value = "";
@@ -108,91 +109,91 @@ watch(type, () => {
 </script>
 
 <template>
-  <div class="pt-12 px-6 pb-24 flex flex-col gap-6 min-h-screen">
+  <GlassCard class="flex flex-col gap-5">
     <div class="flex flex-col items-center">
       <h1 class="text-text-primary text-2xl font-bold tracking-tight">
-        {{ isEditMode ? 'Редактирование' : 'Новая операция' }}
+        {{ isEditMode ? "Редактирование" : "Новая операция" }}
       </h1>
       <p class="text-text-secondary text-sm">
-        {{ isEditMode ? 'Изменение данных транзакции' : 'Запись расхода или дохода' }}
+        {{
+          isEditMode ? "Изменение данных транзакции" : "Запись трат или доходов"
+        }}
       </p>
     </div>
 
-    <GlassSegmentedControl
-      v-model="type"
-      :options="[
-        { id: 'expense', label: 'Расход' },
-        { id: 'income', label: 'Доход' },
-      ]"
-    />
-
-    <form class="flex flex-col gap-5 mt-2" @submit.prevent="submit">
-      
+    <form class="flex flex-col gap-5" @submit.prevent="submit">
       <!-- Amount -->
-      <div class="flex flex-col gap-2">
-        <label class="text-sm font-bold text-text-primary pl-2">Сумма (₽)</label>
-        <input
-          v-model="amount"
-          type="number"
-          step="0.01"
-          placeholder="0.00"
-          class="w-full glass-milky rounded-2xl px-5 py-4 text-text-primary font-medium text-lg outline-none placeholder-text-secondary/50 shadow-glass-inner transition-all focus:ring-2 focus:ring-accent-end/30 appearance-none"
-        >
-      </div>
+      <GlassInput
+        v-model="amount"
+        type="number"
+        step="0.01"
+        label="Сумма"
+        placeholder="0.00"
+        icon="₽"
+      />
 
       <!-- Category -->
       <div class="flex flex-col gap-2">
-        <label class="text-sm font-bold text-text-primary pl-2">Категория</label>
+        <label class="text-sm font-bold text-text-primary pl-2"
+          >Категория</label
+        >
         <div class="relative">
           <select
             v-model="categoryId"
-            class="w-full glass-milky rounded-2xl px-5 py-4 text-text-primary font-medium text-base outline-none shadow-glass-inner transition-all focus:ring-2 focus:ring-accent-end/30 appearance-none disabled:opacity-50"
+            class="w-full glass-milky rounded-3xl px-5 py-3 text-text-primary font-medium text-base outline-none shadow-glass transition-all focus-visible:ring-2 focus-visible:ring-text-accent appearance-none disabled:opacity-50"
             :disabled="pending"
           >
             <option value="" disabled>Выберите категорию...</option>
-            <option v-for="cat in filteredCategories" :key="cat.id" :value="cat.id">
+            <option
+              v-for="cat in filteredCategories"
+              :key="cat.id"
+              :value="cat.id"
+            >
               {{ cat.icon }} {{ cat.name }}
             </option>
           </select>
           <!-- Custom arrow -->
-          <div class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary">
+          <div
+            class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary"
+          >
             ▼
           </div>
         </div>
       </div>
 
       <!-- Date -->
-      <div class="flex flex-col gap-2">
-        <label class="text-sm font-bold text-text-primary pl-2">Дата</label>
-        <input
-          v-model="date"
-          type="date"
-          class="w-full glass-milky rounded-2xl px-5 py-4 text-text-primary font-medium text-base outline-none shadow-glass-inner transition-all focus:ring-2 focus:ring-accent-end/30 appearance-none"
-        >
-      </div>
+      <GlassInput v-model="date" type="date" label="Дата" :icon="Calendar" />
 
       <!-- Description -->
-      <div class="flex flex-col gap-2">
-        <label class="text-sm font-bold text-text-primary pl-2">Комментарий</label>
-        <input
-          v-model="description"
-          type="text"
-          placeholder="Например, Обед с коллегами"
-          class="w-full glass-milky rounded-2xl px-5 py-4 text-text-primary font-medium text-base outline-none placeholder-text-secondary/50 shadow-glass-inner transition-all focus:ring-2 focus:ring-accent-end/30 appearance-none"
-        >
-      </div>
+      <GlassInput
+        v-model="description"
+        type="text"
+        label="Комментарий"
+        placeholder="Например, Обед с коллегами"
+      />
 
-      <div v-if="errorMsg" class="text-accent-end text-sm font-medium text-center">
+      <div
+        v-if="errorMsg"
+        class="text-text-accent text-sm font-medium text-center"
+      >
         {{ errorMsg }}
       </div>
 
+      <GlassTypeSelector v-model="type" />
+
       <!-- Submit Button -->
-      <GlassButton type="submit" class="mt-4 py-4 rounded-full" :disabled="isSubmitting || pending">
+      <GlassButton
+        type="submit"
+        variant="primary"
+        class="mt-px py-4 rounded-full"
+        :disabled="isSubmitting || pending"
+      >
         <span v-if="isSubmitting">Сохранение...</span>
         <span v-else-if="isEditMode">Сохранить изменения</span>
-        <span v-else>Добавить {{ type === 'expense' ? 'расход' : 'доход' }}</span>
+        <span v-else
+          >Добавить {{ type === "expense" ? "трату" : "доход" }}</span
+        >
       </GlassButton>
-
     </form>
-  </div>
+  </GlassCard>
 </template>
