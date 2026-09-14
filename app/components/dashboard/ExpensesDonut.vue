@@ -348,8 +348,8 @@ const segments = computed(() => {
 .layout-enter-active,
 .layout-leave-active {
   transition:
-    transform 1.7s cubic-bezier(0.4, 0, 0.2, 1),
-    opacity 1.7s ease-in-out;
+    transform 1.5s cubic-bezier(0.4, 0, 0.2, 1),
+    opacity 1.5s ease-in-out;
 }
 
 .layout-enter-from,
@@ -368,7 +368,7 @@ const segments = computed(() => {
 /* Анимация появления текста в центре кольца */
 .fade-in-enter-active,
 .fade-in-leave-active {
-  transition: opacity 1.7s ease-in-out;
+  transition: opacity 1.5s ease-in-out;
 }
 .fade-in-enter-from,
 .fade-in-leave-to {

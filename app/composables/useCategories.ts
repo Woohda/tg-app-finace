@@ -2,13 +2,13 @@
  * @module app/composables/useCategories
  * @fileoverview Composable для управления категориями (получение и создание)
  * @description
- * Этот модуль предоставляет реактивное состояние списка категорий пользователя (включая системные)
+ * Этот модуль предоставляет реактивное состояние списка категорий пользователя 
  * и методы для взаимодействия с серверным API (`/api/categories`).
  * ---
  * ### Логика работы:
  * 1. `Token Injection`: Получает актуальный JWT токен из composable `useAuth`
  * 2. `State Management`: Хранит реактивный массив `categories`, флаг загрузки `isLoading` и текст ошибки `error`
- * 3. `Fetch Categories`: Запрашивает объединённый список системных и пользовательских категорий через GET-запрос с Bearer-авторизацией
+ * 3. `Fetch Categories`: Запрашивает список категорий пользователя через GET-запрос с Bearer-авторизацией (если категорий нет, бэкенд автоматически скопирует базовые шаблоны).
  * 4. `Create Category`: Отправляет POST-запрос на создание категории, оптимистично добавляет её в локальное состояние с сохранением сортировки
  *
  * ### API:
@@ -17,6 +17,8 @@
  * - `error: Ref<string | null>`: Сообщение об ошибке при выполнении запросов
  * - `fetchCategories()`: Загружает список категорий с сервера
  * - `createCategory(name, type, icon?)`: Создаёт новую категорию и добавляет её в локальный список
+ * - `updateCategory(id, name, icon?)`: Обновляет существующую категорию
+ * - `deleteCategory(id)`: Удаляет категорию (если с ней нет связанных транзакций)
  *
  * ### Параметры createCategory:
  * - `name: string` — наименование категории (обязательное)
@@ -29,8 +31,8 @@
  * - Не выполняет сетевые запросы при отсутствии активной сессии (`token === null`)
  *
  * ### Примечания:
- * - Системные категории имеют `user_id === null` и доступны всем пользователям
- * - Пользовательские категории привязаны к конкретному `user_id` текущей сессии
+ * - Все категории, возвращаемые сервером, принадлежат конкретному пользователю (`user_id` текущей сессии).
+ * - Базовые (системные) категории с `user_id === null` используются бэкендом только как шаблон для клонирования при первой загрузке.
  *
  * ### Зависимости:
  * - `useAuth` из `~/composables/useAuth` (доступ к JWT токену)
@@ -38,7 +40,7 @@
  */
 import type { Database } from "~/types/database.types";
 
-export type Category = Database["public"]["Tables"]["categories"]["Row"];
+type Category = Database["public"]["Tables"]["categories"]["Row"];
 
 export const useCategories = () => {
   const { token } = useAuth();
@@ -100,9 +102,7 @@ export const useCategories = () => {
         body: { name, type, icon },
       });
 
-      // Добавляем новую категорию в локальное состояние
       categories.value.push(newCategory);
-      // Сортируем (как на сервере)
       categories.value.sort((a, b) => {
         if (a.type !== b.type) {
           return a.type === "expense" ? -1 : 1;
@@ -127,11 +127,77 @@ export const useCategories = () => {
     }
   };
 
+  const updateCategory = async (id: string, name: string, icon?: string) => {
+    if (!token.value) return false;
+
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      const updated = await $fetch<Category>(`/api/categories/${id}`, {
+        method: "PUT",
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+        },
+        body: { name, icon },
+      });
+
+      const index = categories.value.findIndex((c) => c.id === id);
+      if (index !== -1) {
+        categories.value[index] = updated;
+        categories.value.sort((a, b) => {
+          if (a.type !== b.type) return a.type === "expense" ? -1 : 1;
+          return a.name.localeCompare(b.name);
+        });
+      }
+      return true;
+    } catch (e: unknown) {
+      console.error("Ошибка обновления категории:", e);
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
+  const deleteCategory = async (id: string) => {
+    if (!token.value) return false;
+
+    isLoading.value = true;
+    error.value = null;
+
+    try {
+      await $fetch(`/api/categories/${id}`, {
+        method: "DELETE",
+        headers: {
+          Authorization: `Bearer ${token.value}`,
+        },
+      });
+
+      categories.value = categories.value.filter((c) => c.id !== id);
+      return true;
+    } catch (e: unknown) {
+      console.error("Ошибка удаления категории:", e);
+      const fetchError = e as {
+        data?: { statusMessage?: string };
+        message?: string;
+      };
+      error.value =
+        fetchError.data?.statusMessage ||
+        fetchError.message ||
+        "Не удалось удалить категорию";
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  };
+
   return {
     categories,
     isLoading,
     error,
     fetchCategories,
     createCategory,
+    updateCategory,
+    deleteCategory,
   };
 };

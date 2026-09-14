@@ -6,7 +6,8 @@
  * Ownership: обновляются только транзакции текущего пользователя.
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "../../../app/types/database.types";
+import type { Database } from "~/types/database.types";
+import { transactionPatchSchema } from "~/types/validate";
 
 export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event);
@@ -14,31 +15,25 @@ export default defineEventHandler(async (event) => {
 
   const id = getRouterParam(event, "id");
   if (!id) {
-    throw createError({ statusCode: 400, statusMessage: "Не указан ID транзакции" });
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Не указан ID транзакции",
+    });
   }
 
-  const body = await readBody(event);
+  const body = await readValidatedBody(event, (body) =>
+    transactionPatchSchema.safeParse(body),
+  );
 
-  const { amount, category_id, type, date, description } = body;
-
-  // Валидация: хотя бы одно поле должно быть передано
-  if (
-    amount === undefined &&
-    category_id === undefined &&
-    type === undefined &&
-    date === undefined &&
-    description === undefined
-  ) {
-    throw createError({ statusCode: 400, statusMessage: "Нет данных для обновления" });
+  if (!body.success) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: body.error.issues[0]?.message || "Ошибка валидации данных",
+      data: body.error.issues,
+    });
   }
 
-  // Валидация отдельных полей (если переданы)
-  if (amount !== undefined && (typeof amount !== "number" || amount <= 0)) {
-    throw createError({ statusCode: 400, statusMessage: "Некорректная сумма" });
-  }
-  if (type !== undefined && !["income", "expense"].includes(type)) {
-    throw createError({ statusCode: 400, statusMessage: "Некорректный тип транзакции" });
-  }
+  const { amount, category_id, type, date, description } = body.data;
 
   // Собираем объект обновления
   const updateData: Database["public"]["Tables"]["transactions"]["Update"] = {};
@@ -53,7 +48,8 @@ export default defineEventHandler(async (event) => {
     .update(updateData)
     .eq("id", id)
     .eq("user_id", userId)
-    .select(`
+    .select(
+      `
       id,
       amount,
       type,
@@ -65,18 +61,27 @@ export default defineEventHandler(async (event) => {
         name,
         icon
       )
-    `)
+    `,
+    )
     .single();
 
   if (error || !data) {
     if (error?.code === "PGRST116") {
-      throw createError({ statusCode: 404, statusMessage: "Транзакция не найдена" });
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Транзакция не найдена",
+      });
     }
     console.error("Ошибка обновления транзакции:", error);
-    throw createError({ statusCode: 500, statusMessage: "Ошибка при обновлении транзакции" });
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Ошибка при обновлении транзакции",
+    });
   }
 
-  const cat = Array.isArray(data.categories) ? data.categories[0] : data.categories;
+  const cat = Array.isArray(data.categories)
+    ? data.categories[0]
+    : data.categories;
   return {
     id: data.id,
     amount: data.amount,

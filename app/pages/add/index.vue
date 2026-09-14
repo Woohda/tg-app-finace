@@ -9,9 +9,11 @@
 import { ref, computed, watch, onMounted } from "vue";
 import GlassTypeSelector from "~/components/GlassTypeSelector.vue";
 import GlassInput from "~/components/GlassInput.vue";
-import GlassButton from "~/components/GlassButton.vue";
+import GlassMorphButton from "~/components/GlassMorphButton.vue";
 import { useRouter, useRoute } from "vue-router";
-import { Calendar } from "@lucide/vue";
+import { Calendar, RussianRuble } from "@lucide/vue";
+import { transactionFrontendSchema } from "~/types/validate";
+import { formatZodError } from "~/utils/zod";
 
 const router = useRouter();
 const route = useRoute();
@@ -36,7 +38,7 @@ const filteredCategories = computed(() => {
   return categories.value.filter((c) => c.type === type.value);
 });
 
-const isSubmitting = ref(false);
+const buttonState = ref<"idle" | "loading" | "success">("idle");
 const errorMsg = ref("");
 
 // Заполняем форму данными транзакции в edit-режиме
@@ -56,47 +58,45 @@ watch(
 );
 
 const submit = async () => {
-  if (!amount.value || amount.value <= 0) {
-    errorMsg.value = "Введите корректную сумму";
-    return;
-  }
-  if (!categoryId.value) {
-    errorMsg.value = "Выберите категорию";
-    return;
-  }
-  if (!date.value) {
-    errorMsg.value = "Выберите дату";
+  const result = transactionFrontendSchema.safeParse({
+    amount: Number(amount.value),
+    categoryId: categoryId.value,
+    date: date.value,
+    type: type.value,
+    description: description.value,
+  });
+
+  if (!result.success) {
+    errorMsg.value = formatZodError(result.error);
     return;
   }
 
   errorMsg.value = "";
-  isSubmitting.value = true;
+  buttonState.value = "loading";
 
   let res: { success: boolean; error?: string };
 
+  const txData = {
+    amount: result.data.amount,
+    category_id: result.data.categoryId,
+    type: result.data.type,
+    date: result.data.date,
+    description: result.data.description || undefined,
+  };
+
   if (isEditMode.value && editId.value) {
-    res = await updateTransaction(editId.value, {
-      amount: Number(amount.value),
-      category_id: categoryId.value,
-      type: type.value,
-      date: date.value,
-      description: description.value || undefined,
-    });
+    res = await updateTransaction(editId.value, txData);
   } else {
-    res = await addTransaction({
-      amount: Number(amount.value),
-      category_id: categoryId.value,
-      type: type.value,
-      date: date.value,
-      description: description.value || undefined,
-    });
+    res = await addTransaction(txData);
   }
 
-  isSubmitting.value = false;
-
   if (res.success) {
-    router.push(isEditMode.value ? "/finreports" : "/");
+    buttonState.value = "success";
+    setTimeout(() => {
+      router.push(isEditMode.value ? "/finreports" : "/");
+    }, 1200); // Ждем завершения красивой анимации успеха перед переходом
   } else {
+    buttonState.value = "idle";
     errorMsg.value = res.error || "Ошибка при сохранении";
   }
 };
@@ -110,15 +110,19 @@ watch(type, () => {
 
 <template>
   <GlassCard class="flex flex-col gap-5">
-    <div class="flex flex-col items-center">
-      <h1 class="text-text-primary text-2xl font-bold tracking-tight">
-        {{ isEditMode ? "Редактирование" : "Новая операция" }}
-      </h1>
-      <p class="text-text-secondary text-sm">
-        {{
-          isEditMode ? "Изменение данных транзакции" : "Запись трат или доходов"
-        }}
-      </p>
+    <div class="flex items-center justify-center gap-3">
+      <div class="flex flex-col text-center">
+        <h1 class="text-text-primary text-xl font-bold tracking-tight">
+          {{ isEditMode ? "Редактирование" : "Новая операция" }}
+        </h1>
+        <p class="text-text-secondary text-xs">
+          {{
+            isEditMode
+              ? "Изменение данных транзакции"
+              : "Запись трат или доходов"
+          }}
+        </p>
+      </div>
     </div>
 
     <form class="flex flex-col gap-5" @submit.prevent="submit">
@@ -182,18 +186,20 @@ watch(type, () => {
       <GlassTypeSelector v-model="type" />
 
       <!-- Submit Button -->
-      <GlassButton
+      <GlassMorphButton
         type="submit"
         variant="primary"
         class="mt-px py-4 rounded-full"
-        :disabled="isSubmitting || pending"
+        :state="buttonState"
+        :disabled="pending"
       >
-        <span v-if="isSubmitting">Сохранение...</span>
-        <span v-else-if="isEditMode">Сохранить изменения</span>
-        <span v-else
-          >Добавить {{ type === "expense" ? "трату" : "доход" }}</span
-        >
-      </GlassButton>
+        <span v-if="isEditMode">💾 Сохранить изменения</span>
+        <span v-else>💸 Внести {{ type === "expense" ? "трату" : "доход" }}</span>
+        
+        <template #success>
+          <RussianRuble class="w-7 h-7" :stroke-width="2" />
+        </template>
+      </GlassMorphButton>
     </form>
   </GlassCard>
 </template>

@@ -7,7 +7,7 @@
  * В production этот файл не должен попадать в бандл.
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "../../../app/types/database.types";
+import type { Database } from "~/types/database.types";
 
 const DEV_TELEGRAM_ID = 999999999;
 const DEV_USERNAME = "dev_user";
