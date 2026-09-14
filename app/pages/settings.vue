@@ -31,7 +31,7 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
     </div>
 
     <GlassCard
-      class="p-6 flex flex-col items-center justify-center gap-3 text-center"
+      class="p-5 flex flex-col items-center justify-center gap-3 text-center"
     >
       <div class="w-full flex gap-3 items-center justify-start">
         <div
@@ -54,8 +54,58 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
           </p>
         </div>
       </div>
+    </GlassCard>
 
-      <GlassButton variant="soft" class="w-full mt-4" @click="logout">
+    <div class="flex flex-col gap-3">
+      <NuxtLink to="/categories" class="block">
+        <GlassCard
+          class="p-5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="size-10 rounded-full glass-milky flex items-center justify-center text-text-primary"
+            >
+              <span class="text-xl">📁</span>
+            </div>
+            <div class="flex flex-col items-start">
+              <span class="text-text-primary font-bold text-base"
+                >Мои категории</span
+              >
+              <span class="text-text-secondary text-xs"
+                >Добавление и редактирование</span
+              >
+            </div>
+          </div>
+          <div class="text-text-secondary">›</div>
+        </GlassCard>
+      </NuxtLink>
+
+      <NuxtLink to="/budget" class="block">
+        <GlassCard
+          class="p-5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="size-10 rounded-full glass-milky flex items-center justify-center text-text-primary"
+            >
+              <span class="text-xl">🎯</span>
+            </div>
+            <div class="flex flex-col items-start">
+              <span class="text-text-primary font-bold text-base"
+                >Бюджет и цели</span
+              >
+              <span class="text-text-secondary text-xs"
+                >Лимиты и накопления</span
+              >
+            </div>
+          </div>
+          <div class="text-text-secondary">›</div>
+        </GlassCard>
+      </NuxtLink>
+    </div>
+
+    <GlassCard class="p-5 text-center">
+      <GlassButton variant="soft" class="w-full" @click="logout">
         Выйти из аккаунта
       </GlassButton>
     </GlassCard>

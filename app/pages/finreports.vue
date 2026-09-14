@@ -49,12 +49,18 @@ const currentLabel = computed(() =>
 <template>
   <div class="flex flex-col gap-5">
     <div class="relative flex items-center justify-center">
-      <NuxtLink to="/" class="w-7 absolute top-px -left-1 text-text-secondary">
-        <ChevronLeft class="size-7" :stroke-width="1.75" />
+      <NuxtLink
+        class="w-10 h-10 absolute top-px -left-1 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 active:scale-95 transition-transform"
+        to="/"
+      >
+        <ChevronLeft class="text-text-primary -ml-px" :stroke-width="1.5" />
       </NuxtLink>
-      <h1 class="text-text-primary font-medium text-xl tracking-wide">
-        Финансовый отчет
-      </h1>
+      <div class="flex flex-col">
+        <h1 class="text-text-primary text-xl font-bold tracking-tight">
+          Финансовый отчет
+        </h1>
+        <p class="text-text-secondary text-xs">Все транзакции</p>
+      </div>
     </div>
 
     <GlassCard class="flex flex-col gap-1 relative overflow-hidden h-49">
