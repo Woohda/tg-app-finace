@@ -5,10 +5,25 @@
  * Принимает реактивный список транзакций из `useTransactions` и предоставляет:
  * - фильтрацию по периодам (день, неделя, месяц)
  * - месячные агрегации (расходы, доходы, баланс)
- * - бюджетный процент
+ * - расчет бюджетного процента
+ * ---
+ * ### Логика работы:
+ * 1. Получает список транзакций
+ * 2. Фильтрует их согласно выбранному периоду (`activePeriod`)
+ * 3. Высчитывает агрегации (доходы, расходы) за месяц
+ * 4. Все computed свойства кешируются Vue и пересчитываются только при изменении зависимостей.
  *
- * Все computed кешируются Vue и пересчитываются только при изменении
- * исходного массива транзакций или активного периода.
+ * ### API:
+ * - `activePeriod: Ref<PeriodType>`: Текущий выбранный период отображения
+ * - `periodOptions: PeriodOption[]`: Доступные опции периодов для UI
+ * - `filteredTransactions: ComputedRef<Transaction[]>`: Транзакции за выбранный период
+ * - `monthlyExpenses: ComputedRef<number>`: Сумма расходов за месяц
+ * - `monthlyIncome: ComputedRef<number>`: Сумма доходов за месяц
+ * - `monthlyBalance: ComputedRef<number>`: Баланс за месяц (доходы - расходы)
+ * - `budgetProgress: ComputedRef<number>`: Процент расхода бюджета (0-100)
+ * 
+ * ### Зависимости:
+ * - `useTransactions` (тип `Transaction`)
  */
 import { ref, computed } from "vue";
 import type { Ref, ComputedRef } from "vue";
@@ -93,9 +108,11 @@ export const useTransactionView = (
 
   const balance = computed(() => monthlyIncome.value - monthlyExpense.value);
 
-  // --- Бюджет (хардкод до Фазы 6) ---
-
-  const monthlyBudget = ref(60000);
+  // --- Бюджет ---
+  const { budget: monthlyBudget, fetchBudget } = useBudgets();
+  
+  // Инициализируем загрузку бюджета
+  fetchBudget();
 
   const monthlyBudgetPercent = computed(() => {
     if (monthlyBudget.value <= 0) return 0;

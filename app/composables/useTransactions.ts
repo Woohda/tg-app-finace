@@ -4,6 +4,22 @@
  * @description
  * Загружает список транзакций и предоставляет методы создания, обновления, удаления.
  * Все запросы защищены заголовком `Authorization: Bearer <token>`.
+ * ---
+ * ### Логика работы:
+ * 1. Инициализирует `useFetch` для получения списка транзакций при загрузке.
+ * 2. Предоставляет CRUD операции через `$fetch`, обновляя локальное состояние через `refresh()`.
+ * 
+ * ### API:
+ * - `transactions: ComputedRef<Transaction[]>`: Вычисляемый массив всех транзакций
+ * - `pending: Ref<boolean>`: Индикатор загрузки из useFetch
+ * - `error: Ref<Error | null>`: Ошибка запроса
+ * - `addTransaction(data)`: Создает новую транзакцию
+ * - `updateTransaction(id, data)`: Обновляет существующую транзакцию
+ * - `deleteTransaction(id)`: Удаляет транзакцию
+ * - `refresh()`: Метод для ручного перезапроса списка транзакций
+ * 
+ * ### Зависимости:
+ * - `useAuth` из `~/composables/useAuth` (доступ к JWT токену)
  */
 import { computed } from "vue";
 
@@ -21,12 +37,10 @@ export interface Transaction {
 export const useTransactions = () => {
   const { token } = useAuth();
 
-  // Реактивные заголовки авторизации
   const authHeaders = computed(() => ({
     Authorization: `Bearer ${token.value}`,
   }));
 
-  // Загружаем транзакции с сервера
   const {
     data: rawTransactions,
     pending,
@@ -37,8 +51,6 @@ export const useTransactions = () => {
   });
 
   const transactions = computed(() => rawTransactions.value || []);
-
-  // --- CRUD ---
 
   const addTransaction = async (data: {
     amount: number;
