@@ -12,7 +12,7 @@ import { computed } from "vue";
 import { getGreeting } from "~/utils";
 import BalanceCard from "~/components/dashboard/BalanceCard.vue";
 import ExpensesDonut from "~/components/dashboard/ExpensesDonut.vue";
-import TransactionItem from "~/components/TransactionItem.vue";
+import TransactionItem from "~/components/shared/TransactionItem.vue";
 import { Bell, ReceiptText } from "@lucide/vue";
 // Импорт моков для истории баланса (пока не реализован расчет исторического баланса)
 import { mockBalanceHistory, mockPercentChange } from "~/mocks/dashboard";

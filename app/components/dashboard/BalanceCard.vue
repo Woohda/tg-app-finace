@@ -13,7 +13,7 @@
  */
 import { computed } from "vue";
 import { formatAmount, formatPercent } from "~/utils";
-import GlassCard from "~/components/GlassCard.vue";
+import GlassCard from "~/components/shared/GlassCard.vue";
 import { line, curveMonotoneX } from "d3-shape";
 import UiSkeleton from "../ui/Skeleton.vue";
 

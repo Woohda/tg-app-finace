@@ -15,7 +15,7 @@ import {
   SquarePen,
   Trash2,
 } from "@lucide/vue";
-import GlassMorphButton from "~/components/GlassMorphButton.vue";
+import GlassMorphButton from "~/components/shared/GlassMorphButton.vue";
 import { categorySchema } from "~/types/validate";
 import { formatZodError } from "~/utils/zod";
 
