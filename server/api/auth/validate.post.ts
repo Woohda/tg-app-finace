@@ -25,7 +25,7 @@
  * - Вся коммуникация с БД происходит от имени администратора (`serverSupabaseServiceRole`).
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "../../../app/types/database.types";
+import type { Database } from "~/types/database.types";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
