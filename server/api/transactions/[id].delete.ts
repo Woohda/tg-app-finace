@@ -6,7 +6,7 @@
  * Ownership: удаляются только транзакции текущего пользователя.
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "../../../app/types/database.types";
+import type { Database } from "~/types/database.types";
 
 export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event);
@@ -14,7 +14,10 @@ export default defineEventHandler(async (event) => {
 
   const id = getRouterParam(event, "id");
   if (!id) {
-    throw createError({ statusCode: 400, statusMessage: "Не указан ID транзакции" });
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Не указан ID транзакции",
+    });
   }
 
   // Проверяем существование и ownership через select перед delete,
@@ -27,7 +30,10 @@ export default defineEventHandler(async (event) => {
     .single();
 
   if (!existing) {
-    throw createError({ statusCode: 404, statusMessage: "Транзакция не найдена" });
+    throw createError({
+      statusCode: 404,
+      statusMessage: "Транзакция не найдена",
+    });
   }
 
   const { error } = await supabase
@@ -38,7 +44,10 @@ export default defineEventHandler(async (event) => {
 
   if (error) {
     console.error("Ошибка удаления транзакции:", error);
-    throw createError({ statusCode: 500, statusMessage: "Ошибка при удалении транзакции" });
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Ошибка при удалении транзакции",
+    });
   }
 
   return { success: true };

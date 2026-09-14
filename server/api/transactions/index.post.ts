@@ -3,29 +3,24 @@
  * @fileoverview Добавление новой транзакции
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "../../../app/types/database.types";
+import type { Database } from "~/types/database.types";
+import { transactionBackendSchema } from "~/types/validate";
 
 export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event);
   const supabase = serverSupabaseServiceRole<Database>(event);
-  
-  const body = await readBody(event);
-  
-  const { amount, category_id, type, date, description } = body;
 
-  // Базовая валидация
-  if (!amount || typeof amount !== 'number' || amount <= 0) {
-    throw createError({ statusCode: 400, statusMessage: "Некорректная сумма" });
+  const body = await readValidatedBody(event, (body) => transactionBackendSchema.safeParse(body));
+
+  if (!body.success) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Ошибка валидации данных",
+      data: body.error.issues,
+    });
   }
-  if (!category_id) {
-    throw createError({ statusCode: 400, statusMessage: "Не указана категория" });
-  }
-  if (!type || !["income", "expense"].includes(type)) {
-    throw createError({ statusCode: 400, statusMessage: "Некорректный тип транзакции" });
-  }
-  if (!date) {
-    throw createError({ statusCode: 400, statusMessage: "Не указана дата" });
-  }
+
+  const { amount, category_id, type, date, description } = body.data;
 
   const { data, error } = await supabase
     .from("transactions")

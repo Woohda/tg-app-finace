@@ -3,7 +3,7 @@
  * @fileoverview Получение списка транзакций текущего пользователя
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "../../../app/types/database.types";
+import type { Database } from "~/types/database.types";
 
 export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event);
@@ -11,7 +11,8 @@ export default defineEventHandler(async (event) => {
 
   const { data, error } = await supabase
     .from("transactions")
-    .select(`
+    .select(
+      `
       id,
       amount,
       type,
@@ -23,7 +24,8 @@ export default defineEventHandler(async (event) => {
         name,
         icon
       )
-    `)
+    `,
+    )
     .eq("user_id", userId)
     .order("date", { ascending: false })
     .order("created_at", { ascending: false });
@@ -41,7 +43,7 @@ export default defineEventHandler(async (event) => {
   const formattedData = data.map((t) => {
     // Явно приводим тип, так как select() возвращает categories как массив или объект в типах
     const cat = Array.isArray(t.categories) ? t.categories[0] : t.categories;
-    
+
     return {
       id: t.id,
       amount: t.amount,
