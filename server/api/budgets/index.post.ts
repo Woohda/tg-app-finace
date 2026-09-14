@@ -28,11 +28,14 @@ export default defineEventHandler(async (event) => {
 
   const { data, error } = await supabase
     .from("budgets")
-    .insert({
-      amount,
-      user_id: userId,
-      period_date: periodDate,
-    })
+    .upsert(
+      {
+        amount,
+        user_id: userId,
+        period_date: periodDate,
+      },
+      { onConflict: "user_id,period_date" }
+    )
     .select("amount")
     .single();
 
