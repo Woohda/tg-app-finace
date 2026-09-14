@@ -30,27 +30,23 @@
  * - `Database` из `~/app/types/database.types`
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "../../../app/types/database.types";
+import type { Database } from "~/types/database.types";
+import { categorySchema } from "~/types/validate";
 
 export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event);
 
-  const body = await readBody(event);
-  const { name, type, icon } = body ?? {};
-
-  if (!name || typeof name !== "string" || name.trim() === "") {
+  const body = await readValidatedBody(event, (body) => categorySchema.safeParse(body));
+  
+  if (!body.success) {
     throw createError({
       statusCode: 400,
-      statusMessage: "Поле 'name' обязательно",
+      statusMessage: "Ошибка валидации данных",
+      data: body.error.issues,
     });
   }
 
-  if (type !== "expense" && type !== "income") {
-    throw createError({
-      statusCode: 400,
-      statusMessage: "Поле 'type' должно быть 'expense' или 'income'",
-    });
-  }
+  const { name, type, icon } = body.data;
 
   const supabase = serverSupabaseServiceRole<Database>(event);
 
