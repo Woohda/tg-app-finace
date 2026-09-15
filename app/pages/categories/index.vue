@@ -218,7 +218,7 @@ const executeDelete = async () => {
       <GlassButton
         variant="soft"
         size="sm"
-        class="px-2.25 absolute right-0 top-1/2 -translate-y-1/2"
+        class="px-2 absolute right-0 top-1/2 -translate-y-1/2"
         @click="openCreateForm('expense')"
       >
         <Plus class="text-text-primary" :stroke-width="1.5" />
@@ -333,7 +333,7 @@ const executeDelete = async () => {
             isEditMode ? "💾 Сохранить изменения" : "✨ Создать"
           }}</span>
           <template v-if="!isEditMode" #success>
-            <SquarePen class="w-7 h-7" :stroke-width="1.5" />
+            <SquarePen :stroke-width="1.5" />
           </template>
         </GlassMorphButton>
       </form>
@@ -367,7 +367,7 @@ const executeDelete = async () => {
           >
             <span>🧨 Сжечь</span>
             <template #success>
-              <Flame class="w-7 h-7" :stroke-width="1.5" />
+              <Flame :stroke-width="1.5" />
             </template>
           </GlassMorphButton>
         </div>

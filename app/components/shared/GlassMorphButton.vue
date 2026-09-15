@@ -101,7 +101,7 @@ watch(
         v-if="state === 'loading'"
         class="absolute inset-0 flex items-center justify-center"
       >
-        <UiLoader />
+        <Loader />
       </div>
     </Transition>
 
@@ -119,7 +119,7 @@ watch(
         class="absolute inset-0 flex items-center justify-center"
       >
         <slot name="success">
-          <Check class="w-7 h-7" :stroke-width="2" />
+          <Check class="w-8 h-8" :stroke-width="2" />
         </slot>
       </div>
     </Transition>
