@@ -22,94 +22,99 @@ const segments = [
     viewBox="0 0 160 160"
   >
     <defs>
-      <!-- Дублируем фильтр, чтобы он был доступен, когда основной SVG скрыт -->
-      <filter
-        id="glossy-volumetric-skeleton"
-        x="-30%"
-        y="-30%"
-        width="160%"
-        height="160%"
-        color-interpolation-filters="sRGB"
-      >
-        <!-- 1. Внутреннее свечение / Объем (Слева сверху) -->
-        <feGaussianBlur in="SourceAlpha" stdDeviation="4" result="blurLight" />
-        <feOffset dx="-3" dy="-3" in="blurLight" result="offsetBlurLight" />
-        <feComposite
-          in="SourceAlpha"
-          in2="offsetBlurLight"
-          operator="out"
-          result="highlightArea"
-        />
-        <feFlood
-          flood-color="#ffffff"
-          flood-opacity="0.6"
-          result="highlightColor"
-        />
-        <feComposite
-          in="highlightColor"
-          in2="highlightArea"
-          operator="in"
-          result="highlight"
-        />
-
-        <!-- 2. Темная внутренняя тень (Справа снизу) -->
-        <feGaussianBlur in="SourceAlpha" stdDeviation="5" result="blurDark" />
-        <feOffset dx="2" dy="2" in="blurDark" result="offsetBlurDark" />
-        <feComposite
-          in="SourceAlpha"
-          in2="offsetBlurDark"
-          operator="out"
-          result="shadowArea"
-        />
-        <feFlood
-          flood-color="#000000"
-          flood-opacity="0.2"
-          result="shadowColor"
-        />
-        <feComposite
-          in="shadowColor"
-          in2="shadowArea"
-          operator="in"
-          result="innerShadow"
-        />
-
-        <!-- 3. Мягкая внешняя тень -->
-        <feDropShadow
-          in="SourceAlpha"
-          dx="0"
-          dy="1"
-          stdDeviation="6"
-          flood-color="rgba(0,0,0,0.1)"
-          result="drop"
-        />
-
-        <!-- Объединяем все слои -->
-        <feMerge>
-          <feMergeNode in="drop" />
-          <feMergeNode in="SourceGraphic" />
-          <feMergeNode in="innerShadow" />
-          <feMergeNode in="highlight" />
-        </feMerge>
+      <filter id="blur-sm" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="1.5" />
+      </filter>
+      <filter id="blur-md" x="-20%" y="-20%" width="140%" height="140%">
+        <feGaussianBlur stdDeviation="3.5" />
       </filter>
     </defs>
 
-    <circle
-      v-for="seg in segments"
-      :key="seg.id"
-      cx="80"
-      cy="80"
-      :r="67"
-      fill="none"
-      :stroke="seg.color"
-      :stroke-width="24"
-      stroke-linecap="round"
-      filter="url(#glossy-volumetric-skeleton)"
-      class="skeleton-segment"
-      :style="{
-        transform: `rotate(${seg.rotation}deg)`,
-        transformOrigin: '50% 50%',
-      }"
-    />
+    <!-- Группа с отбрасываемой тенью -->
+    <g style="filter: drop-shadow(0px 6px 8px rgba(0, 0, 0, 0.22))">
+      <!-- 1. Базовые цветные сегменты -->
+      <g>
+        <circle
+          v-for="seg in segments"
+          :key="'base-' + seg.id"
+          cx="80"
+          cy="80"
+          :r="67"
+          fill="none"
+          :stroke="seg.color"
+          :stroke-width="24"
+          stroke-linecap="round"
+          class="skeleton-base"
+          :style="{
+            transform: `rotate(${seg.rotation}deg)`,
+            transformOrigin: '50% 50%',
+          }"
+        />
+      </g>
+
+      <!-- 2. Внешняя глубокая тень -->
+      <g filter="url(#blur-md)">
+        <circle
+          v-for="seg in segments"
+          :key="'shadow-' + seg.id"
+          cx="80"
+          cy="80"
+          :r="74"
+          fill="none"
+          stroke="black"
+          :stroke-width="8"
+          stroke-opacity="0.25"
+          stroke-linecap="round"
+          class="pointer-events-none skeleton-shadow"
+          :style="{
+            transform: `rotate(${seg.rotation}deg)`,
+            transformOrigin: '50% 50%',
+          }"
+        />
+      </g>
+
+      <!-- 3. Широкий мягкий блик -->
+      <g filter="url(#blur-md)">
+        <circle
+          v-for="seg in segments"
+          :key="'high-' + seg.id"
+          cx="80"
+          cy="80"
+          :r="62"
+          fill="none"
+          stroke="white"
+          :stroke-width="4"
+          stroke-opacity="0.15"
+          stroke-linecap="round"
+          class="pointer-events-none skeleton-high"
+          :style="{
+            transform: `rotate(${seg.rotation}deg)`,
+            transformOrigin: '50% 50%',
+          }"
+        />
+      </g>
+
+      <!-- 4. Узкий резкий блик -->
+      <g filter="url(#blur-sm)">
+        <circle
+          v-for="seg in segments"
+          :key="'sharp-' + seg.id"
+          cx="80"
+          cy="80"
+          :r="59"
+          fill="none"
+          stroke="white"
+          :stroke-width="1"
+          stroke-opacity="0.25"
+          stroke-linecap="round"
+          class="pointer-events-none skeleton-sharp"
+          :style="{
+            transform: `rotate(${seg.rotation}deg)`,
+            transformOrigin: '50% 50%',
+          }"
+        />
+      </g>
+    </g>
   </svg>
 </template>
 
@@ -120,34 +125,40 @@ const segments = [
 }
 
 @keyframes spin-slow {
-  0% {
-    transform: rotate(-90deg);
-  }
-  100% {
-    transform: rotate(270deg);
-  }
+  0% { transform: rotate(-90deg); }
+  100% { transform: rotate(270deg); }
 }
 
-.skeleton-segment {
-  /* Анимация "гусеницы": растягивание и сжатие в точку */
-  animation: stretch-segment 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+.skeleton-base { animation: stretch-base 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.skeleton-shadow { animation: stretch-shadow 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.skeleton-high { animation: stretch-high 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.skeleton-sharp { animation: stretch-sharp 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+
+/* Base (r=67, C=421) */
+@keyframes stretch-base {
+  0%   { stroke-dasharray: 0, 421; stroke-dashoffset: 0; }
+  50%  { stroke-dasharray: 60, 361; stroke-dashoffset: -500; }
+  100% { stroke-dasharray: 0, 421; stroke-dashoffset: -84.2; }
 }
 
-@keyframes stretch-segment {
-  0% {
-    /* Точка */
-    stroke-dasharray: 0, 421;
-    stroke-dashoffset: 0;
-  }
-  50% {
-    /* Растянутая линия */
-    stroke-dasharray: 60, 361;
-    stroke-dashoffset: -500;
-  }
-  100% {
-    /* Снова точка, но смещенная на 1/5 длины окружности (420.97 / 5 = 84.195) */
-    stroke-dasharray: 0, 421;
-    stroke-dashoffset: -84.195;
-  }
+/* Shadow (r=74, C=465) - scale = 1.1045 */
+@keyframes stretch-shadow {
+  0%   { stroke-dasharray: 0, 465; stroke-dashoffset: 0; }
+  50%  { stroke-dasharray: 66.3, 398.7; stroke-dashoffset: -552.2; }
+  100% { stroke-dasharray: 0, 465; stroke-dashoffset: -93; }
+}
+
+/* Highlight (r=62, C=390) - scale = 0.9254 */
+@keyframes stretch-high {
+  0%   { stroke-dasharray: 0, 390; stroke-dashoffset: 0; }
+  50%  { stroke-dasharray: 55.5, 334.5; stroke-dashoffset: -462.7; }
+  100% { stroke-dasharray: 0, 390; stroke-dashoffset: -77.9; }
+}
+
+/* Sharp (r=59, C=371) - scale = 0.8806 */
+@keyframes stretch-sharp {
+  0%   { stroke-dasharray: 0, 371; stroke-dashoffset: 0; }
+  50%  { stroke-dasharray: 52.8, 318.2; stroke-dashoffset: -440.3; }
+  100% { stroke-dasharray: 0, 371; stroke-dashoffset: -74.1; }
 }
 </style>
