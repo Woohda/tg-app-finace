@@ -9,6 +9,7 @@ import { computed } from "vue";
  * навигацию к управлению бюджетом и категориями.
  */
 const { user, tgUser, logout } = useAuth();
+const isLoading = useGlobalLoading();
 
 const userName = computed(() => {
   if (tgUser.value?.first_name) {
@@ -21,6 +22,13 @@ const userName = computed(() => {
 });
 
 const avatarUrl = computed(() => tgUser.value?.photo_url || null);
+
+const handleLogout = async () => {
+  isLoading.value = true;
+  logout();
+  await navigateTo("/login");
+  isLoading.value = false;
+};
 </script>
 
 <template>
@@ -101,8 +109,13 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
     </div>
 
     <GlassCard class="p-5 text-center">
-      <GlassButton variant="soft" class="w-full" @click="logout">
-        Выйти из аккаунта
+      <GlassButton
+        variant="soft"
+        class="w-full"
+        :disabled="isLoading"
+        @click="handleLogout"
+      >
+        {{ isLoading ? "Выход..." : "Выйти из аккаунта" }}
       </GlassButton>
     </GlassCard>
   </div>
