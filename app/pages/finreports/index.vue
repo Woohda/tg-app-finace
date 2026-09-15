@@ -10,7 +10,12 @@
 
 const router = useRouter();
 
-const { pending, transactions, deleteTransaction } = useTransactions();
+const { startDate, endDate, currentDate, prevMonth, nextMonth } =
+  useDateFilter();
+const { pending, transactions, deleteTransaction } = useTransactions({
+  startDate,
+  endDate,
+});
 const {
   activePeriod,
   periods,
@@ -41,7 +46,7 @@ const currentAmount = computed(() =>
 );
 
 const currentLabel = computed(() =>
-  viewMode.value === "budget" ? "Бюджет на этот месяц" : "Потрачено за месяц",
+  viewMode.value === "budget" ? "Бюджет на этот месяц" : "Потрачено за период",
 );
 </script>
 
@@ -58,12 +63,15 @@ const currentLabel = computed(() =>
       </div>
     </div>
 
+    <!-- Селектор месяца -->
+    <MonthSelector :date="currentDate" @prev="prevMonth" @next="nextMonth" />
+
     <GlassCard class="flex flex-col gap-1 relative overflow-hidden h-49">
       <div class="z-10 flex justify-between items-start">
         <!-- Состояние загрузки: Скелетоны текста -->
         <div v-if="pending" class="flex flex-col gap-2 py-1">
           <Skeleton class="w-30 h-4" />
-          <Skeleton class="w-40 h-9 rounded-lg" />
+          <Skeleton class="w-40 h-9" />
           <Skeleton class="w-20 h-3" />
         </div>
 
@@ -112,18 +120,7 @@ const currentLabel = computed(() =>
 
       <!-- Скелетоны транзакций (загрузка) -->
       <div v-if="pending" class="flex flex-col gap-3">
-        <div
-          v-for="i in 4"
-          :key="i"
-          class="flex items-center gap-3 pb-3 border-b border-black/6 last:border-none"
-        >
-          <Skeleton class="w-12 h-12" rounded="rounded-2xl" />
-          <div class="flex-1 flex flex-col gap-2">
-            <Skeleton class="w-35 h-4" />
-            <Skeleton class="w-15 h-3" />
-          </div>
-          <Skeleton class="w-17 h-5" rounded="rounded-2xl" />
-        </div>
+        <TransactionSkeletonList :count="4" mode="list" />
       </div>
 
       <!-- Список транзакций -->
