@@ -104,7 +104,7 @@ const currentLabel = computed(() =>
     </GlassCard>
 
     <!-- Финансовый раздел: Список операций -->
-    <GlassCard class="relative z-10">
+    <GlassCard class="relative z-10 pb-0">
       <div class="flex flex-col gap-3 mb-5">
         <h2 class="text-lg font-bold text-text-primary tracking-tight">
           Записанные транзакции
