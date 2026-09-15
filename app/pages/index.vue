@@ -11,12 +11,10 @@
 import { computed } from "vue";
 import { getGreeting } from "~/utils";
 import { Bell, ReceiptText } from "@lucide/vue";
-// Импорт моков для истории баланса (пока не реализован расчет исторического баланса)
-import { mockBalanceHistory, mockPercentChange } from "~/mocks/dashboard";
 
 const { user, tgUser } = useAuth();
 const { transactions, pending } = useTransactions();
-const { balance } = useTransactionView(transactions);
+const { balance, monthlyExpense } = useTransactionView(transactions);
 
 const greeting = getGreeting();
 const userName = computed(() => {
@@ -31,9 +29,28 @@ const userName = computed(() => {
 
 const avatarUrl = computed(() => tgUser.value?.photo_url || null);
 
-// 1. Данные баланса
-const balanceHistory = mockBalanceHistory; // TODO: Реализовать расчет на бэкенде
-const percentChange = mockPercentChange; // TODO: Реализовать расчет на бэкенде
+// 1. Данные баланса (используем реальный текущий баланс)
+// TODO: Расчет исторического графика по дням на бэкенде. Пока строим кумулятивный график из транзакций
+const percentChange = 0; // TODO: Сравнение с прошлым месяцем
+
+const balanceHistory = computed(() => {
+  if (transactions.value.length === 0) return [0, 0];
+  
+  // Строим простой график изменения баланса от начала месяца к текущему дню
+  let currentBal = 0;
+  const history = [0];
+  
+  // Идем от старых к новым (сортировка по дате)
+  const sorted = [...transactions.value].sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  
+  sorted.forEach(t => {
+    if (t.type === 'income') currentBal += t.amount;
+    if (t.type === 'expense') currentBal -= t.amount;
+    history.push(currentBal);
+  });
+  
+  return history;
+});
 
 // 2. Данные бюджета
 // Агрегируем расходы по категориям
@@ -135,7 +152,7 @@ const recentTransactions = computed(() => transactions.value.slice(0, 5));
     />
 
     <!-- Главный контент: Топ-5 категорий расходов -->
-    <ExpensesDonut :categories="expensesByCategory" :is-loading="pending" />
+    <ExpensesDonut :categories="expensesByCategory" :total-expense="monthlyExpense" :is-loading="pending" />
 
     <!-- 3. Секция последних операций -->
     <div v-if="pending" class="flex flex-col gap-4 mt-2 px-5">

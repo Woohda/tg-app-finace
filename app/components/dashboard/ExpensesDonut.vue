@@ -14,7 +14,7 @@
  */
 import { computed } from "vue";
 import { formatAmount } from "~/utils";
-import { mockTotalExpense } from "~/mocks/dashboard";
+
 import { ChartColumn } from "@lucide/vue";
 
 export interface CategoryBudgetData {
@@ -28,6 +28,7 @@ export interface CategoryBudgetData {
 const props = defineProps<{
   categories: CategoryBudgetData[];
   isLoading?: boolean;
+  totalExpense?: number;
 }>();
 
 const radius = 67;
@@ -38,7 +39,9 @@ const visualGap = 0;
 const minDash = strokeWidth + visualGap;
 
 const localTotal = computed(() =>
-  props.categories.reduce((acc, cat) => acc + cat.amount, 0),
+  props.totalExpense !== undefined 
+    ? props.totalExpense 
+    : props.categories.reduce((acc, cat) => acc + cat.amount, 0),
 );
 
 const segments = computed(() => {
@@ -299,7 +302,7 @@ const segments = computed(() => {
                 >Потрачено</span
               >
               <span class="text-md font-extrabold text-text-primary">{{
-                formatAmount(mockTotalExpense)
+                formatAmount(localTotal)
               }}</span>
             </div>
           </Transition>

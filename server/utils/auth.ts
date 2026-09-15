@@ -81,7 +81,7 @@ export async function generateJWT(
 ): Promise<string> {
   const secretKey = new TextEncoder().encode(secret);
 
-  const iat = Math.floor(Date.now() / 1000) - 60; // Вычитаем 60 секунд для компенсации рассинхронизации времени с БД
+  const iat = Math.floor(Date.now() / 1000) - 300; // Вычитаем 5 минут для компенсации рассинхронизации времени с БД
 
   return await new SignJWT({ sub: userId })
     .setProtectedHeader({ alg: "HS256" })
