@@ -133,6 +133,7 @@ const currentLabel = computed(() =>
           :key="tx.id"
           :icon="tx.categoryIcon"
           :name="tx.categoryName"
+          :description="tx.description"
           :amount="tx.amount"
           :type="tx.type"
           :date="tx.date"

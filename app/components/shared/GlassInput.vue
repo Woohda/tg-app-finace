@@ -1,5 +1,13 @@
 <script setup lang="ts">
+/**
+ * @module app/components/shared/GlassInput
+ * @fileoverview Универсальное поле ввода в стиле Glassmorphism
+ * @description
+ * Кастомный инпут для форм (сумма, название и др.). Поддерживает иконку слева,
+ * кастомные placeholder и label. Имеет единый закругленный дизайн (glass-milky).
+ */
 import { computed } from "vue";
+import type { Component } from "vue";
 import { Input } from "~/components/ui/input";
 
 const props = defineProps<{
@@ -7,7 +15,7 @@ const props = defineProps<{
   label?: string;
   placeholder?: string;
   type?: string;
-  icon?: string | object;
+  icon?: string | object | Component;
   step?: string | number;
 }>();
 
@@ -29,7 +37,7 @@ const value = computed({
     <div class="relative flex items-center">
       <div
         v-if="$slots.icon || icon"
-        class="absolute left-5 flex items-center justify-center text-text-secondary pointer-events-none z-10"
+        class="absolute left-3 flex items-center justify-center text-text-secondary pointer-events-none z-10"
       >
         <slot name="icon">
           <component
@@ -48,8 +56,8 @@ const value = computed({
         :step="step"
         :placeholder="placeholder"
         :class="[
-          'bg-transparent glass-milky rounded-3xl px-5 py-6 text-text-primary font-medium text-base outline-none border-none focus-visible:ring-2 focus-visible:ring-text-accent',
-          $slots.icon || icon ? 'pl-11' : '',
+          'bg-transparent glass-milky rounded-full px-5 py-5 text-text-primary font-medium text-base outline-none border-none focus-visible:ring-2 focus-visible:ring-text-accent',
+          $slots.icon || icon ? 'pl-9' : '',
         ]"
       />
     </div>
