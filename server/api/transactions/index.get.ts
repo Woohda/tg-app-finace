@@ -9,6 +9,19 @@ export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event);
   const supabase = serverSupabaseServiceRole<Database>(event);
 
+  const query = getQuery(event);
+
+  const defaultStartDate = new Date();
+  defaultStartDate.setMonth(defaultStartDate.getMonth() - 1);
+  defaultStartDate.setHours(0, 0, 0, 0);
+
+  const startDate = query.startDate
+    ? new Date(query.startDate as string)
+    : defaultStartDate;
+  const endDate = query.endDate
+    ? new Date(query.endDate as string)
+    : new Date();
+
   const { data, error } = await supabase
     .from("transactions")
     .select(
@@ -27,6 +40,8 @@ export default defineEventHandler(async (event) => {
     `,
     )
     .eq("user_id", userId)
+    .gte("date", startDate.toISOString())
+    .lte("date", endDate.toISOString())
     .order("date", { ascending: false })
     .order("created_at", { ascending: false });
 
@@ -38,10 +53,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Supabase возвращает связанные таблицы как объект (или массив, зависит от схемы, в нашем случае объект)
-  // Форматируем под интерфейс, который ожидает клиент (как в моках)
   const formattedData = data.map((t) => {
-    // Явно приводим тип, так как select() возвращает categories как массив или объект в типах
     const cat = Array.isArray(t.categories) ? t.categories[0] : t.categories;
 
     return {

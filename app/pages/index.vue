@@ -11,12 +11,12 @@
 import { computed } from "vue";
 import { getGreeting } from "~/utils";
 import { Bell, ReceiptText } from "@lucide/vue";
-// Импорт моков для истории баланса (пока не реализован расчет исторического баланса)
-import { mockBalanceHistory, mockPercentChange } from "~/mocks/dashboard";
 
 const { user, tgUser } = useAuth();
 const { transactions, pending } = useTransactions();
-const { balance } = useTransactionView(transactions);
+const { balance, monthlyExpense } = useTransactionView(transactions);
+const { balanceHistory, expensesByCategory, recentTransactions } =
+  useDashboardStats(transactions);
 
 const greeting = getGreeting();
 const userName = computed(() => {
@@ -31,79 +31,16 @@ const userName = computed(() => {
 
 const avatarUrl = computed(() => tgUser.value?.photo_url || null);
 
-// 1. Данные баланса
-const balanceHistory = mockBalanceHistory; // TODO: Реализовать расчет на бэкенде
-const percentChange = mockPercentChange; // TODO: Реализовать расчет на бэкенде
-
-// 2. Данные бюджета
-// Агрегируем расходы по категориям
-const expensesByCategory = computed(() => {
-  const expenseMap = new Map<
-    string,
-    { amount: number; name: string; icon: string | null }
-  >();
-
-  transactions.value
-    .filter((t) => t.type === "expense")
-    .forEach((t) => {
-      const current = expenseMap.get(t.categoryId) || {
-        amount: 0,
-        name: t.categoryName,
-        icon: t.categoryIcon,
-      };
-      current.amount += t.amount;
-      expenseMap.set(t.categoryId, current);
-    });
-
-  // Сортируем и берем топ-5
-  const sorted = Array.from(expenseMap.entries())
-    .map(([id, data]) => {
-      return {
-        id,
-        name: data.name,
-        icon: data.icon,
-        amount: data.amount,
-      };
-    })
-    .sort((a, b) => b.amount - a.amount)
-    .slice(0, 5);
-
-  // Назначаем более контрастные и насыщенные цвета
-  const colors = [
-    "#E11D48", // Насыщенный красный/рубин (Rose 600)
-    "#C026D3", // Глубокий фуксия (Fuchsia 600)
-    "#7C3AED", // Яркий фиолетовый (Violet 600)
-    "#EA580C", // Насыщенный оранжевый (Orange 600)
-    "#D97706", // Яркий янтарный/золотой (Amber 600)
-  ];
-
-  return sorted.map((cat, index) => ({
-    ...cat,
-    color: colors[index % colors.length] as string,
-  }));
-});
-
-// 3. Данные транзакций
-const recentTransactions = computed(() => transactions.value.slice(0, 5));
+// 1. Данные баланса (используем реальный текущий баланс)
+// TODO: Расчет исторического графика по дням на бэкенде. Пока строим кумулятивный график из транзакций
+const percentChange = 0; // TODO: Сравнение с прошлым месяцем
 </script>
 
 <template>
   <div class="relative flex flex-col gap-5">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <!-- Аватарка -->
-        <div
-          class="w-10 h-10 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 overflow-hidden"
-          style="box-shadow: var(--shadow-glass-flat)"
-        >
-          <img
-            v-if="avatarUrl"
-            :src="avatarUrl"
-            alt="Avatar"
-            class="w-full h-full object-cover"
-          />
-          <span v-else>👱‍♀️</span>
-        </div>
+        <Avatar :src="avatarUrl" />
         <p class="text-text-primary font-bold">{{ userName }}</p>
       </div>
 
@@ -135,28 +72,21 @@ const recentTransactions = computed(() => transactions.value.slice(0, 5));
     />
 
     <!-- Главный контент: Топ-5 категорий расходов -->
-    <ExpensesDonut :categories="expensesByCategory" :is-loading="pending" />
+    <ExpensesDonut
+      :categories="expensesByCategory"
+      :total-expense="monthlyExpense"
+      :is-loading="pending"
+    />
 
     <!-- 3. Секция последних операций -->
     <div v-if="pending" class="flex flex-col gap-4 mt-2 px-5">
       <!-- Скелетон заголовка "Последние операции" -->
       <div class="flex justify-between items-end px-1 mb-2">
-        <Skeleton class="w-40 h-7" />
+        <Skeleton class="w-50 h-6" />
         <Skeleton class="w-7 h-7" />
       </div>
       <!-- Скелетоны транзакций -->
-      <div
-        v-for="i in 4"
-        :key="i"
-        class="flex items-center gap-3 bg-card-bg p-4 rounded-2xl"
-      >
-        <Skeleton class="w-10 h-10 rounded-full shrink-0" />
-        <div class="flex-1 flex flex-col gap-2">
-          <Skeleton class="w-30 h-4" />
-          <Skeleton class="w-15 h-3" />
-        </div>
-        <Skeleton class="w-16 h-5" />
-      </div>
+      <TransactionSkeletonList :count="4" />
     </div>
     <div v-else class="flex flex-col gap-4 mt-2 px-5">
       <div class="flex justify-between items-end px-1">

@@ -54,7 +54,7 @@ const close = () => {
         <GlassCard
           :class="
             cn(
-              'w-full max-w-90 p-6 flex flex-col gap-5 glass-milky',
+              'w-full max-w-90 p-5 flex flex-col gap-5 glass-milky',
               position === 'bottom'
                 ? 'animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200'
                 : 'animate-in zoom-in-95 duration-200',
@@ -76,7 +76,7 @@ const close = () => {
               v-if="showClose"
               variant="soft"
               size="sm"
-              class="px-2.25 text-text-primary shrink-0"
+              class="px-2 text-text-primary shrink-0"
               @click="close"
             >
               <X :stroke-width="1.5" />

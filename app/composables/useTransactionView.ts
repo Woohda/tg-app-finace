@@ -67,6 +67,9 @@ export const useTransactionView = (
   // --- Фильтрация по периоду ---
 
   const filteredTransactions = computed<Transaction[]>(() => {
+    if (activePeriod.value === "month") {
+      return transactions.value; // Бэкенд уже вернул нужный месяц
+    }
     const periodStart = getPeriodStart(activePeriod.value);
     return transactions.value.filter(
       (t) => new Date(t.date) >= periodStart,
@@ -80,18 +83,15 @@ export const useTransactionView = (
       case "week":
         return "За эту неделю трат нет";
       case "month":
-        return "За этот месяц трат нет";
+        return "За этот период трат нет";
     }
   });
 
   // --- Месячные агрегации ---
-  // Всегда считаются за последний месяц, независимо от activePeriod
+  // Всегда считаются за весь загруженный список (бэкенд уже фильтрует по месяцу)
 
   const monthlyTransactions = computed(() => {
-    const monthStart = getPeriodStart("month");
-    return transactions.value.filter(
-      (t) => new Date(t.date) >= monthStart,
-    );
+    return transactions.value;
   });
 
   const monthlyExpense = computed(() =>

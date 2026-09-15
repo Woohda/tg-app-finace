@@ -20,7 +20,7 @@ definePageMeta({
   layout: false,
 });
 
-const isLoading = ref(false);
+const isLoading = useGlobalLoading();
 const errorMessage = ref<string | null>(null);
 const isInTelegram = ref(false);
 
@@ -28,14 +28,14 @@ const handleLogin = async () => {
   errorMessage.value = null;
   isLoading.value = true;
   const success = await initTelegramAuth();
-  isLoading.value = false;
 
   if (success) {
-    router.replace("/");
+    await router.replace("/");
   } else {
     errorMessage.value =
       "Не удалось авторизоваться через Telegram. Попробуйте еще раз.";
   }
+  isLoading.value = false;
 };
 
 const handleDevLogin = async () => {
@@ -43,13 +43,13 @@ const handleDevLogin = async () => {
   isLoading.value = true;
 
   const success = await devLogin();
-  isLoading.value = false;
 
   if (success) {
-    router.replace("/");
+    await router.replace("/");
   } else {
     errorMessage.value = "Ошибка dev-авторизации";
   }
+  isLoading.value = false;
 };
 
 onMounted(async () => {

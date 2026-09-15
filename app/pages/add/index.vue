@@ -187,7 +187,7 @@ watch(type, () => {
         type="submit"
         variant="primary"
         class="mt-px py-4 rounded-full"
-        :state="buttonState"
+        :state="'success'"
         :disabled="pending"
       >
         <span v-if="isEditMode">💾 Сохранить изменения</span>
@@ -196,7 +196,7 @@ watch(type, () => {
         >
 
         <template #success>
-          <RussianRuble class="w-7 h-7" :stroke-width="2" />
+          <RussianRuble :stroke-width="2" />
         </template>
       </GlassMorphButton>
     </form>

@@ -19,16 +19,17 @@
  * - `useAuth` из `~/composables/useAuth` (доступ к JWT токену)
  */
 import { ref } from "vue";
+import { parseApiError } from "~/utils/api";
 
 export const useBudgets = () => {
   const { token } = useAuth();
 
-  const budget = ref(0);
+  const budget = useGlobalBudget();
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
   const fetchBudget = async () => {
-    if (!token.value) return;
+    if (!token.value || isLoading.value) return;
 
     isLoading.value = true;
     error.value = null;
@@ -44,13 +45,14 @@ export const useBudgets = () => {
       }
     } catch (e: unknown) {
       console.error("Ошибка загрузки бюджета:", e);
+      error.value = parseApiError(e, "Не удалось загрузить бюджет");
     } finally {
       isLoading.value = false;
     }
   };
 
   const updateBudget = async (amount: number) => {
-    if (!token.value) return false;
+    if (!token.value || isLoading.value) return false;
 
     isLoading.value = true;
     error.value = null;
@@ -70,14 +72,7 @@ export const useBudgets = () => {
       return true;
     } catch (e: unknown) {
       console.error("Ошибка сохранения бюджета:", e);
-      const fetchError = e as {
-        data?: { statusMessage?: string };
-        message?: string;
-      };
-      error.value =
-        fetchError.data?.statusMessage ||
-        fetchError.message ||
-        "Не удалось сохранить бюджет";
+      error.value = parseApiError(e, "Не удалось сохранить бюджет");
       return false;
     } finally {
       isLoading.value = false;
