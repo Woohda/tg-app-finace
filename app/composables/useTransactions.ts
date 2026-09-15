@@ -8,7 +8,7 @@
  * ### Логика работы:
  * 1. Инициализирует `useFetch` для получения списка транзакций при загрузке.
  * 2. Предоставляет CRUD операции через `$fetch`, обновляя локальное состояние через `refresh()`.
- * 
+ *
  * ### API:
  * - `transactions: ComputedRef<Transaction[]>`: Вычисляемый массив всех транзакций
  * - `pending: Ref<boolean>`: Индикатор загрузки из useFetch
@@ -17,11 +17,12 @@
  * - `updateTransaction(id, data)`: Обновляет существующую транзакцию
  * - `deleteTransaction(id)`: Удаляет транзакцию
  * - `refresh()`: Метод для ручного перезапроса списка транзакций
- * 
+ *
  * ### Зависимости:
  * - `useAuth` из `~/composables/useAuth` (доступ к JWT токену)
  */
-import { computed } from "vue";
+import { computed, type Ref } from "vue";
+import { parseApiError } from "~/utils/api";
 
 export interface Transaction {
   id: string;
@@ -34,12 +35,27 @@ export interface Transaction {
   date: string;
 }
 
-export const useTransactions = () => {
+export const useTransactions = (options?: { startDate?: Ref<Date>; endDate?: Ref<Date> }) => {
   const { token } = useAuth();
 
   const authHeaders = computed(() => ({
     Authorization: `Bearer ${token.value}`,
   }));
+
+  const query = computed(() => {
+    const q: Record<string, string> = {};
+    if (options?.startDate?.value) {
+      q.startDate = options.startDate.value.toISOString();
+    }
+    if (options?.endDate?.value) {
+      q.endDate = options.endDate.value.toISOString();
+    }
+    return q;
+  });
+
+  const cacheKey = computed(() => {
+    return `transactions-list-${query.value.startDate || 'default'}-${query.value.endDate || 'default'}`;
+  });
 
   const {
     data: rawTransactions,
@@ -48,6 +64,9 @@ export const useTransactions = () => {
     refresh,
   } = useFetch<Transaction[]>("/api/transactions", {
     headers: authHeaders,
+    query,
+    key: cacheKey.value,
+    watch: [query],
   });
 
   const transactions = computed(() => rawTransactions.value || []);
@@ -59,6 +78,7 @@ export const useTransactions = () => {
     date: string;
     description?: string;
   }) => {
+    if (pending.value) return { success: false, error: "Запрос уже выполняется" };
     try {
       const newTx = await $fetch<Transaction>("/api/transactions", {
         method: "POST",
@@ -71,17 +91,7 @@ export const useTransactions = () => {
       return { success: true };
     } catch (e: unknown) {
       console.error("Ошибка при добавлении:", e);
-      const fetchError = e as {
-        data?: { statusMessage?: string };
-        message?: string;
-      };
-      return {
-        success: false,
-        error:
-          fetchError.data?.statusMessage ||
-          fetchError.message ||
-          "Ошибка сервера",
-      };
+      return { success: false, error: parseApiError(e, "Ошибка сервера") };
     }
   };
 
@@ -95,6 +105,7 @@ export const useTransactions = () => {
       description?: string;
     },
   ) => {
+    if (pending.value) return { success: false, error: "Запрос уже выполняется" };
     try {
       const updated = await $fetch<Transaction>(`/api/transactions/${id}`, {
         method: "PATCH",
@@ -110,21 +121,12 @@ export const useTransactions = () => {
       return { success: true };
     } catch (e: unknown) {
       console.error("Ошибка при обновлении:", e);
-      const fetchError = e as {
-        data?: { statusMessage?: string };
-        message?: string;
-      };
-      return {
-        success: false,
-        error:
-          fetchError.data?.statusMessage ||
-          fetchError.message ||
-          "Ошибка сервера",
-      };
+      return { success: false, error: parseApiError(e, "Ошибка сервера") };
     }
   };
 
   const deleteTransaction = async (id: string) => {
+    if (pending.value) return { success: false, error: "Запрос уже выполняется" };
     try {
       await $fetch(`/api/transactions/${id}`, {
         method: "DELETE",
@@ -138,17 +140,7 @@ export const useTransactions = () => {
       return { success: true };
     } catch (e: unknown) {
       console.error("Ошибка при удалении:", e);
-      const fetchError = e as {
-        data?: { statusMessage?: string };
-        message?: string;
-      };
-      return {
-        success: false,
-        error:
-          fetchError.data?.statusMessage ||
-          fetchError.message ||
-          "Ошибка сервера",
-      };
+      return { success: false, error: parseApiError(e, "Ошибка сервера") };
     }
   };
 
