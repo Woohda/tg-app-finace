@@ -61,33 +61,14 @@ function isItemActive(to: string): boolean {
     >
       <!-- Левый блок навигации -->
       <div class="flex items-center gap-1">
-        <NuxtLink
+        <BottomNavItem
           v-for="item in leftItems"
           :key="item.name"
           :to="item.to"
-          class="relative flex flex-col items-center justify-center w-16 h-15 transition-all duration-300 rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-          :class="
-            isItemActive(item.to)
-              ? 'text-text-accent'
-              : 'text-text-secondary hover:text-text-primary'
-          "
-          :aria-label="item.label"
-        >
-          <!-- Активный фон (овал) -->
-          <div
-            v-if="isItemActive(item.to)"
-            class="absolute inset-0 bg-white/40 rounded-3xl shadow-[inset_0_2px_3px_rgba(255,255,255,0.8)] border border-white/50 -z-10"
-          />
-
-          <component
-            :is="item.icon"
-            class="size-5.5 mb-1"
-            :stroke-width="isItemActive(item.to) ? 2 : 1.5"
-          />
-          <span class="text-[9px] font-medium leading-none">{{
-            item.label
-          }}</span>
-        </NuxtLink>
+          :icon="item.icon"
+          :label="item.label"
+          :is-active="isItemActive(item.to)"
+        />
       </div>
 
       <!-- Центральная кнопка (Добавить транзакцию) -->
@@ -111,33 +92,14 @@ function isItemActive(to: string): boolean {
 
       <!-- Правый блок навигации -->
       <div class="flex items-center gap-1">
-        <NuxtLink
+        <BottomNavItem
           v-for="item in rightItems"
           :key="item.name"
           :to="item.to"
-          class="relative flex flex-col items-center justify-center w-16 h-15 transition-all duration-300 rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
-          :class="
-            isItemActive(item.to)
-              ? 'text-text-accent'
-              : 'text-text-secondary hover:text-text-primary'
-          "
-          :aria-label="item.label"
-        >
-          <!-- Активный фон (овал) -->
-          <div
-            v-if="isItemActive(item.to)"
-            class="absolute inset-0 bg-white/40 rounded-3xl shadow-[inset_0_2px_3px_rgba(255,255,255,0.8)] border border-white/50 -z-10"
-          />
-
-          <component
-            :is="item.icon"
-            class="size-5.5 mb-1"
-            :stroke-width="isItemActive(item.to) ? 2 : 1.5"
-          />
-          <span class="text-[9px] font-medium leading-none">{{
-            item.label
-          }}</span>
-        </NuxtLink>
+          :icon="item.icon"
+          :label="item.label"
+          :is-active="isItemActive(item.to)"
+        />
       </div>
     </nav>
   </div>
