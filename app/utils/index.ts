@@ -23,11 +23,11 @@ export function formatAmount(
   return `${formatted} ₽`;
 }
 
-export function formatPercent(percent: number): string {
+export function formatPercent(percent: number, suffix: string = "к прошлому месяцу"): string {
   const prefix = percent > 0 ? "+" : "";
   // Округление до десятых (убираем лишние нули в конце, если число целое)
   const rounded = Number(percent.toFixed(1));
-  return `${prefix}${rounded}% к прошлому месяцу`;
+  return `${prefix}${rounded}% ${suffix}`.trim();
 }
 
 export function formatDate(str: string): string {

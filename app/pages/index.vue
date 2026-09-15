@@ -15,7 +15,7 @@ import { Bell, ReceiptText } from "@lucide/vue";
 const { user, tgUser } = useAuth();
 const { transactions, pending } = useTransactions();
 const { balance, monthlyExpense } = useTransactionView(transactions);
-const { balanceHistory, expensesByCategory, recentTransactions } =
+const { balanceHistory, expensesByCategory, recentTransactions, dashboardStats } =
   useDashboardStats(transactions);
 
 const greeting = getGreeting();
@@ -33,7 +33,7 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
 
 // 1. Данные баланса (используем реальный текущий баланс)
 // TODO: Расчет исторического графика по дням на бэкенде. Пока строим кумулятивный график из транзакций
-const percentChange = 0; // TODO: Сравнение с прошлым месяцем
+const percentChange = computed(() => dashboardStats.value?.percentChange || 0);
 </script>
 
 <template>
@@ -46,10 +46,10 @@ const percentChange = 0; // TODO: Сравнение с прошлым меся�
 
       <!-- Иконка колокольчика -->
       <div
-        class="w-10 h-10 rounded-full glass-milky flex items-center justify-center text-text-primary shrink-0"
+        class="w-12 h-12 rounded-full glass-milky flex items-center justify-center text-text-primary shrink-0"
         style="box-shadow: var(--shadow-glass-flat)"
       >
-        <Bell class="w-5 h-5 text-text-secondary" />
+        <Bell class="w-6 h-6 text-text-secondary" />
       </div>
     </div>
 
@@ -73,6 +73,7 @@ const percentChange = 0; // TODO: Сравнение с прошлым меся�
 
     <!-- Главный контент: Топ-5 категорий расходов -->
     <ExpensesDonut
+      v-if="transactions.length > 0"
       :categories="expensesByCategory"
       :total-expense="monthlyExpense"
       :is-loading="pending"
