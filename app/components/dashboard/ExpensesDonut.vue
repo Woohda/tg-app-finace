@@ -32,16 +32,18 @@ const props = defineProps<{
 }>();
 
 const radius = 67;
-const circumference = 2.027 * Math.PI * radius;
+const circumference = 2 * Math.PI * radius;
 
 const strokeWidth = 24;
 const visualGap = 0.5;
 const minDash = strokeWidth + visualGap;
 
-const localTotal = computed(() =>
-  props.totalExpense !== undefined
-    ? props.totalExpense
-    : props.categories.reduce((acc, cat) => acc + cat.amount, 0),
+const donutTotal = computed(() =>
+  props.categories.reduce((acc, cat) => acc + cat.amount, 0),
+);
+
+const displayTotal = computed(() =>
+  props.totalExpense !== undefined ? props.totalExpense : donutTotal.value,
 );
 
 const segments = computed(() => {
@@ -60,7 +62,7 @@ const segments = computed(() => {
 
   return props.categories.map((cat) => {
     const fraction =
-      localTotal.value > 0 ? cat.amount / localTotal.value : 1 / numCats;
+      donutTotal.value > 0 ? cat.amount / donutTotal.value : 1 / numCats;
     const dashLength = minDash + fraction * remainingCircumference;
     const visibleLength = Math.max(0, dashLength - minDash);
 
@@ -241,7 +243,7 @@ const segments = computed(() => {
                 >Потрачено</span
               >
               <span class="text-md font-extrabold text-text-primary">{{
-                formatAmount(localTotal)
+                formatAmount(displayTotal)
               }}</span>
             </div>
           </Transition>
