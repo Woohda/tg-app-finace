@@ -219,14 +219,6 @@ const saveAll = async () => {
       {{ saveError }}
     </div>
 
-    <!-- Total card -->
-    <GlassCard class="flex justify-between items-center">
-      <span class="text-text-secondary font-medium">Сумма чека</span>
-      <span class="text-2xl font-bold text-text-primary">{{
-        formatAmount(totalAmount)
-      }}</span>
-    </GlassCard>
-
     <!-- Список транзакций по группам -->
     <div class="flex flex-col gap-4">
       <GlassCard
