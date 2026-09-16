@@ -204,7 +204,7 @@ onClickOutside(itemRef, () => {
         "
         @click="onDeleteClick"
       >
-        <Trash2 class="size-7 text-white" :stroke-width="1.5" />
+        <Trash2 class="size-6 text-white" :stroke-width="1.5" />
       </div>
     </div>
   </div>
