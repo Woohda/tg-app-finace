@@ -22,7 +22,7 @@ const props = defineProps<{
   isLoading?: boolean;
 }>();
 
-const formattedPercent = computed(() => formatPercent(props.percentChange));
+const formattedPercent = computed(() => formatPercent(props.percentChange, "трат в день"));
 
 const width = 300;
 const height = 80;
@@ -89,10 +89,10 @@ const areaPathData = computed(() => {
         </h2>
         <p
           class="text-xs font-bold mt-2 tracking-wide flex items-center gap-1"
-          :class="percentChange >= 0 ? 'text-green-500' : 'text-red-500'"
+          :class="percentChange <= 0 ? 'text-green-500' : 'text-red-500'"
         >
           <span class="text-lg leading-none mb-0.5"
-            >{{ percentChange >= 0 ? "↑" : "↓" }}
+            >{{ percentChange > 0 ? "↑" : "↓" }}
           </span>
           {{ formattedPercent }}
         </p>

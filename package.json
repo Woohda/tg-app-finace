@@ -12,6 +12,7 @@
     "typecheck": "nuxi typecheck"
   },
   "dependencies": {
+    "@google/genai": "^2.22.0",
     "@lucide/vue": "^1.46.0",
     "@nuxt/eslint": "1.17.0",
     "@nuxt/image": "2.1.0",

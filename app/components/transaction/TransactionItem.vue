@@ -13,8 +13,9 @@ import { Trash2 } from "@lucide/vue";
 
 interface Props {
   class?: HTMLAttributes["class"];
-  icon: string;
+  icon?: string;
   name: string;
+  description?: string | null;
   amount: number;
   type: "income" | "expense";
   date: string;
@@ -24,6 +25,8 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   class: undefined,
   interactive: false,
+  icon: undefined,
+  description: undefined,
 });
 
 const emit = defineEmits<{
@@ -114,7 +117,7 @@ function onDeleteClick() {
       <div
         :class="
           cn(
-            'transaction-content w-full shrink-0 flex items-center gap-3 pb-3 bg-transparent z-10 border-b border-black/6',
+            'transaction-content w-full shrink-0 flex items-center gap-2 pb-3 bg-transparent z-10 border-b border-black/6',
             interactive && 'cursor-pointer active:opacity-80',
             props.class,
           )
@@ -123,7 +126,8 @@ function onDeleteClick() {
       >
         <!-- Иконка категории -->
         <div
-          class="shrink-0 size-12 rounded-2xl glass- flex items-center justify-center text-xl border-[0.5px] border-white/50 border-b-transparent border-r-transparent"
+          v-if="icon"
+          class="shrink-0 size-11 rounded-2xl glass- flex items-center justify-center text-xl border-[0.5px] border-white/50 border-b-transparent border-r-transparent"
           style="
             background: rgba(255, 255, 255, 0.7);
             box-shadow:
@@ -134,14 +138,18 @@ function onDeleteClick() {
           {{ icon }}
         </div>
 
-        <!-- Название + дата -->
+        <!-- Название + описание + дата -->
         <div class="flex-1 min-w-0">
           <p class="text-sm font-medium text-text-primary truncate">
             {{ name }}
           </p>
-          <p class="text-xs text-text-secondary truncate mt-0.5">
-            {{ formattedDate }}
-          </p>
+          <div class="w-full flex text-xs text-text-secondary mt-0.5">
+            <span class="shrink-0"> {{ formattedDate }}</span>
+            {{ description ? "," : "" }}
+            <span v-if="description" class="truncate ml-1">
+              {{ description }}</span
+            >
+          </div>
         </div>
 
         <!-- Сумма -->

@@ -68,9 +68,19 @@ export const useDashboardStats = (
 
   const recentTransactions = computed(() => transactions.value.slice(0, 5));
 
+  // Запрашиваем агрегированную статистику с бэкенда
+  const { token } = useAuth();
+  const { data: dashboardStats, pending: statsPending } = useFetch("/api/stats/dashboard", {
+    headers: computed(() => ({
+      Authorization: `Bearer ${token.value}`,
+    })),
+  });
+
   return {
     balanceHistory,
     expensesByCategory,
     recentTransactions,
+    dashboardStats,
+    statsPending,
   };
 };

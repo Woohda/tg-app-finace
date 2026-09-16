@@ -8,13 +8,14 @@
  */
 import { ref, computed, watch, onMounted } from "vue";
 import { useRouter, useRoute } from "vue-router";
-import { Calendar, RussianRuble } from "@lucide/vue";
+import { Calendar, RussianRuble, Camera } from "@lucide/vue";
 import { transactionFrontendSchema } from "~/types/validate";
 import { formatZodError } from "~/utils/zod";
 
 const router = useRouter();
 const route = useRoute();
 const { addTransaction, updateTransaction, transactions } = useTransactions();
+const { token } = useAuth();
 
 // Edit mode
 const editId = computed(() => (route.query.edit as string) || null);
@@ -103,102 +104,175 @@ watch(type, () => {
     categoryId.value = "";
   }
 });
+
+// -- Логика сканирования чека --
+
+interface ScannedTransaction {
+  type: "expense" | "income";
+  amount: number;
+  description: string;
+  suggestedCategory?: string;
+}
+
+const fileInput = ref<HTMLInputElement | null>(null);
+const isScanning = ref(false);
+const scanError = ref("");
+const scanResults = useState<ScannedTransaction[]>("scanResults", () => []);
+
+const triggerScan = () => {
+  fileInput.value?.click();
+};
+
+const handleFileUpload = async (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+
+  isScanning.value = true;
+  scanError.value = "";
+
+  try {
+    const reader = new FileReader();
+    const base64Promise = new Promise<string>((resolve, reject) => {
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+    reader.readAsDataURL(file);
+    const base64Data = await base64Promise;
+
+    const res = await $fetch("/api/ai/parse-receipt", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token.value}`,
+      },
+      body: { image: base64Data },
+    });
+
+    if (res && res.transactions) {
+      scanResults.value = res.transactions;
+      router.push("/scan-results");
+    } else {
+      throw new Error("Неверный формат ответа");
+    }
+  } catch (e) {
+    scanError.value = parseApiError(e, "Ошибка распознавания чека");
+  } finally {
+    isScanning.value = false;
+    if (fileInput.value) fileInput.value.value = ""; // reset
+  }
+};
 </script>
 
 <template>
-  <GlassCard class="flex flex-col gap-5">
-    <div class="flex items-center justify-center gap-3">
-      <div class="flex flex-col text-center">
-        <h1 class="text-text-primary text-xl font-bold tracking-tight">
-          {{ isEditMode ? "Редактирование" : "Новая операция" }}
-        </h1>
-        <p class="text-text-secondary text-xs">
-          {{
-            isEditMode
-              ? "Изменение данных транзакции"
-              : "Запись трат или доходов"
-          }}
-        </p>
-      </div>
-    </div>
-
-    <form class="flex flex-col gap-5" @submit.prevent="submit">
-      <!-- Amount -->
-      <GlassInput
-        v-model="amount"
-        type="number"
-        step="0.01"
-        label="Сумма"
-        placeholder="0.00"
-        icon="₽"
-      />
-
-      <!-- Category -->
-      <div class="flex flex-col gap-2">
-        <label class="text-sm font-bold text-text-primary pl-2"
-          >Категория</label
-        >
-        <div class="relative">
-          <select
-            v-model="categoryId"
-            class="w-full glass-milky rounded-3xl px-5 py-3 text-text-primary font-medium text-base outline-none shadow-glass transition-all focus-visible:ring-2 focus-visible:ring-text-accent appearance-none disabled:opacity-50"
-            :disabled="pending"
-          >
-            <option value="" disabled>Выберите категорию...</option>
-            <option
-              v-for="cat in filteredCategories"
-              :key="cat.id"
-              :value="cat.id"
-            >
-              {{ cat.icon }} {{ cat.name }}
-            </option>
-          </select>
-          <!-- Custom arrow -->
-          <div
-            class="absolute right-5 top-1/2 -translate-y-1/2 pointer-events-none text-text-secondary"
-          >
-            ▼
-          </div>
+  <div class="relative w-full h-full">
+    <GlassCard class="flex flex-col gap-5">
+      <div class="flex items-center justify-center gap-3">
+        <div class="flex flex-col text-center w-full relative">
+          <h1 class="text-text-primary text-xl font-bold tracking-tight">
+            {{ isEditMode ? "Редактирование" : "Новая операция" }}
+          </h1>
+          <p class="text-text-secondary text-xs">
+            {{
+              isEditMode
+                ? "Изменение данных транзакции"
+                : "Запись трат или доходов"
+            }}
+          </p>
         </div>
       </div>
 
-      <!-- Date -->
-      <GlassInput v-model="date" type="date" label="Дата" :icon="Calendar" />
+      <form class="flex flex-col gap-5" @submit.prevent="submit">
+        <!-- Amount -->
+        <GlassInput
+          v-model="amount"
+          type="number"
+          step="0.01"
+          label="Сумма"
+          placeholder="0.00"
+          icon="₽"
+        />
 
-      <!-- Description -->
-      <GlassInput
-        v-model="description"
-        type="text"
-        label="Комментарий"
-        placeholder="Например, Обед с коллегами"
-      />
+        <!-- Category -->
+        <div class="flex flex-col gap-1">
+          <label class="text-sm font-bold text-text-primary pl-2"
+            >Категория</label
+          >
+          <GlassCategorySelect
+            v-model="categoryId"
+            :categories="filteredCategories"
+          />
+        </div>
 
-      <div
-        v-if="errorMsg"
-        class="text-text-accent text-sm font-medium text-center"
-      >
-        {{ errorMsg }}
-      </div>
+        <!-- Date -->
+        <GlassInput v-model="date" type="date" label="Дата" :icon="Calendar" />
 
-      <GlassTypeSelector v-model="type" />
+        <!-- Description -->
+        <GlassInput
+          v-model="description"
+          type="text"
+          label="Комментарий"
+          placeholder="Например, Обед с коллегами"
+        />
 
-      <!-- Submit Button -->
-      <GlassMorphButton
-        type="submit"
-        variant="primary"
-        class="mt-px py-4 rounded-full"
-        :state="'success'"
-        :disabled="pending"
-      >
-        <span v-if="isEditMode">💾 Сохранить изменения</span>
-        <span v-else
-          >💸 Внести {{ type === "expense" ? "трату" : "доход" }}</span
+        <div
+          v-if="errorMsg"
+          class="text-text-accent text-sm font-medium text-center"
         >
+          {{ errorMsg }}
+        </div>
 
-        <template #success>
-          <RussianRuble :stroke-width="2" />
-        </template>
-      </GlassMorphButton>
-    </form>
-  </GlassCard>
+        <GlassTypeSelector v-model="type" />
+
+        <!-- Submit Button -->
+        <GlassMorphButton
+          type="submit"
+          variant="primary"
+          class="max-w-60 py-4 rounded-full"
+          :state="buttonState"
+          :disabled="pending"
+        >
+          <span v-if="isEditMode">💾 Сохранить изменения</span>
+          <span v-else
+            >💸 Внести {{ type === "expense" ? "трату" : "доход" }}</span
+          >
+
+          <template v-if="!isEditMode" #success>
+            <RussianRuble :stroke-width="2" />
+          </template>
+        </GlassMorphButton>
+      </form>
+      <!-- Кнопка сканирования (только для новых расходов) -->
+      <div
+        v-if="!isEditMode && type === 'expense'"
+        class="absolute bottom-5 right-7"
+      >
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          class="hidden"
+          @change="handleFileUpload"
+        />
+        <button
+          class="flex items-center justify-center w-12 h-12 p-2"
+          @click.prevent="triggerScan"
+        >
+          <Camera :stroke-width="2" class="text-text-accent size-8" />
+        </button>
+      </div>
+      <div
+        v-if="scanError"
+        class="text-text-accent text-sm font-medium text-center -mt-2"
+      >
+        {{ scanError }}
+      </div>
+    </GlassCard>
+
+    <!-- Модалка загрузки -->
+    <GlassModal :is-open="isScanning" position="center" :show-close="false">
+      <p class="text-text-primary font-medium text-center animate-pulse">
+        Читаю чек... <br />Магия нейросетей работает ✨
+      </p>
+    </GlassModal>
+  </div>
 </template>

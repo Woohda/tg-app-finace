@@ -24,6 +24,12 @@ const isLoading = useGlobalLoading();
 const errorMessage = ref<string | null>(null);
 const isInTelegram = ref(false);
 
+// Включаем загрузку сразу на клиенте, чтобы не было "моргания" экрана входа
+// перед автоматической авторизацией через Telegram или DevMode.
+if (import.meta.client && !isAuthenticated.value) {
+  isLoading.value = true;
+}
+
 const handleLogin = async () => {
   errorMessage.value = null;
   isLoading.value = true;
@@ -61,6 +67,9 @@ onMounted(async () => {
   } else if (isDev && !isAuthenticated.value) {
     // Dev-режим: автоматический вход без Telegram
     await handleDevLogin();
+  } else {
+    // Если авто-вход невозможен (не в ТГ и не dev) — скрываем лоадер
+    isLoading.value = false;
   }
 });
 </script>

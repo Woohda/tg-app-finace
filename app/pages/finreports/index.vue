@@ -133,6 +133,7 @@ const currentLabel = computed(() =>
           :key="tx.id"
           :icon="tx.categoryIcon"
           :name="tx.categoryName"
+          :description="tx.description"
           :amount="tx.amount"
           :type="tx.type"
           :date="tx.date"
@@ -144,7 +145,10 @@ const currentLabel = computed(() =>
       </div>
 
       <!-- Пустое состояние при отсутствии трат -->
-      <div v-else class="flex flex-col items-center justify-start text-start">
+      <div
+        v-else
+        class="flex flex-col items-center justify-start text-start pb-5"
+      >
         <p class="text-text-secondary text-md font-medium">
           {{ emptyMessage }}
         </p>
