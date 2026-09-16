@@ -1,43 +1,31 @@
 <script setup lang="ts">
 /**
- * @module app/components/transaction/TransactionItem
- * @fileoverview Компонент отображения отдельной транзакции в списке.
+ * @module app/components/categories/CategoryItem
+ * @fileoverview Компонент отображения отдельной категории.
  * @description
- * Отображает иконку категории, название, дату и сумму транзакции.
- * Цвет суммы зависит от типа транзакции (доход/расход).
- * По клику вызывает `useTransactionModal` в режиме редактирования.
+ * Отображает иконку и название категории.
+ * По клику вызывает событие редактирования.
+ * Свайп влево открывает кнопку удаления.
  */
-import type { HTMLAttributes } from "vue";
 import { ref, watch, useId } from "vue";
-import { cn } from "~/utils";
 import { Trash2 } from "@lucide/vue";
 import { onClickOutside } from "@vueuse/core";
 
 interface Props {
-  class?: HTMLAttributes["class"];
   icon?: string;
-  title: string;
-  subtitle?: string | null;
-  amount: number;
-  type: "income" | "expense";
-  date: string;
-  interactive?: boolean;
+  name: string;
+  defaultIcon?: string;
 }
 
-const props = withDefaults(defineProps<Props>(), {
-  class: undefined,
-  interactive: false,
+withDefaults(defineProps<Props>(), {
   icon: undefined,
-  subtitle: undefined,
+  defaultIcon: "💸",
 });
 
 const emit = defineEmits<{
-  click: [];
+  edit: [];
   delete: [];
 }>();
-
-const formattedAmount = computed(() => formatAmount(props.amount, props.type));
-const formattedDate = computed(() => formatDate(props.date));
 
 // --- Логика свайпа ---
 const offsetX = ref(0);
@@ -57,7 +45,6 @@ watch(activeSwipeId, (newId) => {
 const DELETE_THRESHOLD = 72;
 
 function onTouchStart(e: TouchEvent) {
-  if (!props.interactive) return;
   startX.value = e.touches[0]!.clientX;
   isSwiping.value = true;
   activeSwipeId.value = itemId;
@@ -86,6 +73,7 @@ function onTouchEnd() {
   if (!isSwiping.value) return;
   isSwiping.value = false;
 
+  // Если свайпнули очень далеко — удаляем сразу
   if (offsetX.value < -120) {
     emit("delete");
     closeSwipe();
@@ -104,12 +92,11 @@ function closeSwipe() {
 }
 
 function onItemClick() {
-  if (!props.interactive) return;
   if (isRevealed.value) {
     closeSwipe();
     return;
   }
-  emit("click");
+  emit("edit");
 }
 
 function onDeleteClick() {
@@ -127,10 +114,7 @@ onClickOutside(itemRef, () => {
 </script>
 
 <template>
-  <div
-    ref="itemRef"
-    class="transaction-item relative overflow-hidden rounded-2xl"
-  >
+  <div ref="itemRef" class="category-item relative overflow-hidden rounded-xl">
     <!-- Контейнер, который двигается целиком -->
     <div
       class="flex w-full"
@@ -146,56 +130,23 @@ onClickOutside(itemRef, () => {
     >
       <!-- Основное содержимое -->
       <div
-        :class="
-          cn(
-            'transaction-content w-full shrink-0 flex items-center gap-2 pb-3 bg-transparent z-10 border-b border-black/6',
-            interactive && 'cursor-pointer active:opacity-80',
-            props.class,
-          )
-        "
+        class="category-content w-full shrink-0 flex items-center justify-between px-3 py-2 bg-transparent z-10 border-b border-black/6 cursor-pointer active:opacity-80"
         @click="onItemClick"
       >
-        <!-- Иконка категории -->
-        <div
-          v-if="icon"
-          class="shrink-0 size-11 rounded-2xl glass- flex items-center justify-center text-xl border-[0.5px] border-white/50 border-b-transparent border-r-transparent"
-          style="
-            background: rgba(255, 255, 255, 0.7);
-            box-shadow:
-              inset 3px 3px 8px rgba(255, 255, 255, 1),
-              inset -4px -4px 10px rgba(130, 115, 105, 0.15);
-          "
-        >
-          {{ icon }}
-        </div>
-
-        <!-- Название + описание + дата -->
-        <div class="flex-1 min-w-0">
-          <p class="text-sm font-medium text-text-primary truncate">
-            {{ title }}
-          </p>
-          <div class="w-full flex text-xs text-text-secondary mt-0.5">
-            <span class="shrink-0"> {{ formattedDate }}</span>
-            <span v-if="subtitle" class="truncate">,&nbsp;{{ subtitle }}</span>
-          </div>
-        </div>
-
-        <!-- Сумма -->
-        <div class="text-right">
-          <p
-            class="font-bold text-[15px]"
-            :class="
-              type === 'income' ? 'text-text-accent' : 'text-text-primary'
-            "
+        <div class="flex items-center gap-3 min-w-0">
+          <div
+            class="size-9 rounded-full glass-milky flex items-center justify-center text-lg shrink-0"
           >
-            {{ formattedAmount }}
-          </p>
+            {{ icon || defaultIcon }}
+          </div>
+          <span class="w-full text-text-primary font-medium text-sm truncate">
+            {{ name }}
+          </span>
         </div>
       </div>
 
       <!-- Кнопка удаления (сбоку, вне экрана) -->
       <div
-        v-if="interactive"
         class="w-17 ml-1 pr-px shrink-0 flex items-center justify-center bg-accent-mid rounded-r-3xl"
         style="
           box-shadow:
@@ -204,14 +155,14 @@ onClickOutside(itemRef, () => {
         "
         @click="onDeleteClick"
       >
-        <Trash2 class="size-7 text-white" :stroke-width="1.5" />
+        <Trash2 class="size-6 text-white" :stroke-width="1.5" />
       </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.transaction-item:last-child .transaction-content {
+.category-item:last-child .category-content {
   border-bottom-width: 0;
 }
 </style>

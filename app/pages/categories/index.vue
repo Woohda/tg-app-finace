@@ -11,9 +11,7 @@ import {
 	ChevronLeft,
 	Flame,
 	Plus,
-	Pencil,
 	SquarePen,
-	Trash2,
 } from '@lucide/vue';
 import { categorySchema } from '~/types/validate';
 import { formatZodError } from '~/utils/zod';
@@ -261,37 +259,15 @@ const executeDelete = async () => {
 					>
 						У вас нет добавленных категорий
 					</div>
-					<div
+					<CategoryItem
 						v-for="cat in section.items"
 						:key="cat.id"
-						class="flex items-center justify-between px-3 py-2 transition-colors border-b border-black/6 last:border-none"
-					>
-						<div class="flex items-center gap-3 min-w-0">
-							<div
-								class="size-9 rounded-full glass-milky flex items-center justify-center text-lg shrink-0"
-							>
-								{{ cat.icon || section.defaultIcon }}
-							</div>
-							<span
-								class="w-full text-text-primary font-medium text-sm truncate"
-								>{{ cat.name }}</span
-							>
-						</div>
-						<div class="flex items-center gap-5 ml-2">
-							<button
-								class="text-text-secondary transition-colors"
-								@click="openEditForm(cat)"
-							>
-								<Pencil class="size-5" />
-							</button>
-							<button
-								class="text-text-accent transition-colors"
-								@click="confirmDelete(cat.id)"
-							>
-								<Trash2 class="size-5" />
-							</button>
-						</div>
-					</div>
+						:name="cat.name"
+						:icon="cat.icon || undefined"
+						:default-icon="section.defaultIcon"
+						@edit="openEditForm(cat)"
+						@delete="confirmDelete(cat.id)"
+					/>
 				</template>
 			</GlassCard>
 		</div>

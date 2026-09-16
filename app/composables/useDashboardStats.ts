@@ -1,12 +1,12 @@
 /**
  * @module app/composables/useDashboardStats
  * @fileoverview Вычисление и получение статистики для дашборда
- * 
+ *
  * @description
- * Подготавливает данные для визуализации на главном экране. 
- * Принимает реактивный список транзакций и вычисляет историю баланса 
+ * Подготавливает данные для визуализации на главном экране.
+ * Принимает реактивный список транзакций и вычисляет историю баланса
  * и топ-5 категорий расходов. Параллельно запрашивает агрегированную сводку с сервера.
- * 
+ *
  * ### Логика:
  * - `balanceHistory`: Аккумулирует изменения баланса по датам для графика.
  * - `expensesByCategory`: Группирует расходы по категориям, возвращает топ-5 с присвоенными цветами.
@@ -17,24 +17,24 @@ import type { Ref, ComputedRef } from "vue";
 import type { Transaction } from "./useTransactions";
 
 export const useDashboardStats = (
-  transactions: ComputedRef<Transaction[]> | Ref<Transaction[]>
+  transactions: ComputedRef<Transaction[]> | Ref<Transaction[]>,
 ) => {
   const balanceHistory = computed(() => {
     if (transactions.value.length === 0) return [0, 0];
-    
+
     let currentBal = 0;
     const history = [0];
-    
+
     const sorted = [...transactions.value].sort(
-      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime()
+      (a, b) => new Date(a.date).getTime() - new Date(b.date).getTime(),
     );
-    
+
     sorted.forEach((t) => {
       if (t.type === "income") currentBal += t.amount;
       if (t.type === "expense") currentBal -= t.amount;
       history.push(currentBal);
     });
-    
+
     return history;
   });
 
@@ -84,11 +84,16 @@ export const useDashboardStats = (
 
   // Запрашиваем агрегированную статистику с бэкенда
   const { token } = useAuth();
-  const { data: dashboardStats, pending: statsPending } = useFetch("/api/stats/dashboard", {
-    headers: computed(() => ({
-      Authorization: `Bearer ${token.value}`,
-    })),
-  });
+  const txVersion = useGlobalTransactionsVersion();
+  const { data: dashboardStats, pending: statsPending } = useFetch(
+    "/api/stats/dashboard",
+    {
+      headers: computed(() => ({
+        Authorization: `Bearer ${token.value}`,
+      })),
+      watch: [txVersion],
+    },
+  );
 
   return {
     balanceHistory,

@@ -1,6 +1,6 @@
 <script setup lang="ts">
 import type { Component } from "vue";
-import { Home, ChartColumn, ReceiptText, Settings } from "@lucide/vue";
+import { Home, ChartColumn, Plus, ReceiptText, Settings } from "@lucide/vue";
 import { useTransactionModal } from "~/composables/useTransactionModal";
 
 /**
@@ -77,7 +77,9 @@ const { openModal } = useTransactionModal();
       <!-- Центральная кнопка (Добавить транзакцию) -->
       <div class="absolute left-1/2 -top-5 -translate-x-1/2">
         <!-- Выпуклая матовая кнопка с блюром -->
-        <button
+        <GlassButton
+          type="button"
+          variant="primary"
           class="size-17 rounded-full flex items-center justify-center text-text-accent text-4xl font-light active:scale-90 transition-transform outline-none focus-visible:ring-1 focus-visible:ring-text-accent pointer-events-auto"
           style="
             background: rgba(238, 238, 238, 1);
@@ -89,8 +91,8 @@ const { openModal } = useTransactionModal();
           aria-label="Добавить операцию"
           @click="openModal()"
         >
-          <span class="text-3xl mb-1.5">+</span>
-        </button>
+          <Plus :stroke-width="2.5" />
+        </GlassButton>
       </div>
 
       <!-- Правый блок навигации -->

@@ -84,7 +84,7 @@ const percentChange = computed(() => dashboardStats.value?.percentChange || 0);
     />
 
     <!-- 3. Секция последних операций -->
-    <div v-if="pending" class="flex flex-col gap-4 mt-2 px-5">
+    <div v-if="pending && transactions.length === 0" class="flex flex-col gap-4 mt-2 px-5">
       <!-- Скелетон заголовка "Последние операции" -->
       <div class="flex justify-between items-end px-1 mb-2">
         <Skeleton class="w-50 h-6" />

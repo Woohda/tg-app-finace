@@ -248,7 +248,7 @@ const saveAll = async () => {
             class="text-text-accent transition-colors"
             @click="removeGroupById(catId)"
           >
-            <Trash2 class="size-5" />
+            <Trash2 :stroke-width="2" />
           </Button>
         </div>
 
@@ -272,7 +272,7 @@ const saveAll = async () => {
 
     <GlassMorphButton
       variant="primary"
-      class="w-full py-4 rounded-full text-lg shadow-xl"
+      class="py-4 rounded-full text-lg shadow-xl"
       :state="isSaving ? 'loading' : 'idle'"
       @click="saveAll"
     >

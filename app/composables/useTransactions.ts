@@ -1,7 +1,7 @@
 /**
  * @module app/composables/useTransactions
  * @fileoverview Управление CRUD-операциями для транзакций
- * 
+ *
  * @description
  * Обеспечивает получение, создание, обновление и удаление транзакций через API.
  * Использует `useFetch` для автоматического реактивного обновления списка.
@@ -21,7 +21,10 @@ export interface Transaction {
   date: string;
 }
 
-export const useTransactions = (options?: { startDate?: Ref<Date>; endDate?: Ref<Date> }) => {
+export const useTransactions = (options?: {
+  startDate?: Ref<Date>;
+  endDate?: Ref<Date>;
+}) => {
   const { token } = useAuth();
 
   const authHeaders = computed(() => ({
@@ -40,8 +43,10 @@ export const useTransactions = (options?: { startDate?: Ref<Date>; endDate?: Ref
   });
 
   const cacheKey = computed(() => {
-    return `transactions-list-${query.value.startDate || 'default'}-${query.value.endDate || 'default'}`;
+    return `transactions-list-${query.value.startDate || "default"}-${query.value.endDate || "default"}`;
   });
+
+  const txVersion = useGlobalTransactionsVersion();
 
   const {
     data: rawTransactions,
@@ -52,10 +57,19 @@ export const useTransactions = (options?: { startDate?: Ref<Date>; endDate?: Ref
     headers: authHeaders,
     query,
     key: cacheKey.value,
-    watch: [query],
+    watch: [query, txVersion],
   });
 
   const transactions = computed(() => rawTransactions.value || []);
+
+  const clearOtherCaches = () => {
+    clearNuxtData(
+      (key) =>
+        typeof key === "string" &&
+        key.startsWith("transactions-list-") &&
+        key !== cacheKey.value,
+    );
+  };
 
   const addTransaction = async (data: {
     amount: number;
@@ -64,7 +78,8 @@ export const useTransactions = (options?: { startDate?: Ref<Date>; endDate?: Ref
     date: string;
     name?: string;
   }) => {
-    if (pending.value) return { success: false, error: "Запрос уже выполняется" };
+    if (pending.value)
+      return { success: false, error: "Запрос уже выполняется" };
     try {
       const newTx = await $fetch<Transaction>("/api/transactions", {
         method: "POST",
@@ -74,6 +89,8 @@ export const useTransactions = (options?: { startDate?: Ref<Date>; endDate?: Ref
       if (rawTransactions.value) {
         rawTransactions.value.unshift(newTx);
       }
+      clearOtherCaches();
+      txVersion.value++;
       return { success: true };
     } catch (e: unknown) {
       console.error("Ошибка при добавлении:", e);
@@ -91,7 +108,8 @@ export const useTransactions = (options?: { startDate?: Ref<Date>; endDate?: Ref
       name?: string;
     },
   ) => {
-    if (pending.value) return { success: false, error: "Запрос уже выполняется" };
+    if (pending.value)
+      return { success: false, error: "Запрос уже выполняется" };
     try {
       const updated = await $fetch<Transaction>(`/api/transactions/${id}`, {
         method: "PATCH",
@@ -104,6 +122,8 @@ export const useTransactions = (options?: { startDate?: Ref<Date>; endDate?: Ref
           rawTransactions.value[index] = updated;
         }
       }
+      clearOtherCaches();
+      txVersion.value++;
       return { success: true };
     } catch (e: unknown) {
       console.error("Ошибка при обновлении:", e);
@@ -112,7 +132,8 @@ export const useTransactions = (options?: { startDate?: Ref<Date>; endDate?: Ref
   };
 
   const deleteTransaction = async (id: string) => {
-    if (pending.value) return { success: false, error: "Запрос уже выполняется" };
+    if (pending.value)
+      return { success: false, error: "Запрос уже выполняется" };
     try {
       await $fetch(`/api/transactions/${id}`, {
         method: "DELETE",
@@ -123,6 +144,8 @@ export const useTransactions = (options?: { startDate?: Ref<Date>; endDate?: Ref
           (t) => t.id !== id,
         );
       }
+      clearOtherCaches();
+      txVersion.value++;
       return { success: true };
     } catch (e: unknown) {
       console.error("Ошибка при удалении:", e);
