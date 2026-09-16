@@ -29,7 +29,15 @@ const date = ref<string>(new Date().toISOString().split("T")[0] as string); // Y
 
 // Категории из готового composable (auth уже внутри)
 const { categories, isLoading: pending, fetchCategories } = useCategories();
-onMounted(fetchCategories);
+
+const amountInputRef = ref<{ focus: () => void } | null>(null);
+
+onMounted(() => {
+  fetchCategories();
+  setTimeout(() => {
+    amountInputRef.value?.focus();
+  }, 100);
+});
 
 // Filter categories by selected type
 const filteredCategories = computed(() => {
@@ -183,12 +191,13 @@ const handleFileUpload = async (event: Event) => {
       <form class="flex flex-col gap-5" @submit.prevent="submit">
         <!-- Amount -->
         <GlassInput
+          ref="amountInputRef"
           v-model="amount"
           type="number"
           step="0.01"
           label="Сумма"
           placeholder="0.00"
-          icon="₽"
+          :icon="RussianRuble"
         />
 
         <!-- Category -->
@@ -241,10 +250,7 @@ const handleFileUpload = async (event: Event) => {
         </GlassMorphButton>
       </form>
       <!-- Кнопка сканирования (только для новых расходов) -->
-      <div
-        v-if="!isEditMode && type === 'expense'"
-        class="absolute bottom-5 right-7"
-      >
+      <div v-if="!isEditMode" class="absolute bottom-5 right-7">
         <input
           ref="fileInput"
           type="file"
@@ -254,7 +260,7 @@ const handleFileUpload = async (event: Event) => {
           @change="handleFileUpload"
         />
         <button
-          class="flex items-center justify-center w-12 h-12 p-2"
+          class="flex items-center justify-center w-12 h-12 p-2 border-transparent rounded-2xl outline-none border-none transition-all duration-300 ease-in-out focus-visible:ring-1 focus-visible:ring-text-accent"
           @click.prevent="triggerScan"
         >
           <Camera :stroke-width="2" class="text-text-accent size-8" />

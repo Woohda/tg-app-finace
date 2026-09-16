@@ -20,7 +20,7 @@ const emit = defineEmits<{
   >
     <RadioGroupItem
       value="income"
-      class="group flex-1 flex flex-col items-center justify-center gap-px py-2 rounded-4xl glass-panel border-[0.5px] border-white/50 border-b-transparent border-r-transparent transition-all duration-300 outline-none data-[state=checked]:shadow-glass-inner data-[state=checked]:bg-white/40 focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+      class="group flex-1 flex flex-col items-center justify-center gap-px py-2 rounded-4xl glass-panel border-[0.5px] border-white/50 border-b-transparent border-r-transparent transition-all duration-300 ease-in-out outline-none data-[state=checked]:shadow-glass-inner data-[state=checked]:bg-white/40 focus-visible:ring-1 focus-visible:ring-text-accent"
     >
       <BanknoteArrowUp
         class="size-10 transition-colors duration-300 group-data-[state=checked]:text-text-accent"
@@ -31,7 +31,7 @@ const emit = defineEmits<{
 
     <RadioGroupItem
       value="expense"
-      class="group flex-1 flex flex-col items-center justify-center gap-px py-2 rounded-4xl glass-panel border-[0.5px] border-white/50 border-b-transparent border-r-transparent transition-all duration-300 outline-none data-[state=checked]:shadow-glass-inner data-[state=checked]:bg-white/40 focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+      class="group flex-1 flex flex-col items-center justify-center gap-px py-2 rounded-4xl glass-panel border-[0.5px] border-white/50 border-b-transparent border-r-transparent transition-all duration-300 ease-in-out outline-none data-[state=checked]:shadow-glass-inner data-[state=checked]:bg-white/40 focus-visible:ring-1 focus-visible:ring-text-accent"
     >
       <BanknoteArrowDown
         class="size-10 transition-colors duration-300 group-data-[state=checked]:text-text-accent"
