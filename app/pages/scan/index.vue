@@ -155,6 +155,7 @@ const saveAll = async () => {
     const transactionsToSave: {
       amount: number;
       description: string;
+      comment?: string;
       category_id: string;
       type: string;
       date: string;
@@ -162,14 +163,10 @@ const saveAll = async () => {
     const fallbackDate = new Date().toISOString().split("T")[0] || "";
 
     editableItems.value.forEach((item) => {
-      let finalDescription = item.description;
-      if (item.comment) {
-        finalDescription += ` - ${item.comment}`;
-      }
-
       transactionsToSave.push({
         amount: Number(item.amount),
-        description: finalDescription,
+        description: item.description,
+        comment: item.comment || undefined,
         category_id: item.categoryId || "",
         type: item.type,
         date: item.date || fallbackDate,

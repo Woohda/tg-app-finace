@@ -4,12 +4,7 @@
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
 import type { Database } from "~/types/database.types";
-import { z } from "zod";
-import { transactionBackendSchema } from "~/types/validate";
-
-const bulkTransactionSchema = z.object({
-  transactions: z.array(transactionBackendSchema),
-});
+import { bulkTransactionSchema } from "~/types/validate";
 
 export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event);
@@ -33,17 +28,18 @@ export default defineEventHandler(async (event) => {
     type: t.type,
     date: t.date,
     description: t.description || null,
+    comment: t.comment || null,
     user_id: userId,
   }));
 
   const { data, error } = await supabase
     .from("transactions")
-    .insert(transactionsToInsert)
-    .select(`
+    .insert(transactionsToInsert).select(`
       id,
       amount,
       type,
       description,
+      comment,
       date,
       created_at,
       categories (
@@ -61,19 +57,21 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const formattedData = data?.map((t) => {
-    const cat = Array.isArray(t.categories) ? t.categories[0] : t.categories;
-    return {
-      id: t.id,
-      amount: t.amount,
-      type: t.type,
-      description: t.description,
-      date: t.date,
-      categoryId: cat?.id || "",
-      categoryName: cat?.name || "Неизвестно",
-      categoryIcon: cat?.icon || "💸",
-    };
-  }) || [];
+  const formattedData =
+    data?.map((t) => {
+      const cat = Array.isArray(t.categories) ? t.categories[0] : t.categories;
+      return {
+        id: t.id,
+        amount: t.amount,
+        type: t.type,
+        description: t.description,
+        comment: t.comment,
+        date: t.date,
+        categoryId: cat?.id || "",
+        categoryName: cat?.name || "Неизвестно",
+        categoryIcon: cat?.icon || "💸",
+      };
+    }) || [];
 
   return formattedData;
 });

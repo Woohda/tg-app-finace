@@ -36,13 +36,13 @@ export const transactionFrontendSchema = z.object({
   description: z.string().optional(),
 });
 
-// Для бэкенда (где используется snake_case для базы данных)
 export const transactionBackendSchema = z.object({
   amount: z.number().positive("Некорректная сумма"),
   category_id: z.string().min(1, "Не указана категория"),
   type: z.enum(["income", "expense"]),
   date: z.string().min(1, "Не указана дата"),
   description: z.string().optional().nullable(),
+  comment: z.string().optional().nullable(),
 });
 
 export const transactionPatchSchema = z
@@ -65,4 +65,8 @@ export const budgetSchema = z.object({
 // --- AI ---
 export const parseReceiptSchema = z.object({
   image: z.string().min(1, "Изображение не предоставлено"), // base64
+});
+
+export const bulkTransactionSchema = z.object({
+  transactions: z.array(transactionBackendSchema),
 });
