@@ -71,7 +71,7 @@ const currentLabel = computed(() =>
     <GlassCard class="flex flex-col gap-1 relative overflow-hidden h-49">
       <div class="z-10 flex justify-between items-start">
         <!-- Состояние загрузки: Скелетоны текста -->
-        <div v-if="pending" class="flex flex-col gap-2 py-1">
+        <div v-if="pending && transactions.length === 0" class="flex flex-col gap-2 py-1">
           <Skeleton class="w-30 h-4" />
           <Skeleton class="w-40 h-9" />
           <Skeleton class="w-20 h-3" />
@@ -121,7 +121,7 @@ const currentLabel = computed(() =>
       </div>
 
       <!-- Скелетоны транзакций (загрузка) -->
-      <div v-if="pending" class="flex flex-col gap-3">
+      <div v-if="pending && transactions.length === 0" class="flex flex-col gap-3">
         <TransactionSkeletonList :count="4" mode="list" />
       </div>
 

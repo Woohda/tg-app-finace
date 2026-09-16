@@ -83,7 +83,7 @@ const close = () => {
               v-if="showClose"
               variant="soft"
               size="sm"
-              class="px-2 text-text-primary shrink-0"
+              class="px-2.25 text-text-primary shrink-0"
               @click="close"
             >
               <X :stroke-width="1.5" />

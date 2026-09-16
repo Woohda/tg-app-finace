@@ -28,6 +28,7 @@ export interface TelegramWebApp {
   close: () => void;
   openLink: (url: string) => void;
   openTelegramLink: (url: string) => void;
+  isVersionAtLeast: (version: string) => boolean;
   HapticFeedback?: {
     impactOccurred: (style: "light" | "medium" | "heavy" | "rigid" | "soft") => void;
     notificationOccurred: (type: "error" | "success" | "warning") => void;

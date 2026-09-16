@@ -11,7 +11,6 @@
 import { computed, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Sparkles, RussianRuble, Trash2 } from "@lucide/vue";
-import { formatAmount } from "~/utils";
 
 interface ScannedTransaction {
   id?: string;
@@ -26,6 +25,7 @@ interface ScannedTransaction {
 const router = useRouter();
 const { token } = useAuth();
 const scanResults = useState<ScannedTransaction[]>("scanResults", () => []);
+const txVersion = useGlobalTransactionsVersion();
 
 // Категории для маппинга
 const { categories, fetchCategories } = useCategories();
@@ -68,13 +68,6 @@ onMounted(async () => {
   });
 });
 
-const totalAmount = computed(() => {
-  return editableItems.value.reduce(
-    (sum, item) => sum + (Number(item.amount) || 0),
-    0,
-  );
-});
-
 // -- Группировка транзакций по категориям --
 const groupedItems = computed(() => {
   const groups: Record<
@@ -107,9 +100,12 @@ const removeItemById = (id: string) => {
 };
 
 // -- Удаление всей группы --
-const removeGroupById = (categoryId: string) => {
+const removeGroupById = (groupId: string) => {
   editableItems.value = editableItems.value.filter(
-    (i) => (i.categoryId || "unknown") !== categoryId,
+    (i) => {
+      const key = `${i.type}_${i.categoryId || "unknown"}`;
+      return key !== groupId;
+    }
   );
   if (editableItems.value.length === 0) {
     scanResults.value = [];
@@ -185,6 +181,10 @@ const saveAll = async () => {
 
     if (res) {
       scanResults.value = [];
+      clearNuxtData(
+        (key) => typeof key === "string" && key.startsWith("transactions-list-")
+      );
+      txVersion.value++;
       router.push("/");
     }
   } catch (e) {
@@ -219,14 +219,6 @@ const saveAll = async () => {
       {{ saveError }}
     </div>
 
-    <!-- Total card -->
-    <GlassCard class="flex justify-between items-center">
-      <span class="text-text-secondary font-medium">Сумма чека</span>
-      <span class="text-2xl font-bold text-text-primary">{{
-        formatAmount(totalAmount)
-      }}</span>
-    </GlassCard>
-
     <!-- Список транзакций по группам -->
     <div class="flex flex-col gap-4">
       <GlassCard
@@ -248,7 +240,7 @@ const saveAll = async () => {
             class="text-text-accent transition-colors"
             @click="removeGroupById(catId)"
           >
-            <Trash2 class="size-5" />
+            <Trash2 :stroke-width="2" />
           </Button>
         </div>
 
@@ -272,7 +264,7 @@ const saveAll = async () => {
 
     <GlassMorphButton
       variant="primary"
-      class="w-full py-4 rounded-full text-lg shadow-xl"
+      class="py-4 rounded-full text-lg shadow-xl"
       :state="isSaving ? 'loading' : 'idle'"
       @click="saveAll"
     >

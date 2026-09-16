@@ -1,5 +1,9 @@
 @import "tailwindcss";
 
+@font-face { font-family: "Sansation-Regular"; src: url("/fonts/Sansation-Regular.ttf") format("truetype"); font-display: block; }
+@font-face { font-family: "Gabriela"; src: url("/fonts/Gabriela-Regular.ttf") format("truetype"); font-display: block; }
+
+
 @theme {
   /* Цвета: Glassmorphism (Стекломорфизм) */
   --color-accent-start: #e11d48; /* Яркий рубин */
@@ -15,20 +19,18 @@
     15px 15px 35px rgba(130, 115, 105, 0.25),
     -10px -10px 30px rgba(255, 255, 255, 0.6);
 
-
   /* Вдавленная тень (для полей ввода) - гибрид со стеклом */
   --shadow-glass-inner:
     inset 4px 4px 10px rgba(130, 115, 105, 0.15),
     inset -4px -4px 10px rgba(255, 255, 255, 0.9);
-
 
   /* Скругления */
   --radius-pill: 999px;
 
   /* Типографика */
   --font-sans:
-    "Inter", -apple-system, BlinkMacSystemFont, "SF Pro Text", "Segoe UI",
-    Roboto, Helvetica, Arial, sans-serif;
+    "Sansation-Regular", "Gabriela", -apple-system, BlinkMacSystemFont, "SF Pro Text",
+    "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 @layer base {

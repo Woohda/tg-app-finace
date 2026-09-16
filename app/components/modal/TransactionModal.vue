@@ -17,7 +17,10 @@ import { useRouter } from "vue-router";
 import { Calendar, RussianRuble, Camera } from "@lucide/vue";
 import { transactionFrontendSchema } from "~/types/validate";
 import { formatZodError } from "~/utils/zod";
-import { useTransactionModal, type ScannedTransaction } from "~/composables/useTransactionModal";
+import {
+  useTransactionModal,
+  type ScannedTransaction,
+} from "~/composables/useTransactionModal";
 
 const router = useRouter();
 const { addTransaction, updateTransaction, transactions } = useTransactions();
@@ -134,6 +137,9 @@ const submit = async () => {
     buttonState.value = "success";
     setTimeout(() => {
       closeModal();
+      if (!isEditMode.value) {
+        router.push("/");
+      }
     }, 1000);
   } else {
     buttonState.value = "idle";
@@ -173,9 +179,10 @@ const handleFileUpload = async (event: Event) => {
     const base64Data = await base64Promise;
 
     const currentToken = token.value || useCookie("auth_token").value;
-    
-    if (!currentToken || currentToken === 'null') {
-      scanError.value = "Ошибка авторизации: токен отсутствует. Зайдите заново (Dev Login).";
+
+    if (!currentToken || currentToken === "null") {
+      scanError.value =
+        "Ошибка авторизации: токен отсутствует. Зайдите заново (Dev Login).";
       isScanning.value = false;
       return;
     }
@@ -183,7 +190,7 @@ const handleFileUpload = async (event: Event) => {
     const res = await $fetch("/api/ai/parse-receipt", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${currentToken.replace(/['"]+/g, '')}`,
+        Authorization: `Bearer ${currentToken.replace(/['"]+/g, "")}`,
       },
       body: { image: base64Data },
     });
@@ -258,7 +265,7 @@ const handleFileUpload = async (event: Event) => {
       <GlassMorphButton
         type="submit"
         variant="primary"
-        class="w-full py-4 rounded-full"
+        class="py-4 rounded-full"
         :state="buttonState"
         :disabled="pending"
       >

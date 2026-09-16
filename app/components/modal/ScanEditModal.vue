@@ -3,7 +3,7 @@
  * @module app/components/modal/ScanEditModal
  * @fileoverview Вспомогательное окно для редактирования отсканированных позиций из чека.
  * @description
- * Позволяет пользователю проверить и откорректировать данные конкретной товарной позиции, 
+ * Позволяет пользователю проверить и откорректировать данные конкретной товарной позиции,
  * полученной от AI-парсера, перед массовым сохранением в БД.
  * ---
  * ### Логика работы:
@@ -13,10 +13,6 @@
  */
 import { computed } from "vue";
 import { Calendar } from "@lucide/vue";
-import GlassModal from "~/components/modal/GlassModal.vue";
-import GlassInput from "~/components/shared/GlassInput.vue";
-import GlassCategorySelect from "~/components/shared/GlassCategorySelect.vue";
-import GlassButton from "~/components/shared/GlassButton.vue";
 import type { Database } from "~/types/database.types";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
@@ -131,9 +127,9 @@ const save = () => {
         />
       </div>
 
-      <GlassButton variant="primary" class="w-full py-4 mt-2" @click="save">
+      <GlassMorphButton variant="primary" class="py-4 mt-2" @click="save">
         Сохранить изменения
-      </GlassButton>
+      </GlassMorphButton>
     </div>
   </GlassModal>
 </template>

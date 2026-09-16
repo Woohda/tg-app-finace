@@ -7,7 +7,9 @@ export const useHaptic = () => {
   const isAvailable = () => {
     return (
       typeof window !== "undefined" &&
-      !!window.Telegram?.WebApp?.HapticFeedback
+      !!window.Telegram?.WebApp?.HapticFeedback &&
+      typeof window.Telegram.WebApp.isVersionAtLeast === "function" &&
+      window.Telegram.WebApp.isVersionAtLeast("6.1")
     );
   };
 
