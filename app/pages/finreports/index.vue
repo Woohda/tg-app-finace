@@ -8,7 +8,9 @@
  * Транзакции интерактивны: swipe-to-delete, tap-to-edit.
  */
 
-const router = useRouter();
+import { useTransactionModal } from "~/composables/useTransactionModal";
+
+const { openModal } = useTransactionModal();
 
 const { startDate, endDate, currentDate, prevMonth, nextMonth } =
   useDateFilter();
@@ -35,7 +37,7 @@ async function handleDelete(id: string) {
 }
 
 function handleEdit(id: string) {
-  router.push(`/add?edit=${id}`);
+  openModal(id);
 }
 
 type ViewMode = "budget" | "spent";

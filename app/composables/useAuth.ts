@@ -53,12 +53,12 @@ export const useAuth = () => {
   const tokenCookie = useCookie<string | null>("auth_token", {
     maxAge: 60 * 60 * 24 * 7,
     sameSite: "lax",
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
   });
   const userCookie = useCookie<User | null>("auth_user", {
     maxAge: 60 * 60 * 24 * 7,
     sameSite: "lax",
-    secure: true,
+    secure: process.env.NODE_ENV === "production",
   });
 
   const token = useState<string | null>("auth:token", () => tokenCookie.value ?? null);
