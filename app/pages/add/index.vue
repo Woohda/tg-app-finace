@@ -157,7 +157,7 @@ const handleFileUpload = async (event: Event) => {
 
     if (res && res.transactions) {
       scanResults.value = res.transactions;
-      router.push("/scan-results");
+      router.push("/scan");
     } else {
       throw new Error("Неверный формат ответа");
     }
