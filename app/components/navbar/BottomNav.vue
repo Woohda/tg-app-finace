@@ -76,7 +76,7 @@ function isItemActive(to: string): boolean {
         <!-- Выпуклая матовая кнопка с блюром -->
         <NuxtLink
           to="/add"
-          class="size-17 rounded-full flex items-center justify-center text-text-accent text-4xl font-light active:scale-90 transition-transform outline-none focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-4 focus-visible:ring-offset-transparent"
+          class="size-17 rounded-full flex items-center justify-center text-text-accent text-4xl font-light active:scale-90 transition-transform outline-none focus-visible:ring-1 focus-visible:ring-text-accent"
           style="
             background: rgba(238, 238, 238, 1);
             box-shadow:

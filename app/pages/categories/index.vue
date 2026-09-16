@@ -63,7 +63,7 @@ const formIcon = ref('');
 const formType = ref<'expense' | 'income'>('expense');
 const formError = ref<string | null>(null);
 const formButtonState = ref<'idle' | 'loading' | 'success'>('idle');
-
+const nameInputRef = ref<{ focus: () => void } | null>(null);
 // Оставляем только один эмодзи/символ при вводе
 watch(formIcon, (newVal) => {
 	if (newVal) {
@@ -84,6 +84,9 @@ const openCreateForm = (type: 'expense' | 'income' = 'expense') => {
 	formError.value = null;
 	formButtonState.value = 'idle';
 	isFormOpen.value = true;
+	setTimeout(() => {
+		nameInputRef.value?.focus();
+	}, 100);
 };
 
 const openEditForm = (category: (typeof categories.value)[0]) => {
@@ -95,6 +98,9 @@ const openEditForm = (category: (typeof categories.value)[0]) => {
 	formError.value = null;
 	formButtonState.value = 'idle';
 	isFormOpen.value = true;
+	setTimeout(() => {
+		nameInputRef.value?.focus();
+	}, 100);
 };
 
 const closeForm = () => {
@@ -300,6 +306,7 @@ const executeDelete = async () => {
 			<form class="flex flex-col gap-4" @submit.prevent="submitForm">
 				<div class="flex gap-3">
 					<GlassInput
+						ref="nameInputRef"
 						v-model="formName"
 						type="text"
 						label="Название"

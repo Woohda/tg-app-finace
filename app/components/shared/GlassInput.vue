@@ -27,6 +27,16 @@ const value = computed({
   get: () => props.modelValue ?? "",
   set: (val) => emits("update:modelValue", val),
 });
+
+const inputCompRef = ref<InstanceType<typeof Input> | null>(null);
+
+const focus = () => {
+  if (inputCompRef.value?.inputRef) {
+    inputCompRef.value.inputRef.focus();
+  }
+};
+
+defineExpose({ focus });
 </script>
 
 <template>
@@ -51,13 +61,15 @@ const value = computed({
         </slot>
       </div>
       <Input
+        ref="inputCompRef"
         v-model="value"
         :type="type"
         :step="step"
         :placeholder="placeholder"
         :class="[
-          'bg-transparent glass-milky rounded-full px-5 py-5 text-text-primary font-medium text-base outline-none border-none focus-visible:ring-2 focus-visible:ring-text-accent',
+          'glass-milky rounded-full px-5 text-text-primary font-medium text-base outline-none border-none transition-all duration-300 ease-in-out focus-visible:ring-1 focus-visible:ring-text-accent',
           $slots.icon || icon ? 'pl-9' : '',
+          value ? 'shadow-glass-inner bg-white/40' : '',
         ]"
       />
     </div>

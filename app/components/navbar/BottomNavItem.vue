@@ -12,7 +12,7 @@ defineProps<{
 <template>
   <NuxtLink
     :to="to"
-    class="relative flex flex-col items-center justify-center w-16 h-15 transition-all duration-300 rounded-3xl outline-none focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent"
+    class="relative flex flex-col items-center justify-center w-16 h-15 transition-all duration-300 rounded-3xl outline-none focus-visible:ring-1 focus-visible:ring-text-accent"
     :class="
       isActive
         ? 'text-text-accent'

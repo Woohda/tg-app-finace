@@ -44,7 +44,7 @@ watch(
     :class="
       cn(
         'relative flex items-center justify-center overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]',
-        'outline-none focus-visible:ring-2 focus-visible:ring-text-accent',
+        'outline-none focus-visible:ring-1 focus-visible:ring-text-accent',
         // Размеры и форма
         state === 'idle'
           ? 'h-12 w-full px-5 rounded-pill'

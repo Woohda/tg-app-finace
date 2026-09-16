@@ -34,7 +34,10 @@ const value = computed({
   <div class="relative w-full">
     <select
       v-model="value"
-      class="w-full glass-milky rounded-full pl-3 pr-8 py-2.25 text-text-primary font-medium text-sm outline-none shadow-glass appearance-none text-ellipsis overflow-hidden whitespace-nowrap"
+      :class="[
+        'w-full glass-milky rounded-full pl-3 pr-8 py-2.5 font-medium text-[15px] outline-none border-none transition-all duration-300 ease-in-out focus-visible:ring-1 focus-visible:ring-text-accent appearance-none text-ellipsis overflow-hidden whitespace-nowrap',
+        value ? 'shadow-glass-inner bg-white/40' : 'text-text-secondary',
+      ]"
     >
       <option value="" disabled>Категория</option>
       <option v-for="cat in categories" :key="cat.id" :value="cat.id">
