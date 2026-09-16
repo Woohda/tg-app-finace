@@ -50,6 +50,10 @@ export const useCategories = () => {
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
+  const authHeaders = computed(() => ({
+    Authorization: `Bearer ${token.value}`,
+  }));
+
   const sortCategories = (cats: Category[]) => {
     cats.sort((a, b) => {
       if (a.type !== b.type) return a.type === "expense" ? -1 : 1;
@@ -68,9 +72,7 @@ export const useCategories = () => {
 
     try {
       const data = await $fetch<Category[]>("/api/categories", {
-        headers: {
-          Authorization: `Bearer ${token.value}`,
-        },
+        headers: authHeaders.value,
       });
       categories.value = data;
     } catch (e: unknown) {
@@ -97,9 +99,7 @@ export const useCategories = () => {
     try {
       const newCategory = await $fetch<Category>("/api/categories", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token.value}`,
-        },
+        headers: authHeaders.value,
         body: { name, type, icon },
       });
 
@@ -125,9 +125,7 @@ export const useCategories = () => {
     try {
       const updated = await $fetch<Category>(`/api/categories/${id}`, {
         method: "PUT",
-        headers: {
-          Authorization: `Bearer ${token.value}`,
-        },
+        headers: authHeaders.value,
         body: { name, icon },
       });
 
@@ -155,9 +153,7 @@ export const useCategories = () => {
     try {
       await $fetch(`/api/categories/${id}`, {
         method: "DELETE",
-        headers: {
-          Authorization: `Bearer ${token.value}`,
-        },
+        headers: authHeaders.value,
       });
 
       categories.value = categories.value.filter((c) => c.id !== id);

@@ -38,6 +38,7 @@ export async function requireAuth(
   const authHeader = getHeader(event, "authorization");
 
   if (!authHeader?.startsWith("Bearer ")) {
+    console.error("requireAuth: Missing or invalid auth header:", authHeader);
     throw createError({
       statusCode: 401,
       statusMessage: "Требуется авторизация",
@@ -56,7 +57,8 @@ export async function requireAuth(
     }
 
     return payload.sub;
-  } catch {
+  } catch (err) {
+    console.error("requireAuth: JWT verification failed:", err);
     throw createError({
       statusCode: 401,
       statusMessage: "Токен недействителен или просрочен",

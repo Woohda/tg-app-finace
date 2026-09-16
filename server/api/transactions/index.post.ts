@@ -55,16 +55,5 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Возвращаем в отформатированном виде
-  const cat = Array.isArray(data.categories) ? data.categories[0] : data.categories;
-  return {
-    id: data.id,
-    amount: data.amount,
-    type: data.type,
-    name: data.name,
-    date: data.date,
-    categoryId: cat?.id || "",
-    categoryName: cat?.name || "Неизвестно",
-    categoryIcon: cat?.icon || "💸",
-  };
+  return formatTransaction(data);
 });
