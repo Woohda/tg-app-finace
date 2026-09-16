@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/**
+ * @module app/components/shared/GlassTypeSelector
+ * @fileoverview Селектор типа транзакции (Доход / Расход)
+ * @description
+ * Компонент на базе RadioGroup из `reka-ui`. Представляет собой две большие
+ * стеклянные кнопки с иконками и текстом, позволяющие выбрать тип операции.
+ */
 import { RadioGroupRoot, RadioGroupItem } from "reka-ui";
 import { BanknoteArrowUp, BanknoteArrowDown } from "@lucide/vue";
 

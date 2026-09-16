@@ -1,11 +1,11 @@
 <script setup lang="ts">
 /**
- * @module app/components/TransactionItem
- * @fileoverview Карточка транзакции со swipe-to-delete и возможностью клика
+ * @module app/components/transaction/TransactionItem
+ * @fileoverview Компонент отображения отдельной транзакции в списке.
  * @description
- * Отображает иконку категории, название, дату и сумму.
- * Расходы — текстом primary, доходы — акцентным цветом.
- * Поддерживает горизонтальный свайп влево для показа кнопки «Удалить».
+ * Отображает иконку категории, название, дату и сумму транзакции.
+ * Цвет суммы зависит от типа транзакции (доход/расход).
+ * По клику вызывает `useTransactionModal` в режиме редактирования.
  */
 import type { HTMLAttributes } from "vue";
 import { cn } from "~/utils";
