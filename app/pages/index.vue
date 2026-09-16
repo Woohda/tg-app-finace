@@ -15,8 +15,12 @@ import { Bell, ReceiptText } from "@lucide/vue";
 const { user, tgUser } = useAuth();
 const { transactions, pending } = useTransactions();
 const { balance, monthlyExpense } = useTransactionView(transactions);
-const { balanceHistory, expensesByCategory, recentTransactions, dashboardStats } =
-  useDashboardStats(transactions);
+const {
+  balanceHistory,
+  expensesByCategory,
+  recentTransactions,
+  dashboardStats,
+} = useDashboardStats(transactions);
 
 const greeting = getGreeting();
 const userName = computed(() => {
@@ -110,7 +114,7 @@ const percentChange = computed(() => dashboardStats.value?.percentChange || 0);
           v-for="item in recentTransactions"
           :key="item.id"
           :icon="item.categoryIcon"
-          :name="item.categoryName"
+          :title="item.name || item.categoryName"
           :amount="item.amount"
           :type="item.type"
           :date="item.date"

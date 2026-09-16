@@ -33,7 +33,7 @@ export const transactionFrontendSchema = z.object({
   categoryId: z.string().min(1, "Выберите категорию"),
   date: z.string().min(1, "Выберите дату"),
   type: z.enum(["expense", "income"]),
-  description: z.string().optional(),
+  name: z.string().optional(),
 });
 
 export const transactionBackendSchema = z.object({
@@ -41,8 +41,7 @@ export const transactionBackendSchema = z.object({
   category_id: z.string().min(1, "Не указана категория"),
   type: z.enum(["income", "expense"]),
   date: z.string().min(1, "Не указана дата"),
-  description: z.string().optional().nullable(),
-  comment: z.string().optional().nullable(),
+  name: z.string().optional().nullable(),
 });
 
 export const transactionPatchSchema = z
@@ -51,7 +50,7 @@ export const transactionPatchSchema = z
     category_id: z.string().min(1, "Не указана категория").optional(),
     type: z.enum(["income", "expense"]).optional(),
     date: z.string().min(1, "Не указана дата").optional(),
-    description: z.string().optional().nullable(),
+    name: z.string().optional().nullable(),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "Нет данных для обновления",

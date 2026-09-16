@@ -24,7 +24,7 @@ const isEditMode = computed(() => !!editId.value);
 const type = ref<"expense" | "income">("expense");
 const amount = ref<number | "">("");
 const categoryId = ref<string>("");
-const description = ref<string>("");
+const name = ref<string>("");
 const date = ref<string>(new Date().toISOString().split("T")[0] as string); // YYYY-MM-DD
 
 // Категории из готового composable (auth уже внутри)
@@ -57,7 +57,7 @@ watch(
     type.value = tx.type;
     amount.value = tx.amount;
     categoryId.value = tx.categoryId;
-    description.value = tx.description || "";
+    name.value = tx.name || "";
     date.value = tx.date;
   },
   { immediate: true },
@@ -69,7 +69,7 @@ const submit = async () => {
     categoryId: categoryId.value,
     date: date.value,
     type: type.value,
-    description: description.value,
+    name: name.value,
   });
 
   if (!result.success) {
@@ -87,7 +87,7 @@ const submit = async () => {
     category_id: result.data.categoryId,
     type: result.data.type,
     date: result.data.date,
-    description: result.data.description || undefined,
+    name: result.data.name || undefined,
   };
 
   if (isEditMode.value && editId.value) {
@@ -118,7 +118,7 @@ watch(type, () => {
 interface ScannedTransaction {
   type: "expense" | "income";
   amount: number;
-  description: string;
+  name: string;
   suggestedCategory?: string;
 }
 
@@ -214,9 +214,9 @@ const handleFileUpload = async (event: Event) => {
         <!-- Date -->
         <GlassInput v-model="date" type="date" label="Дата" :icon="Calendar" />
 
-        <!-- Description -->
+        <!-- Name -->
         <GlassInput
-          v-model="description"
+          v-model="name"
           type="text"
           label="Комментарий"
           placeholder="Например, Обед с коллегами"

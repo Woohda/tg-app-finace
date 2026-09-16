@@ -14,8 +14,8 @@ import { Trash2 } from "@lucide/vue";
 interface Props {
   class?: HTMLAttributes["class"];
   icon?: string;
-  name: string;
-  description?: string | null;
+  title: string;
+  subtitle?: string | null;
   amount: number;
   type: "income" | "expense";
   date: string;
@@ -26,7 +26,7 @@ const props = withDefaults(defineProps<Props>(), {
   class: undefined,
   interactive: false,
   icon: undefined,
-  description: undefined,
+  subtitle: undefined,
 });
 
 const emit = defineEmits<{
@@ -141,14 +141,11 @@ function onDeleteClick() {
         <!-- Название + описание + дата -->
         <div class="flex-1 min-w-0">
           <p class="text-sm font-medium text-text-primary truncate">
-            {{ name }}
+            {{ title }}
           </p>
           <div class="w-full flex text-xs text-text-secondary mt-0.5">
             <span class="shrink-0"> {{ formattedDate }}</span>
-            {{ description ? "," : "" }}
-            <span v-if="description" class="truncate ml-1">
-              {{ description }}</span
-            >
+            <span v-if="subtitle" class="truncate">,&nbsp;{{ subtitle }}</span>
           </div>
         </div>
 

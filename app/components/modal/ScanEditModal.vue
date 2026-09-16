@@ -12,7 +12,7 @@ interface ScannedTransaction {
   id?: string;
   type: "expense" | "income";
   amount: number;
-  description: string;
+  name: string;
   suggestedCategory?: string;
   categoryId?: string;
   date?: string;
@@ -92,9 +92,9 @@ const save = () => {
       </div>
 
       <GlassInput
-        v-model="localItem.description"
+        v-model="localItem.name"
         type="text"
-        placeholder="Название покупки / Комментарий"
+        placeholder="Название покупки"
       />
 
       <GlassCategorySelect

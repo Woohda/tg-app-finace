@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { amount, category_id, type, date, description } = body.data;
+  const { amount, category_id, type, date, name } = body.data;
 
   // Собираем объект обновления
   const updateData: Database["public"]["Tables"]["transactions"]["Update"] = {};
@@ -41,7 +41,7 @@ export default defineEventHandler(async (event) => {
   if (category_id !== undefined) updateData.category_id = category_id;
   if (type !== undefined) updateData.type = type;
   if (date !== undefined) updateData.date = date;
-  if (description !== undefined) updateData.description = description || null;
+  if (name !== undefined) updateData.name = name || null;
 
   const { data, error } = await supabase
     .from("transactions")
@@ -53,7 +53,7 @@ export default defineEventHandler(async (event) => {
       id,
       amount,
       type,
-      description,
+      name,
       date,
       created_at,
       categories (
@@ -86,7 +86,7 @@ export default defineEventHandler(async (event) => {
     id: data.id,
     amount: data.amount,
     type: data.type,
-    description: data.description,
+    name: data.name,
     date: data.date,
     categoryId: cat?.id || "",
     categoryName: cat?.name || "Неизвестно",

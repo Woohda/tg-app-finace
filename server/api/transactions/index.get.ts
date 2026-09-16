@@ -29,7 +29,7 @@ export default defineEventHandler(async (event) => {
       id,
       amount,
       type,
-      description,
+      name,
       date,
       created_at,
       categories (
@@ -60,7 +60,7 @@ export default defineEventHandler(async (event) => {
       id: t.id,
       amount: t.amount,
       type: t.type,
-      description: t.description,
+      name: t.name,
       date: t.date,
       categoryId: cat?.id || "",
       categoryName: cat?.name || "Неизвестно",

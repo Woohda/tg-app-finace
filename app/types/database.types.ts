@@ -90,8 +90,7 @@ export type Database = {
           category_id: string;
           created_at: string;
           date: string;
-          description: string | null;
-          comment: string | null;
+          name: string | null;
           id: string;
           type: string;
           user_id: string;
@@ -101,8 +100,7 @@ export type Database = {
           category_id: string;
           created_at?: string;
           date: string;
-          description?: string | null;
-          comment?: string | null;
+          name?: string | null;
           id?: string;
           type: string;
           user_id: string;
@@ -112,8 +110,7 @@ export type Database = {
           category_id?: string;
           created_at?: string;
           date?: string;
-          description?: string | null;
-          comment?: string | null;
+          name?: string | null;
           id?: string;
           type?: string;
           user_id?: string;
