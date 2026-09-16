@@ -31,9 +31,12 @@ export default defineEventHandler(async (event) => {
     }
 
     const botInstance = getBot(token);
+    await botInstance.init();
     await botInstance.handleUpdate(update);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("[Telegram Webhook Error]", error);
+    const errorMessage = error instanceof Error ? error.message : String(error);
+    return { ok: false, error: errorMessage };
   }
   return { ok: true };
 });
