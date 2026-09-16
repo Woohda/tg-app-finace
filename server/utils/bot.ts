@@ -42,7 +42,7 @@ export function getBot(customToken?: string): Bot {
     const webAppUrl = getWebAppUrl();
     await ctx.reply(
       `Привет! 👋\n` +
-        `Я, *FINO*, твой финансовый помощник.\n` +
+        `Я, *FINO*, твой финансовый помощник.\n\n` +
         `Я помогу тебе удобно отслеживать расходы и доходы. Ты можешь использовать полноценное Web-приложение внутри Telegram или просто писать мне текстом!\n\n` +
         `Нажми кнопку "FINO", чтобы открыть приложение.`,
       { parse_mode: "Markdown" },
