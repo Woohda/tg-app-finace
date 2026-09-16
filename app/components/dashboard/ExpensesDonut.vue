@@ -14,7 +14,7 @@
  */
 import { computed } from "vue";
 import { formatAmount } from "~/utils";
-import { mockTotalExpense } from "~/mocks/dashboard";
+
 import { ChartColumn } from "@lucide/vue";
 
 export interface CategoryBudgetData {
@@ -28,17 +28,20 @@ export interface CategoryBudgetData {
 const props = defineProps<{
   categories: CategoryBudgetData[];
   isLoading?: boolean;
+  totalExpense?: number;
 }>();
 
 const radius = 67;
-const circumference = 2 * Math.PI * radius;
+const circumference = 2.027 * Math.PI * radius;
 
 const strokeWidth = 24;
-const visualGap = 0;
+const visualGap = 0.5;
 const minDash = strokeWidth + visualGap;
 
 const localTotal = computed(() =>
-  props.categories.reduce((acc, cat) => acc + cat.amount, 0),
+  props.totalExpense !== undefined
+    ? props.totalExpense
+    : props.categories.reduce((acc, cat) => acc + cat.amount, 0),
 );
 
 const segments = computed(() => {
@@ -50,6 +53,11 @@ const segments = computed(() => {
 
   let accumulatedOffset = 0;
 
+  // Масштабы для бликов и теней (чтобы они идеально совпадали с углом базового кольца)
+  const scaleHighlight = 63 / radius;
+  const scaleSharp = 59 / radius;
+  const scaleShadow = 73 / radius;
+
   return props.categories.map((cat) => {
     const fraction =
       localTotal.value > 0 ? cat.amount / localTotal.value : 1 / numCats;
@@ -59,8 +67,17 @@ const segments = computed(() => {
     const strokeDasharray = `${visibleLength} ${circumference}`;
     const strokeDashoffset = -accumulatedOffset;
 
-    const midAngle =
-      ((accumulatedOffset + visibleLength / 2) / circumference) * 2 * Math.PI;
+    // Смещения для 3D бликов и теней
+    const highlightDasharray = `${visibleLength * scaleHighlight} ${circumference * scaleHighlight}`;
+    const highlightDashoffset = -accumulatedOffset * scaleHighlight;
+
+    const sharpDasharray = `${visibleLength * scaleSharp} ${circumference * scaleSharp}`;
+    const sharpDashoffset = -accumulatedOffset * scaleSharp;
+
+    const shadowDasharray = `${visibleLength * scaleShadow} ${circumference * scaleShadow}`;
+    const shadowDashoffset = -accumulatedOffset * scaleShadow;
+
+    const midAngle = (accumulatedOffset + visibleLength / 2) / radius;
     const pxX = 80 + radius * Math.sin(midAngle);
     const pxY = 80 - radius * Math.cos(midAngle);
 
@@ -70,6 +87,12 @@ const segments = computed(() => {
       ...cat,
       strokeDasharray,
       strokeDashoffset,
+      highlightDasharray,
+      highlightDashoffset,
+      sharpDasharray,
+      sharpDashoffset,
+      shadowDasharray,
+      shadowDashoffset,
       iconX: Number(((pxX / 160) * 100).toFixed(2)),
       iconY: Number(((pxY / 160) * 100).toFixed(2)),
       IconComponent: useCategoryIcon(cat.icon || "❔"),
@@ -104,172 +127,91 @@ const segments = computed(() => {
             viewBox="0 0 160 160"
           >
             <defs>
-              <filter
-                id="glossy-volumetric"
-                x="-30%"
-                y="-30%"
-                width="160%"
-                height="160%"
-              >
-                <!-- 1. Яркая цветная внешняя тень -->
-                <!-- Создает красивую светящуюся тень, используя собственные цвета графики -->
-                <feGaussianBlur
-                  in="SourceGraphic"
-                  stdDeviation="6"
-                  result="coloredBlur"
-                />
-                <feOffset
-                  dx="0"
-                  dy="2"
-                  in="coloredBlur"
-                  result="coloredOffset"
-                />
-                <feComponentTransfer in="coloredOffset" result="coloredShadow">
-                  <feFuncA type="linear" slope="0.1" />
-                </feComponentTransfer>
-
-                <!-- 2. Мягкая внешняя тень (для глубины) -->
-                <feDropShadow
-                  in="SourceAlpha"
-                  dx="0"
-                  dy="2"
-                  stdDeviation="6"
-                  flood-color="rgba(0,0,0,0.1)"
-                  result="drop"
-                />
-
-                <!-- 3. Мягкая внутренняя тень (Справа снизу) для 3D объема -->
-                <feGaussianBlur
-                  in="SourceAlpha"
-                  stdDeviation="5"
-                  result="blurDark"
-                />
-                <feOffset dx="2" dy="2" in="blurDark" result="offsetBlurDark" />
-                <feComposite
-                  in="SourceAlpha"
-                  in2="offsetBlurDark"
-                  operator="out"
-                  result="shadowArea"
-                />
-                <feFlood
-                  flood-color="#000000"
-                  flood-opacity="0.1"
-                  result="shadowColor"
-                />
-                <feComposite
-                  in="shadowColor"
-                  in2="shadowArea"
-                  operator="in"
-                  result="innerShadow"
-                />
-
-                <!-- 4. Мягкий внутренний блик (Слева сверху) для 3D объема -->
-                <feGaussianBlur
-                  in="SourceAlpha"
-                  stdDeviation="4"
-                  result="blurLight"
-                />
-                <feOffset
-                  dx="-3"
-                  dy="-3"
-                  in="blurLight"
-                  result="offsetBlurLight"
-                />
-                <feComposite
-                  in="SourceAlpha"
-                  in2="offsetBlurLight"
-                  operator="out"
-                  result="highlightArea"
-                />
-                <feFlood
-                  flood-color="#ffffff"
-                  flood-opacity="0.3"
-                  result="highlightColor"
-                />
-                <feComposite
-                  in="highlightColor"
-                  in2="highlightArea"
-                  operator="in"
-                  result="highlight"
-                />
-
-                <!-- 5. Четкий внутренний контурный свет (Слева сверху) для стеклянного края -->
-                <feGaussianBlur
-                  in="SourceAlpha"
-                  stdDeviation="0.9"
-                  result="sharpBlur"
-                />
-                <feOffset dx="-1" dy="-1" in="sharpBlur" result="sharpOffset" />
-                <feComposite
-                  in="SourceAlpha"
-                  in2="sharpOffset"
-                  operator="out"
-                  result="sharpHighlightArea"
-                />
-                <feFlood
-                  flood-color="#ffffff"
-                  flood-opacity="0.6"
-                  result="sharpHighlightColor"
-                />
-                <feComposite
-                  in="sharpHighlightColor"
-                  in2="sharpHighlightArea"
-                  operator="in"
-                  result="sharpHighlight"
-                />
-
-                <!-- 6. Тонкая обводка по всему контуру (Очень мягкая) -->
-                <feMorphology
-                  in="SourceAlpha"
-                  operator="erode"
-                  radius="0.9"
-                  result="eroded"
-                />
-                <feComposite
-                  in="SourceAlpha"
-                  in2="eroded"
-                  operator="out"
-                  result="rimArea"
-                />
-                <feFlood
-                  flood-color="#ffffff"
-                  flood-opacity="0.9"
-                  result="rimColor"
-                />
-                <feComposite
-                  in="rimColor"
-                  in2="rimArea"
-                  operator="in"
-                  result="rimHighlight"
-                />
-
-                <!-- Объединяем все слои -->
-                <feMerge>
-                  <feMergeNode in="coloredShadow" />
-                  <feMergeNode in="drop" />
-                  <feMergeNode in="SourceGraphic" />
-                  <feMergeNode in="innerShadow" />
-                  <feMergeNode in="highlight" />
-                  <feMergeNode in="sharpHighlight" />
-                </feMerge>
+              <filter id="blur-sm" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="1.5" />
+              </filter>
+              <filter id="blur-md" x="-20%" y="-20%" width="140%" height="140%">
+                <feGaussianBlur stdDeviation="3.5" />
               </filter>
             </defs>
 
-            <circle
-              v-for="seg in segments"
-              :key="seg.id"
-              cx="80"
-              cy="80"
-              :r="radius"
-              fill="none"
-              :stroke="seg.color"
-              :stroke-width="strokeWidth"
-              :stroke-dasharray="seg.strokeDasharray"
-              :stroke-dashoffset="seg.strokeDashoffset"
-              stroke-linecap="round"
-              class="transition-all duration-1000 ease-out"
-              filter="url(#glossy-volumetric)"
-            />
+            <!-- Группа с отбрасываемой тенью -->
+            <g style="filter: drop-shadow(0px 6px 8px rgba(0, 0, 0, 0.22))">
+              <!-- 1. Базовые цветные сегменты -->
+              <g>
+                <circle
+                  v-for="seg in segments"
+                  :key="'base-' + seg.id"
+                  cx="80"
+                  cy="80"
+                  :r="radius"
+                  fill="none"
+                  :stroke="seg.color"
+                  :stroke-width="strokeWidth"
+                  :stroke-dasharray="seg.strokeDasharray"
+                  :stroke-dashoffset="seg.strokeDashoffset"
+                  stroke-linecap="round"
+                  class="transition-all duration-1000 ease-out"
+                />
+              </g>
+
+              <!-- 2. Внешняя глубокая тень (эффект закругления края трубки) -->
+              <g filter="url(#blur-md)">
+                <circle
+                  v-for="seg in segments"
+                  :key="'shadow-' + seg.id"
+                  cx="80"
+                  cy="80"
+                  :r="74"
+                  fill="none"
+                  stroke="black"
+                  :stroke-width="8"
+                  stroke-opacity="0.25"
+                  :stroke-dasharray="seg.shadowDasharray"
+                  :stroke-dashoffset="seg.shadowDashoffset"
+                  stroke-linecap="round"
+                  class="pointer-events-none transition-all duration-1000 ease-out"
+                />
+              </g>
+
+              <!-- 3. Широкий мягкий блик (плавный переход объема) -->
+              <g filter="url(#blur-md)">
+                <circle
+                  v-for="seg in segments"
+                  :key="'high-' + seg.id"
+                  cx="80"
+                  cy="80"
+                  :r="62"
+                  fill="none"
+                  stroke="white"
+                  :stroke-width="4"
+                  stroke-opacity="0.15"
+                  :stroke-dasharray="seg.highlightDasharray"
+                  :stroke-dashoffset="seg.highlightDashoffset"
+                  stroke-linecap="round"
+                  class="pointer-events-none transition-all duration-1000 ease-out"
+                />
+              </g>
+
+              <!-- 4. Узкий резкий блик (эффект мокрого пластика/глянца) -->
+              <g filter="url(#blur-sm)">
+                <circle
+                  v-for="seg in segments"
+                  :key="'sharp-' + seg.id"
+                  cx="80"
+                  cy="80"
+                  :r="59"
+                  fill="none"
+                  stroke="white"
+                  :stroke-width="1"
+                  stroke-opacity="0.25"
+                  :stroke-dasharray="seg.sharpDasharray"
+                  :stroke-dashoffset="seg.sharpDashoffset"
+                  stroke-linecap="round"
+                  class="pointer-events-none transition-all duration-1000 ease-out"
+                />
+              </g>
+            </g>
           </svg>
 
           <div
@@ -299,7 +241,7 @@ const segments = computed(() => {
                 >Потрачено</span
               >
               <span class="text-md font-extrabold text-text-primary">{{
-                formatAmount(mockTotalExpense)
+                formatAmount(localTotal)
               }}</span>
             </div>
           </Transition>

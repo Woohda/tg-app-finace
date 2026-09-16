@@ -20,8 +20,6 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Проверяем существование и ownership через select перед delete,
-  // т.к. Supabase delete не возвращает count затронутых строк надёжно
   const { data: existing } = await supabase
     .from("transactions")
     .select("id")

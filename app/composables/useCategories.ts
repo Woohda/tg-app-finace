@@ -39,19 +39,27 @@
  * - `Database` из `~/types/database.types` (типизация строк таблицы `categories`)
  */
 import type { Database } from "~/types/database.types";
+import { parseApiError } from "~/utils/api";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
 
 export const useCategories = () => {
   const { token } = useAuth();
 
-  const categories = ref<Category[]>([]);
+  const categories = useGlobalCategories();
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
+  const sortCategories = (cats: Category[]) => {
+    cats.sort((a, b) => {
+      if (a.type !== b.type) return a.type === "expense" ? -1 : 1;
+      return a.name.localeCompare(b.name);
+    });
+  };
+
   const fetchCategories = async () => {
-    if (!token.value) {
-      error.value = "Пользователь не авторизован";
+    if (!token.value || isLoading.value) {
+      if (!token.value) error.value = "Пользователь не авторизован";
       return;
     }
 
@@ -67,14 +75,7 @@ export const useCategories = () => {
       categories.value = data;
     } catch (e: unknown) {
       console.error("Ошибка загрузки категорий:", e);
-      const fetchError = e as {
-        data?: { statusMessage?: string };
-        message?: string;
-      };
-      error.value =
-        fetchError.data?.statusMessage ||
-        fetchError.message ||
-        "Не удалось загрузить категории";
+      error.value = parseApiError(e, "Не удалось загрузить категории");
     } finally {
       isLoading.value = false;
     }
@@ -85,8 +86,8 @@ export const useCategories = () => {
     type: "income" | "expense",
     icon?: string,
   ) => {
-    if (!token.value) {
-      error.value = "Пользователь не авторизован";
+    if (!token.value || isLoading.value) {
+      if (!token.value) error.value = "Пользователь не авторизован";
       return null;
     }
 
@@ -103,24 +104,12 @@ export const useCategories = () => {
       });
 
       categories.value.push(newCategory);
-      categories.value.sort((a, b) => {
-        if (a.type !== b.type) {
-          return a.type === "expense" ? -1 : 1;
-        }
-        return a.name.localeCompare(b.name);
-      });
+      sortCategories(categories.value);
 
       return newCategory;
     } catch (e: unknown) {
       console.error("Ошибка создания категории:", e);
-      const fetchError = e as {
-        data?: { statusMessage?: string };
-        message?: string;
-      };
-      error.value =
-        fetchError.data?.statusMessage ||
-        fetchError.message ||
-        "Не удалось создать категорию";
+      error.value = parseApiError(e, "Не удалось создать категорию");
       return null;
     } finally {
       isLoading.value = false;
@@ -128,7 +117,7 @@ export const useCategories = () => {
   };
 
   const updateCategory = async (id: string, name: string, icon?: string) => {
-    if (!token.value) return false;
+    if (!token.value || isLoading.value) return false;
 
     isLoading.value = true;
     error.value = null;
@@ -145,14 +134,12 @@ export const useCategories = () => {
       const index = categories.value.findIndex((c) => c.id === id);
       if (index !== -1) {
         categories.value[index] = updated;
-        categories.value.sort((a, b) => {
-          if (a.type !== b.type) return a.type === "expense" ? -1 : 1;
-          return a.name.localeCompare(b.name);
-        });
+        sortCategories(categories.value);
       }
       return true;
     } catch (e: unknown) {
       console.error("Ошибка обновления категории:", e);
+      error.value = parseApiError(e, "Не удалось обновить категорию");
       return false;
     } finally {
       isLoading.value = false;
@@ -160,7 +147,7 @@ export const useCategories = () => {
   };
 
   const deleteCategory = async (id: string) => {
-    if (!token.value) return false;
+    if (!token.value || isLoading.value) return false;
 
     isLoading.value = true;
     error.value = null;
@@ -177,14 +164,7 @@ export const useCategories = () => {
       return true;
     } catch (e: unknown) {
       console.error("Ошибка удаления категории:", e);
-      const fetchError = e as {
-        data?: { statusMessage?: string };
-        message?: string;
-      };
-      error.value =
-        fetchError.data?.statusMessage ||
-        fetchError.message ||
-        "Не удалось удалить категорию";
+      error.value = parseApiError(e, "Не удалось удалить категорию");
       return false;
     } finally {
       isLoading.value = false;

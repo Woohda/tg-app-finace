@@ -1,6 +1,5 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import { User } from "@lucide/vue";
 
 /**
  * @module app/pages/settings
@@ -10,6 +9,7 @@ import { User } from "@lucide/vue";
  * навигацию к управлению бюджетом и категориями.
  */
 const { user, tgUser, logout } = useAuth();
+const isLoading = useGlobalLoading();
 
 const userName = computed(() => {
   if (tgUser.value?.first_name) {
@@ -22,6 +22,13 @@ const userName = computed(() => {
 });
 
 const avatarUrl = computed(() => tgUser.value?.photo_url || null);
+
+const handleLogout = async () => {
+  isLoading.value = true;
+  logout();
+  await navigateTo("/login");
+  isLoading.value = false;
+};
 </script>
 
 <template>
@@ -41,17 +48,7 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
       class="p-5 flex flex-col items-center justify-center gap-3 text-center"
     >
       <div class="w-full flex gap-3 items-center justify-start">
-        <div
-          class="size-16 rounded-full glass-milky shadow-glass-inner flex items-center justify-center text-text-primary overflow-hidden"
-        >
-          <img
-            v-if="avatarUrl"
-            :src="avatarUrl"
-            alt="Avatar"
-            class="w-full h-full object-cover"
-          />
-          <User v-else class="size-8" :stroke-width="1.75" />
-        </div>
+        <Avatar :src="avatarUrl" size="lg" />
         <div class="flex flex-col gap-0.5 items-start">
           <h2 class="text-text-primary font-bold text-lg">
             {{ userName }}
@@ -112,8 +109,13 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
     </div>
 
     <GlassCard class="p-5 text-center">
-      <GlassButton variant="soft" class="w-full" @click="logout">
-        Выйти из аккаунта
+      <GlassButton
+        variant="soft"
+        class="w-full"
+        :disabled="isLoading"
+        @click="handleLogout"
+      >
+        {{ isLoading ? "Выход..." : "Выйти из аккаунта" }}
       </GlassButton>
     </GlassCard>
   </div>
