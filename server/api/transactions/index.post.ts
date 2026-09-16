@@ -20,7 +20,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { amount, category_id, type, date, description } = body.data;
+  const { amount, category_id, type, date, name } = body.data;
 
   const { data, error } = await supabase
     .from("transactions")
@@ -29,14 +29,14 @@ export default defineEventHandler(async (event) => {
       category_id,
       type,
       date,
-      description: description || null,
+      name: name || null,
       user_id: userId,
     })
     .select(`
       id,
       amount,
       type,
-      description,
+      name,
       date,
       created_at,
       categories (
@@ -61,7 +61,7 @@ export default defineEventHandler(async (event) => {
     id: data.id,
     amount: data.amount,
     type: data.type,
-    description: data.description,
+    name: data.name,
     date: data.date,
     categoryId: cat?.id || "",
     categoryName: cat?.name || "Неизвестно",

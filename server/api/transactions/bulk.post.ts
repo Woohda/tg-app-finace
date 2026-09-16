@@ -27,8 +27,7 @@ export default defineEventHandler(async (event) => {
     category_id: t.category_id,
     type: t.type,
     date: t.date,
-    description: t.description || null,
-    comment: t.comment || null,
+    name: t.name || null,
     user_id: userId,
   }));
 
@@ -38,8 +37,7 @@ export default defineEventHandler(async (event) => {
       id,
       amount,
       type,
-      description,
-      comment,
+      name,
       date,
       created_at,
       categories (
@@ -64,8 +62,7 @@ export default defineEventHandler(async (event) => {
         id: t.id,
         amount: t.amount,
         type: t.type,
-        description: t.description,
-        comment: t.comment,
+        name: t.name,
         date: t.date,
         categoryId: cat?.id || "",
         categoryName: cat?.name || "Неизвестно",
