@@ -1,6 +1,26 @@
 /**
  * @module server/api/categories/[id].put
  * @fileoverview Серверный обработчик PUT-запроса для редактирования категории
+ * @description
+ * Обновляет название и иконку категории в базе данных.
+ * ---
+ * ### Логика работы:
+ * 1. `Authentication`: Проверка JWT токена.
+ * 2. `Validation`: Чтение параметров роута и валидация тела запроса через Zod (`categoryUpdateSchema`).
+ * 3. `Database Update`: Обновление полей `name` и `icon` в таблице `categories`.
+ * 
+ * ### Параметры запроса:
+ * - `id` (в URL) — идентификатор обновляемой категории.
+ * - `name?: string` — новое название.
+ * - `icon?: string | null` — новая иконка.
+ * 
+ * ### Ошибки:
+ * - `400 Bad Request`: Ошибка валидации данных Zod.
+ * - `401 Unauthorized`: Отсутствует или недействителен JWT токен.
+ * - `500 Internal Server Error`: Ошибка БД при обновлении.
+ * 
+ * ### Особенности:
+ * - Разрешено обновлять только категории, принадлежащие текущему пользователю.
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
 import type { Database } from "~/types/database.types";
@@ -17,8 +37,10 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const body = await readValidatedBody(event, (body) => categoryUpdateSchema.safeParse(body));
-  
+  const body = await readValidatedBody(event, (body) =>
+    categoryUpdateSchema.safeParse(body),
+  );
+
   if (!body.success) {
     throw createError({
       statusCode: 400,

@@ -1,6 +1,23 @@
 /**
  * @module server/api/transactions/index.get
- * @fileoverview Получение списка транзакций текущего пользователя
+ * @fileoverview Серверный обработчик GET-запроса для получения списка транзакций
+ * @description
+ * Возвращает список транзакций пользователя. По умолчанию возвращает данные за
+ * последний месяц, но можно передать `startDate` и `endDate` в query параметрах.
+ * ---
+ * ### Логика работы:
+ * 1. `Authentication`: Проверка JWT токена и получение `userId`.
+ * 2. `Query Parsing`: Чтение параметров `startDate` и `endDate` (или установка дефолтных).
+ * 3. `Database Query`: Выборка транзакций пользователя с джойном категорий (`category:categories(name, type, icon)`).
+ * 4. `Formatting`: Прогон результатов через `formatTransaction` для приведения типов (amount).
+ * 
+ * ### Параметры запроса:
+ * - `startDate?: string` — начальная дата выборки (ISO).
+ * - `endDate?: string` — конечная дата выборки (ISO).
+ * 
+ * ### Ошибки:
+ * - `401 Unauthorized`: Отсутствует или недействителен JWT токен.
+ * - `500 Internal Server Error`: Ошибка базы данных.
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
 import type { Database } from "~/types/database.types";

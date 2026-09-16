@@ -1,25 +1,11 @@
 /**
  * @module app/composables/useTransactions
- * @fileoverview Composable для CRUD-операций с транзакциями
+ * @fileoverview Управление CRUD-операциями для транзакций
+ * 
  * @description
- * Загружает список транзакций и предоставляет методы создания, обновления, удаления.
- * Все запросы защищены заголовком `Authorization: Bearer <token>`.
- * ---
- * ### Логика работы:
- * 1. Инициализирует `useFetch` для получения списка транзакций при загрузке.
- * 2. Предоставляет CRUD операции через `$fetch`, обновляя локальное состояние через `refresh()`.
- *
- * ### API:
- * - `transactions: ComputedRef<Transaction[]>`: Вычисляемый массив всех транзакций
- * - `pending: Ref<boolean>`: Индикатор загрузки из useFetch
- * - `error: Ref<Error | null>`: Ошибка запроса
- * - `addTransaction(data)`: Создает новую транзакцию
- * - `updateTransaction(id, data)`: Обновляет существующую транзакцию
- * - `deleteTransaction(id)`: Удаляет транзакцию
- * - `refresh()`: Метод для ручного перезапроса списка транзакций
- *
- * ### Зависимости:
- * - `useAuth` из `~/composables/useAuth` (доступ к JWT токену)
+ * Обеспечивает получение, создание, обновление и удаление транзакций через API.
+ * Использует `useFetch` для автоматического реактивного обновления списка.
+ * Поддерживает массовое добавление (`addBulkTransactions`).
  */
 import { computed, type Ref } from "vue";
 import { parseApiError } from "~/utils/api";

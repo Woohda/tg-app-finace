@@ -5,6 +5,19 @@
  * Создаёт или находит тестового пользователя и выдаёт JWT.
  * Работает ТОЛЬКО в dev-режиме (`import.meta.dev`).
  * В production этот файл не должен попадать в бандл.
+ * ---
+ * ### Логика работы:
+ * 1. `Check Env`: Проверяет, что сервер запущен в режиме разработки (`import.meta.dev`).
+ * 2. `Supabase Role`: Подключается к БД через Service Role.
+ * 3. `Upsert User`: Создает или обновляет тестового пользователя с фиксированным `telegram_id` (999999999).
+ * 4. `Generate JWT`: Выдает токен для доступа к API.
+ * 
+ * ### Ошибки:
+ * - `404 Not Found` — блокировка в продакшене.
+ * - `500 Internal Server Error` — если ошибка БД.
+ * 
+ * ### Особенности:
+ * - Только для локальной разработки, чтобы можно было тестировать API без Telegram Web App.
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
 import type { Database } from "~/types/database.types";

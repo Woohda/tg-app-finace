@@ -1,38 +1,15 @@
 /**
  * @module app/composables/useAuth
- * @fileoverview Composable для глобального управления состоянием аутентификации пользователя
+ * @fileoverview Глобальное управление состоянием аутентификации пользователя
+ *
  * @description
- * Этот модуль предоставляет реактивный доступ к сессионным данным пользователя и JWT токену,
- * а также инкапсулирует методы входа через Telegram Mini App и выхода из системы.
- * Использует глобальное состояние Nuxt `useState` для сохранения контекста между компонентами.
- * ---
- * ### Логика работы:
- * 1. `State Management`: Хранит токен сессии (`auth:token`) и данные профиля (`auth:user`) в реактивном `useState`
- * 2. `Computed Auth State`: Вычисляет статус авторизации `isAuthenticated` на основе одновременного наличия токена и пользователя
- * 3. `Telegram Login`: Отправляет строку `initData` на endpoint `/api/auth/validate`, сохраняет выданный JWT токен и профиль
- * 4. `Logout`: Очищает реактивное состояние сессии (сбрасывает токен и профиль в `null`)
+ * Предоставляет реактивный доступ к данным пользователя и JWT токену.
+ * Инкапсулирует методы входа через Telegram Mini App (или dev-режим) и выхода.
  *
- * ### API:
- * - `token: Ref<string | null>`: Текущий JWT токен сессии
- * - `user: Ref<User | null>`: Данные профиля авторизованного пользователя
- * - `isAuthenticated: ComputedRef<boolean>`: Флаг наличия активной авторизованной сессии
- * - `loginWithTelegram(initData)`: Выполняет вход с валидацией Telegram initData на сервере
- * - `logout()`: Завершает сессию и очищает локальное состояние
- *
- * ### Параметры loginWithTelegram:
- * - `initData: string` — строка параметров запуска Telegram Mini App с криптографическим хэшем
- *
- * ### Особенности:
- * - Использование `useState` гарантирует SSR-безопасность и синхронизацию состояния между страницами и компонентами
- * - Stateless-архитектура: сессия держится на клиенте и валидируется на сервере при каждом запросе через Bearer-токен
- * - Автоматический сброс состояния при ошибке аутентификации
- *
- * ### Примечания:
- * - Метод `loginWithTelegram` возвращает `true` при успешном входе и `false` при возникновении ошибки
- * - Не хранит чувствительные данные в `localStorage` по умолчанию, поддерживая модель безопасности Mini App
- *
- * ### Зависимости:
- * - Endpoint `/api/auth/validate` для валидации подписи и выпуска JWT
+ * ### Логика:
+ * - Хранит `token` и `user` в `useState` и куках для SSR-безопасности.
+ * - При вызове `loginWithTelegram` отправляет `initData` на сервер для получения JWT.
+ * - При вызове `devLogin` выполняет тестовый вход (для локальной разработки без TG).
  */
 
 export interface User {
@@ -61,8 +38,14 @@ export const useAuth = () => {
     secure: process.env.NODE_ENV === "production",
   });
 
-  const token = useState<string | null>("auth:token", () => tokenCookie.value ?? null);
-  const user = useState<User | null>("auth:user", () => userCookie.value ?? null);
+  const token = useState<string | null>(
+    "auth:token",
+    () => tokenCookie.value ?? null,
+  );
+  const user = useState<User | null>(
+    "auth:user",
+    () => userCookie.value ?? null,
+  );
   const tgUser = useState<TgUser | null>("auth:tgUser", () => null);
 
   const isAuthenticated = computed(() => !!token.value && !!user.value);
@@ -132,14 +115,13 @@ export const useAuth = () => {
       user.value = response.user;
       tokenCookie.value = response.token;
       userCookie.value = response.user;
-      
+
       // Фейковые данные Telegram для разработки
       tgUser.value = {
         id: 12345678,
         first_name: "Иван",
         username: "dev_user",
-        // Используем картинку для разработки
-        photo_url: "https://i.pravatar.cc/150?u=a042581f4e29026704d", 
+        photo_url: "https://i.pravatar.cc/150?u=a042581f4e29026704d",
       };
 
       return true;

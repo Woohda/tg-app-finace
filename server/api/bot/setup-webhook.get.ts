@@ -4,6 +4,14 @@
  * @description
  * Поскольку api.telegram.org может быть заблокирован локальными провайдерами,
  * этот эндпоинт выполняется на серверах Cloudflare и сам регистрирует вебхук в Telegram.
+ * ---
+ * ### Логика работы:
+ * 1. Читает токен бота и URL проекта из конфигурации.
+ * 2. Отправляет GET-запрос к API Telegram (`setWebhook`).
+ * 3. Возвращает ответ Telegram.
+ * 
+ * ### Ошибки:
+ * - `500 Internal Server Error` — если Telegram не ответил или вернул ошибку.
  */
 export default defineEventHandler(async (event) => {
   const query = getQuery(event);
