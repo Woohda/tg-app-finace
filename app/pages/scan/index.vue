@@ -17,8 +17,7 @@ interface ScannedTransaction {
   id?: string;
   type: "expense" | "income";
   amount: number;
-  description: string;
-  comment?: string;
+  name: string;
   suggestedCategory?: string;
   categoryId?: string;
   date?: string;
@@ -60,8 +59,7 @@ onMounted(async () => {
       id: Math.random().toString(36).substring(7), // локальный ID
       type: tx.type || "expense",
       amount: Number(tx.amount),
-      description: tx.description,
-      comment: "",
+      name: tx.name,
       categoryId: matchedCategory
         ? matchedCategory.id
         : defaultCategory?.id || "",
@@ -154,8 +152,7 @@ const saveAll = async () => {
   try {
     const transactionsToSave: {
       amount: number;
-      description: string;
-      comment?: string;
+      name: string;
       category_id: string;
       type: string;
       date: string;
@@ -165,8 +162,7 @@ const saveAll = async () => {
     editableItems.value.forEach((item) => {
       transactionsToSave.push({
         amount: Number(item.amount),
-        description: item.description,
-        comment: item.comment || undefined,
+        name: item.name,
         category_id: item.categoryId || "",
         type: item.type,
         date: item.date || fallbackDate,
@@ -261,8 +257,7 @@ const saveAll = async () => {
           <TransactionItem
             v-for="item in group.items"
             :key="item.id"
-            :name="item.description"
-            :description="item.comment"
+            :title="item.name"
             :amount="item.amount"
             :type="item.type"
             :date="item.date!"

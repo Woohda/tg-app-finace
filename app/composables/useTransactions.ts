@@ -31,7 +31,7 @@ export interface Transaction {
   categoryIcon: string;
   amount: number;
   type: "income" | "expense";
-  description: string | null;
+  name: string | null;
   date: string;
 }
 
@@ -76,7 +76,7 @@ export const useTransactions = (options?: { startDate?: Ref<Date>; endDate?: Ref
     category_id: string;
     type: "income" | "expense";
     date: string;
-    description?: string;
+    name?: string;
   }) => {
     if (pending.value) return { success: false, error: "Запрос уже выполняется" };
     try {
@@ -102,7 +102,7 @@ export const useTransactions = (options?: { startDate?: Ref<Date>; endDate?: Ref
       category_id?: string;
       type?: "income" | "expense";
       date?: string;
-      description?: string;
+      name?: string;
     },
   ) => {
     if (pending.value) return { success: false, error: "Запрос уже выполняется" };

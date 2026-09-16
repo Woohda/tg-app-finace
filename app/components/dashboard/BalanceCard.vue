@@ -12,7 +12,7 @@
  * - История масштабируется автоматически (min/max).
  */
 import { computed } from "vue";
-import { formatAmount, formatPercent } from "~/utils";
+import { formatAmount } from "~/utils";
 import { line, curveMonotoneX } from "d3-shape";
 
 const props = defineProps<{
@@ -22,7 +22,9 @@ const props = defineProps<{
   isLoading?: boolean;
 }>();
 
-const formattedPercent = computed(() => formatPercent(props.percentChange, "трат в день"));
+// const formattedPercent = computed(() =>
+//   formatPercent(props.percentChange, "трат в день"),
+// );
 
 const width = 300;
 const height = 80;
@@ -33,14 +35,15 @@ const min = computed(() => Math.min(...props.history));
 const max = computed(() => Math.max(...props.history));
 
 const points = computed(() => {
-  if (props.isLoading) {
+  const isLoading = true;
+  if (isLoading) {
     // Красивая плавная кривая-заглушка для загрузки
     return [
       [0, 60],
-      [75, 30],
-      [150, 50],
-      [225, 20],
-      [300, 40],
+      [75, 35],
+      [180, 55],
+      [280, 20],
+      [375, 10],
     ] as [number, number][];
   }
 
@@ -87,7 +90,7 @@ const areaPathData = computed(() => {
         <h2 class="text-4xl font-extrabold text-text-primary tracking-tight">
           {{ formatAmount(balance) }}
         </h2>
-        <p
+        <!-- <p
           class="text-xs font-bold mt-2 tracking-wide flex items-center gap-1"
           :class="percentChange <= 0 ? 'text-green-500' : 'text-red-500'"
         >
@@ -95,7 +98,7 @@ const areaPathData = computed(() => {
             >{{ percentChange > 0 ? "↑" : "↓" }}
           </span>
           {{ formattedPercent }}
-        </p>
+        </p> -->
       </div>
     </div>
 
