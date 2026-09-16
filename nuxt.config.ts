@@ -41,7 +41,6 @@ export default defineNuxtConfig({
     telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
     jwtSecret: process.env.JWT_SECRET,
     webAppUrl: process.env.WEB_APP_URL,
-    devAppUrl: process.env.DEV_APP_URL,
     geminiApiKey: process.env.GEMINI_API_KEY,
     geminiApiKey2: process.env.GEMINI_API_KEY2,
   },
