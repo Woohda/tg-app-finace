@@ -18,7 +18,7 @@
  * ### Зависимости:
  * - `useAuth` из `~/composables/useAuth` (доступ к JWT токену)
  */
-import { ref } from "vue";
+import { ref, computed } from "vue";
 import { parseApiError } from "~/utils/api";
 
 export const useBudgets = () => {
@@ -28,6 +28,10 @@ export const useBudgets = () => {
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
+  const authHeaders = computed(() => ({
+    Authorization: `Bearer ${token.value}`,
+  }));
+
   const fetchBudget = async () => {
     if (!token.value || isLoading.value) return;
 
@@ -36,9 +40,7 @@ export const useBudgets = () => {
 
     try {
       const data = await $fetch<{ amount: number }>("/api/budgets", {
-        headers: {
-          Authorization: `Bearer ${token.value}`,
-        },
+        headers: authHeaders.value,
       });
       if (data && data.amount > 0) {
         budget.value = data.amount;
@@ -60,9 +62,7 @@ export const useBudgets = () => {
     try {
       const data = await $fetch<{ amount: number }>("/api/budgets", {
         method: "POST",
-        headers: {
-          Authorization: `Bearer ${token.value}`,
-        },
+        headers: authHeaders.value,
         body: { amount },
       });
 

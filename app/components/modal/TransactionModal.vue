@@ -4,12 +4,13 @@ import { useRouter } from "vue-router";
 import { Calendar, RussianRuble, Camera } from "@lucide/vue";
 import { transactionFrontendSchema } from "~/types/validate";
 import { formatZodError } from "~/utils/zod";
-import { useTransactionModal } from "~/composables/useTransactionModal";
+import { useTransactionModal, type ScannedTransaction } from "~/composables/useTransactionModal";
 
 const router = useRouter();
 const { addTransaction, updateTransaction, transactions } = useTransactions();
 const { token } = useAuth();
-const { isOpen, editId, scanResults, closeModal } = useTransactionModal();
+const { isOpen, editId, closeModal } = useTransactionModal();
+const scanResults = useState<ScannedTransaction[]>("scanResults", () => []);
 
 const isEditMode = computed(() => !!editId.value);
 
@@ -77,20 +78,6 @@ watch(
         categoryId.value = tx.categoryId;
         name.value = tx.name || "";
         date.value = tx.date;
-      }
-    } else if (scanResults.value && scanResults.value.length > 0) {
-      const scanned = scanResults.value[0];
-      if (scanned) {
-        type.value = scanned.type;
-        amount.value = scanned.amount;
-        name.value = scanned.name;
-        if (scanned.suggestedCategory) {
-          const match = categories.value.find(
-            (c) =>
-              c.name.toLowerCase() === scanned.suggestedCategory?.toLowerCase(),
-          );
-          if (match) categoryId.value = match.id;
-        }
       }
     }
   },
@@ -173,7 +160,6 @@ const handleFileUpload = async (event: Event) => {
     const base64Data = await base64Promise;
 
     const currentToken = token.value || useCookie("auth_token").value;
-    console.log("Token before upload:", currentToken);
     
     if (!currentToken || currentToken === 'null') {
       scanError.value = "Ошибка авторизации: токен отсутствует. Зайдите заново (Dev Login).";
@@ -278,7 +264,6 @@ const handleFileUpload = async (event: Event) => {
           ref="fileInput"
           type="file"
           accept="image/*"
-          capture="environment"
           class="hidden"
           @change="handleFileUpload"
         />

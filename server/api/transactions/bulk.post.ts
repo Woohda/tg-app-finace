@@ -55,20 +55,5 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const formattedData =
-    data?.map((t) => {
-      const cat = Array.isArray(t.categories) ? t.categories[0] : t.categories;
-      return {
-        id: t.id,
-        amount: t.amount,
-        type: t.type,
-        name: t.name,
-        date: t.date,
-        categoryId: cat?.id || "",
-        categoryName: cat?.name || "Неизвестно",
-        categoryIcon: cat?.icon || "💸",
-      };
-    }) || [];
-
-  return formattedData;
+  return data?.map(formatTransaction) || [];
 });

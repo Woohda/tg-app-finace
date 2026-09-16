@@ -10,11 +10,6 @@ export interface ScannedTransaction {
 export const useTransactionModal = () => {
   const isOpen = useState<boolean>("tx-modal-is-open", () => false);
   const editId = useState<string | null>("tx-modal-edit-id", () => null);
-  const scanResults = useState<ScannedTransaction[]>(
-    "tx-modal-scan-results",
-    () => [],
-  );
-
   const openModal = (id?: string) => {
     editId.value = id || null;
     isOpen.value = true;
@@ -25,14 +20,12 @@ export const useTransactionModal = () => {
     // Сбрасываем ID не сразу, чтобы при анимации закрытия данные не моргали
     setTimeout(() => {
       editId.value = null;
-      scanResults.value = [];
     }, 300);
   };
 
   return {
     isOpen,
     editId,
-    scanResults,
     openModal,
     closeModal,
   };
