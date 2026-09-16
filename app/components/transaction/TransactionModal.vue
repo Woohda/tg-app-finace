@@ -172,10 +172,19 @@ const handleFileUpload = async (event: Event) => {
     reader.readAsDataURL(file);
     const base64Data = await base64Promise;
 
+    const currentToken = token.value || useCookie("auth_token").value;
+    console.log("Token before upload:", currentToken);
+    
+    if (!currentToken || currentToken === 'null') {
+      scanError.value = "Ошибка авторизации: токен отсутствует. Зайдите заново (Dev Login).";
+      isScanning.value = false;
+      return;
+    }
+
     const res = await $fetch("/api/ai/parse-receipt", {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${token.value}`,
+        Authorization: `Bearer ${currentToken.replace(/['"]+/g, '')}`,
       },
       body: { image: base64Data },
     });
