@@ -25,12 +25,12 @@
  * - `user_id` всегда берётся из верифицированного JWT токена; клиент не может подменить автора или создать глобальную категорию
  *
  */
-import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "~/types/database.types";
+
 import { categorySchema } from "~/types/validate";
+import { getUserSupabase } from "~~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
-  const userId = await requireAuth(event);
+  const { userId, token } = await requireAuth(event);
 
   const body = await readValidatedBody(event, (body) =>
     categorySchema.safeParse(body),
@@ -46,7 +46,7 @@ export default defineEventHandler(async (event) => {
 
   const { name, type, icon } = body.data;
 
-  const supabase = serverSupabaseServiceRole<Database>(event);
+  const supabase = getUserSupabase(token);
 
   const { data, error } = await supabase
     .from("categories")

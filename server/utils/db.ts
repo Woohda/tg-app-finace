@@ -7,7 +7,8 @@
  * ---
  * ### Логика работы:
  * 1. Пытается найти переменные окружения `SUPABASE_URL` и `SUPABASE_KEY`.
- * 2. Создает клиента Supabase с Service Role (полный доступ в обход RLS).
+ * 2. `getBotSupabase`: Инициализирует и возвращает клиент Supabase с ключом `service_role`.
+ * 3. `getUserSupabase`: Инициализирует и возвращает клиент Supabase с ключом `anon_key` и токеном пользователя. (полный доступ в обход RLS).
  * 3. Кеширует инстанс в `supabaseInstance`.
  * 
  * ### Особенности:
@@ -49,4 +50,41 @@ export function getBotSupabase() {
   });
 
   return supabaseInstance;
+}
+
+/**
+ * Создает экземпляр клиента Supabase для запросов от лица конкретного пользователя.
+ * Использует публичный anon_key и переданный JWT токен в заголовке Authorization.
+ * Это позволяет Supabase RLS корректно идентифицировать пользователя.
+ * 
+ * @param {string} token JWT токен пользователя
+ * @returns {SupabaseClient<Database>} Клиент Supabase для работы с БД от лица пользователя
+ */
+export function getUserSupabase(token: string) {
+  let url = process.env.SUPABASE_URL;
+  let key = process.env.SUPABASE_KEY;
+
+  try {
+    const config = useRuntimeConfig();
+    url = url || config.public?.supabase?.url;
+    key = key || config.public?.supabase?.key;
+  } catch {
+    // Вне запроса useRuntimeConfig может выбросить ошибку
+  }
+
+  if (!url || !key) {
+    throw new Error("Missing Supabase URL or Anon Key");
+  }
+
+  return createClient<Database>(
+    url as string,
+    key as string,
+    {
+      global: {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      },
+    },
+  );
 }

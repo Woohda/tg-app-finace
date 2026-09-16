@@ -83,7 +83,7 @@ export async function generateJWT(
 
   const iat = Math.floor(Date.now() / 1000) - 300; // Вычитаем 5 минут для компенсации рассинхронизации времени с БД
 
-  return await new SignJWT({ sub: userId })
+  return await new SignJWT({ sub: userId, role: "authenticated" })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt(iat)
     .setExpirationTime("7d")

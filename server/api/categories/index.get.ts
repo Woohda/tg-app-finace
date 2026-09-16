@@ -25,14 +25,16 @@
  * - `serverSupabaseServiceRole` из `#supabase/server`
  * - `Database` из `~/app/types/database.types`
  */
-import { serverSupabaseServiceRole } from "#supabase/server";
+
 import type { Database } from "~/types/database.types";
+import { getUserSupabase } from "~~/server/utils/db";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
+type NewCategory = Database["public"]["Tables"]["categories"]["Insert"];
 
 export default defineEventHandler(async (event) => {
-  const userId = await requireAuth(event);
-  const supabase = serverSupabaseServiceRole<Database>(event);
+  const { userId, token } = await requireAuth(event);
+  const supabase = getUserSupabase(token);
 
   // 1. Получаем личные категории пользователя
   let userCategories: Category[] = [];
@@ -71,7 +73,7 @@ export default defineEventHandler(async (event) => {
     }
 
     if (templateCategories && templateCategories.length > 0) {
-      const newCategories = templateCategories.map((c) => ({
+      const newCategories = templateCategories.map((c: NewCategory) => ({
         name: c.name,
         type: c.type,
         icon: c.icon,
@@ -92,7 +94,7 @@ export default defineEventHandler(async (event) => {
         // Сопоставляем старые ID с новыми по совпадению (name + type)
         for (const tpl of templateCategories) {
           const newCat = inserted.find(
-            (c) => c.name === tpl.name && c.type === tpl.type,
+            (c: Category) => c.name === tpl.name && c.type === tpl.type,
           );
           if (newCat) {
             await supabase

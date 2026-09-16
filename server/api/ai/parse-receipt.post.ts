@@ -10,26 +10,29 @@
  * 2. `Body Parsing`: Парсинг base64-изображения чека через Zod.
  * 3. `AI Generation`: Отправка запроса к Google Gemini. Используется каскадный перебор моделей (Flash Lite -> Flash) и ключей, чтобы обходить 429/503 ошибки Rate Limit.
  * 4. `Response`: Возврат массива распознанных транзакций.
- * 
+ *
  * ### Параметры запроса:
  * - `imageBase64: string` — base64-строка изображения (содержащая `data:image/...`).
- * 
+ *
  * ### Ошибки:
  * - `400 Bad Request` — неверный формат изображения.
  * - `401 Unauthorized` — нет доступа.
  * - `500 Internal Server Error` — ошибка AI, исчерпание лимитов или сбой парсинга JSON от LLM.
- * 
+ *
  * ### Зависимости:
  * - `@google/genai` (SDK для Gemini)
  */
 import { GoogleGenAI, Type } from "@google/genai";
-import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "~/types/database.types";
+
 import { parseReceiptSchema } from "~/types/validate";
+import { getUserSupabase } from "~~/server/utils/db";
+import type { Database } from "~/types/database.types";
+
+type Category = Database["public"]["Tables"]["categories"]["Insert"];
 
 export default defineEventHandler(async (event) => {
-  const userId = await requireAuth(event);
-  const supabase = serverSupabaseServiceRole<Database>(event);
+  const { userId, token } = await requireAuth(event);
+  const supabase = getUserSupabase(token);
   const config = useRuntimeConfig();
 
   const body = await readValidatedBody(event, (body) =>
@@ -59,14 +62,14 @@ export default defineEventHandler(async (event) => {
 
   const expenseCategories =
     categories
-      ?.filter((c) => c.type === "expense")
-      .map((c) => c.name)
+      ?.filter((c: Category) => c.type === "expense")
+      .map((c: Category) => c.name)
       .join(", ") || "Еда, Дом, Транспорт, Развлечения";
 
   const incomeCategories =
     categories
-      ?.filter((c) => c.type === "income")
-      .map((c) => c.name)
+      ?.filter((c: Category) => c.type === "income")
+      .map((c: Category) => c.name)
       .join(", ") || "Зарплата, Кэшбек, Переводы";
 
   // Убираем префикс base64 (например, data:image/jpeg;base64,) если он есть

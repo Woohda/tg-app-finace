@@ -8,31 +8,33 @@
  * 1. `Authentication`: Проверка JWT токена.
  * 2. `Validation`: Проверка тела запроса через Zod (`transactionBackendSchema`).
  * 3. `Database Insert`: Добавление записи в `transactions` с `user_id`.
- * 
+ *
  * ### Параметры запроса:
  * - `amount: number` — сумма транзакции.
  * - `type: "income" | "expense"` — тип.
  * - `category_id: string` — UUID категории.
  * - `date: string` — ISO дата.
  * - `description?: string` — комментарий (опционально).
- * 
+ *
  * ### Ошибки:
  * - `400 Bad Request`: Ошибка валидации параметров.
  * - `401 Unauthorized`: Отсутствует или недействителен JWT токен.
  * - `500 Internal Server Error`: Ошибка при вставке в БД.
- * 
+ *
  * ### Особенности:
  * - Возвращает созданную транзакцию, отформатированную через `formatTransaction`.
  */
-import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "~/types/database.types";
+
 import { transactionBackendSchema } from "~/types/validate";
+import { getUserSupabase } from "~~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
-  const userId = await requireAuth(event);
-  const supabase = serverSupabaseServiceRole<Database>(event);
+  const { userId, token } = await requireAuth(event);
+  const supabase = getUserSupabase(token);
 
-  const body = await readValidatedBody(event, (body) => transactionBackendSchema.safeParse(body));
+  const body = await readValidatedBody(event, (body) =>
+    transactionBackendSchema.safeParse(body),
+  );
 
   if (!body.success) {
     throw createError({
@@ -54,7 +56,8 @@ export default defineEventHandler(async (event) => {
       name: name || null,
       user_id: userId,
     })
-    .select(`
+    .select(
+      `
       id,
       amount,
       type,
@@ -66,7 +69,8 @@ export default defineEventHandler(async (event) => {
         name,
         icon
       )
-    `)
+    `,
+    )
     .single();
 
   if (error) {
