@@ -37,7 +37,7 @@ onMounted(async () => {
   await fetchCategories();
 
   if (!scanResults.value || scanResults.value.length === 0) {
-    router.push("/add");
+    router.push("/");
     return;
   }
 
@@ -102,7 +102,7 @@ const removeItemById = (id: string) => {
   editableItems.value = editableItems.value.filter((i) => i.id !== id);
   if (editableItems.value.length === 0) {
     scanResults.value = [];
-    router.push("/add");
+    router.push("/");
   }
 };
 
@@ -113,7 +113,7 @@ const removeGroupById = (categoryId: string) => {
   );
   if (editableItems.value.length === 0) {
     scanResults.value = [];
-    router.push("/add");
+    router.push("/");
   }
 };
 

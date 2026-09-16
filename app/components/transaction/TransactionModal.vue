@@ -1,0 +1,302 @@
+<script setup lang="ts">
+import { ref, computed, watch, onUnmounted } from "vue";
+import { useRouter } from "vue-router";
+import { Calendar, RussianRuble, Camera } from "@lucide/vue";
+import { transactionFrontendSchema } from "~/types/validate";
+import { formatZodError } from "~/utils/zod";
+import { useTransactionModal } from "~/composables/useTransactionModal";
+
+const router = useRouter();
+const { addTransaction, updateTransaction, transactions } = useTransactions();
+const { token } = useAuth();
+const { isOpen, editId, scanResults, closeModal } = useTransactionModal();
+
+const isEditMode = computed(() => !!editId.value);
+
+const type = ref<"expense" | "income">("expense");
+const amount = ref<number | "">("");
+const categoryId = ref<string>("");
+const name = ref<string>("");
+const date = ref<string>(new Date().toISOString().split("T")[0] as string); // YYYY-MM-DD
+
+const { categories, isLoading: pending, fetchCategories } = useCategories();
+const globalLoading = useGlobalLoading();
+
+watch(
+  pending,
+  (val) => {
+    globalLoading.value = val;
+  },
+  { immediate: true },
+);
+
+onUnmounted(() => {
+  globalLoading.value = false;
+});
+
+const amountInputRef = ref<{ focus: () => void } | null>(null);
+
+// Сброс формы и фокус при открытии/закрытии модалки
+watch(isOpen, (newVal) => {
+  if (newVal) {
+    fetchCategories();
+    setTimeout(() => {
+      amountInputRef.value?.focus();
+    }, 100);
+  } else {
+    // сбрасываем данные при закрытии
+    setTimeout(() => {
+      type.value = "expense";
+      amount.value = "";
+      categoryId.value = "";
+      name.value = "";
+      date.value = new Date().toISOString().split("T")[0] as string;
+      buttonState.value = "idle";
+      errorMsg.value = "";
+    }, 300);
+  }
+});
+
+const filteredCategories = computed(() => {
+  return categories.value.filter((c) => c.type === type.value);
+});
+
+const buttonState = ref<"idle" | "loading" | "success">("idle");
+const errorMsg = ref("");
+
+watch(
+  [editId, transactions, isOpen],
+  () => {
+    if (!isOpen.value) return;
+
+    if (editId.value) {
+      const tx = transactions.value.find((t) => t.id === editId.value);
+      if (tx) {
+        type.value = tx.type;
+        amount.value = tx.amount;
+        categoryId.value = tx.categoryId;
+        name.value = tx.name || "";
+        date.value = tx.date;
+      }
+    } else if (scanResults.value && scanResults.value.length > 0) {
+      const scanned = scanResults.value[0];
+      if (scanned) {
+        type.value = scanned.type;
+        amount.value = scanned.amount;
+        name.value = scanned.name;
+        if (scanned.suggestedCategory) {
+          const match = categories.value.find(
+            (c) =>
+              c.name.toLowerCase() === scanned.suggestedCategory?.toLowerCase(),
+          );
+          if (match) categoryId.value = match.id;
+        }
+      }
+    }
+  },
+  { immediate: true },
+);
+
+const submit = async () => {
+  const result = transactionFrontendSchema.safeParse({
+    amount: Number(amount.value),
+    categoryId: categoryId.value,
+    date: date.value,
+    type: type.value,
+    name: name.value,
+  });
+
+  if (!result.success) {
+    errorMsg.value = formatZodError(result.error);
+    return;
+  }
+
+  errorMsg.value = "";
+  buttonState.value = "loading";
+
+  let res: { success: boolean; error?: string };
+
+  const txData = {
+    amount: result.data.amount,
+    category_id: result.data.categoryId,
+    type: result.data.type,
+    date: result.data.date,
+    name: result.data.name || undefined,
+  };
+
+  if (isEditMode.value && editId.value) {
+    res = await updateTransaction(editId.value, txData);
+  } else {
+    res = await addTransaction(txData);
+  }
+
+  if (res.success) {
+    buttonState.value = "success";
+    setTimeout(() => {
+      closeModal();
+    }, 1000);
+  } else {
+    buttonState.value = "idle";
+    errorMsg.value = res.error || "Ошибка при сохранении";
+  }
+};
+
+watch(type, () => {
+  if (!isEditMode.value) {
+    categoryId.value = "";
+  }
+});
+
+// -- Логика сканирования чека --
+const fileInput = ref<HTMLInputElement | null>(null);
+const isScanning = ref(false);
+const scanError = ref("");
+
+const triggerScan = () => {
+  fileInput.value?.click();
+};
+
+const handleFileUpload = async (event: Event) => {
+  const file = (event.target as HTMLInputElement).files?.[0];
+  if (!file) return;
+
+  isScanning.value = true;
+  scanError.value = "";
+
+  try {
+    const reader = new FileReader();
+    const base64Promise = new Promise<string>((resolve, reject) => {
+      reader.onload = () => resolve(reader.result as string);
+      reader.onerror = (error) => reject(error);
+    });
+    reader.readAsDataURL(file);
+    const base64Data = await base64Promise;
+
+    const res = await $fetch("/api/ai/parse-receipt", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token.value}`,
+      },
+      body: { image: base64Data },
+    });
+
+    if (res && res.transactions) {
+      scanResults.value = res.transactions;
+      closeModal();
+      router.push("/scan");
+    } else {
+      throw new Error("Неверный формат ответа");
+    }
+  } catch (e) {
+    scanError.value = parseApiError(e, "Ошибка распознавания чека");
+  } finally {
+    isScanning.value = false;
+    if (fileInput.value) fileInput.value.value = ""; // reset
+  }
+};
+</script>
+
+<template>
+  <GlassModal
+    :is-open="isOpen"
+    position="bottom"
+    :title="isEditMode ? 'Редактирование' : 'Новая операция'"
+    @close="closeModal"
+  >
+    <form class="flex flex-col gap-4" @submit.prevent="submit">
+      <!-- Amount -->
+      <GlassInput
+        ref="amountInputRef"
+        v-model="amount"
+        type="number"
+        step="0.01"
+        label="Сумма"
+        placeholder="0.00"
+        :icon="RussianRuble"
+      />
+
+      <!-- Category -->
+      <div class="flex flex-col gap-1">
+        <label class="text-sm font-bold text-text-primary pl-2"
+          >Категория</label
+        >
+        <GlassCategorySelect
+          v-model="categoryId"
+          :categories="filteredCategories"
+        />
+      </div>
+
+      <!-- Date -->
+      <GlassInput v-model="date" type="date" label="Дата" :icon="Calendar" />
+
+      <!-- Name -->
+      <GlassInput
+        v-model="name"
+        type="text"
+        label="Комментарий"
+        placeholder="Например, Обед с коллегами"
+      />
+
+      <div
+        v-if="errorMsg"
+        class="text-text-accent text-sm font-medium text-center"
+      >
+        {{ errorMsg }}
+      </div>
+
+      <GlassTypeSelector v-model="type" />
+
+      <!-- Submit Button -->
+      <GlassMorphButton
+        type="submit"
+        variant="primary"
+        class="w-full py-4 rounded-full"
+        :state="buttonState"
+        :disabled="pending"
+      >
+        <span v-if="isEditMode">💾 Сохранить изменения</span>
+        <span v-else
+          >💸 Внести {{ type === "expense" ? "трату" : "доход" }}</span
+        >
+
+        <template v-if="!isEditMode" #success>
+          <RussianRuble :stroke-width="2" />
+        </template>
+      </GlassMorphButton>
+      <!-- Кнопка сканирования (только для новых расходов) -->
+      <div v-if="!isEditMode">
+        <input
+          ref="fileInput"
+          type="file"
+          accept="image/*"
+          capture="environment"
+          class="hidden"
+          @change="handleFileUpload"
+        />
+        <GlassButton
+          type="button"
+          label="Сканировать чек"
+          variant="soft"
+          class="w-full flex items-center gap-2"
+          @click.prevent="triggerScan"
+        >
+          <Camera :stroke-width="2" class="text-text-accent size-9" />
+          <span class="text-sm text-text-accent">Загрузить скриншот</span>
+        </GlassButton>
+      </div>
+      <div
+        v-if="scanError"
+        class="text-text-accent text-sm font-medium text-center -mt-2"
+      >
+        {{ scanError }}
+      </div>
+    </form>
+  </GlassModal>
+
+  <!-- Модалка загрузки для чека -->
+  <GlassModal :is-open="isScanning" position="center" :show-close="false">
+    <p class="text-text-primary font-medium text-center animate-pulse">
+      Читаю чек... <br />Магия нейросетей работает ✨
+    </p>
+  </GlassModal>
+</template>

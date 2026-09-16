@@ -17,6 +17,8 @@ onMounted(() => {
     <NuxtPage />
   </NuxtLayout>
 
+  <TransactionModal />
+
   <Transition name="fade">
     <div
       v-if="isLoading"

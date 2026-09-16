@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import type { Component } from "vue";
 import { Home, ChartColumn, ReceiptText, Settings } from "@lucide/vue";
+import { useTransactionModal } from "~/composables/useTransactionModal";
 
 /**
  * @module app/components/BottomNav
@@ -50,11 +51,13 @@ function isItemActive(to: string): boolean {
   }
   return route.path.startsWith(to);
 }
+
+const { openModal } = useTransactionModal();
 </script>
 
 <template>
   <div
-    class="absolute bottom-5 left-1/2 -translate-x-1/2 w-full max-w-97 px-2.75 z-50 pointer-events-none"
+    class="absolute bottom-5 left-1/2 -translate-x-1/2 w-full max-w-97 px-2.75 z-50 pointer-events-none transition-opacity duration-200"
   >
     <nav
       class="relative h-19 glass-milky rounded-[38px] px-4 flex items-center justify-between pointer-events-auto"
@@ -74,9 +77,8 @@ function isItemActive(to: string): boolean {
       <!-- Центральная кнопка (Добавить транзакцию) -->
       <div class="absolute left-1/2 -top-5 -translate-x-1/2">
         <!-- Выпуклая матовая кнопка с блюром -->
-        <NuxtLink
-          to="/add"
-          class="size-17 rounded-full flex items-center justify-center text-text-accent text-4xl font-light active:scale-90 transition-transform outline-none focus-visible:ring-1 focus-visible:ring-text-accent"
+        <button
+          class="size-17 rounded-full flex items-center justify-center text-text-accent text-4xl font-light active:scale-90 transition-transform outline-none focus-visible:ring-1 focus-visible:ring-text-accent pointer-events-auto"
           style="
             background: rgba(238, 238, 238, 1);
             box-shadow:
@@ -85,9 +87,10 @@ function isItemActive(to: string): boolean {
               inset -4px -4px 10px rgba(130, 115, 105, 0.15);
           "
           aria-label="Добавить операцию"
+          @click="openModal()"
         >
           <span class="text-3xl mb-1.5">+</span>
-        </NuxtLink>
+        </button>
       </div>
 
       <!-- Правый блок навигации -->
