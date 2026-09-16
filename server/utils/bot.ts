@@ -59,15 +59,15 @@ export function getBot(customToken?: string): Bot {
 
   const newBot = new Bot(token);
 
-  // Базовая обработка команды /start
-  newBot.command("start", async (ctx) => {
+  // Обрабатываем любые сообщения (в том числе /start)
+  newBot.on("message", async (ctx) => {
     const webAppUrl = getWebAppUrl();
 
     await ctx.reply(
-      "Привет! 👋 Я, FINO, твой финансовый помощник.\nНажми кнопку ниже, чтобы открыть приложение.",
+      "Привет! 👋 Я, FINO, твой финансовый помощник.\nНажми кнопку ниже или используй кнопку «Меню», чтобы открыть приложение.",
       {
         reply_markup: {
-          inline_keyboard: [[{ text: "Открыть", web_app: { url: webAppUrl } }]],
+          inline_keyboard: [[{ text: "Открыть приложение", web_app: { url: webAppUrl } }]],
         },
       },
     );
