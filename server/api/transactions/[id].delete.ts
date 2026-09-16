@@ -8,24 +8,24 @@
  * 1. `Authentication`: Проверка JWT токена и извлечение `userId`.
  * 2. `Validation`: Чтение `id` из параметров маршрута.
  * 3. `Database Deletion`: Удаление записи из таблицы `transactions` с проверкой `user_id`.
- * 
+ *
  * ### Параметры запроса:
  * - `id` (в URL) — идентификатор транзакции.
- * 
+ *
  * ### Ошибки:
  * - `400 Bad Request`: Не передан ID транзакции.
  * - `401 Unauthorized`: Отсутствует или недействителен JWT токен.
  * - `500 Internal Server Error`: Ошибка удаления из базы данных.
- * 
+ *
  * ### Особенности:
  * - Безопасность: `user_id: userId` гарантирует, что пользователь не может удалить чужую транзакцию.
  */
-import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "~/types/database.types";
+
+import { getUserSupabase } from "~~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
-  const userId = await requireAuth(event);
-  const supabase = serverSupabaseServiceRole<Database>(event);
+  const { userId, token } = await requireAuth(event);
+  const supabase = getUserSupabase(token);
 
   const id = getRouterParam(event, "id");
   if (!id) {

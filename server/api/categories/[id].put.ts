@@ -8,26 +8,26 @@
  * 1. `Authentication`: Проверка JWT токена.
  * 2. `Validation`: Чтение параметров роута и валидация тела запроса через Zod (`categoryUpdateSchema`).
  * 3. `Database Update`: Обновление полей `name` и `icon` в таблице `categories`.
- * 
+ *
  * ### Параметры запроса:
  * - `id` (в URL) — идентификатор обновляемой категории.
  * - `name?: string` — новое название.
  * - `icon?: string | null` — новая иконка.
- * 
+ *
  * ### Ошибки:
  * - `400 Bad Request`: Ошибка валидации данных Zod.
  * - `401 Unauthorized`: Отсутствует или недействителен JWT токен.
  * - `500 Internal Server Error`: Ошибка БД при обновлении.
- * 
+ *
  * ### Особенности:
  * - Разрешено обновлять только категории, принадлежащие текущему пользователю.
  */
-import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "~/types/database.types";
+
 import { categoryUpdateSchema } from "~/types/validate";
+import { getUserSupabase } from "~~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
-  const userId = await requireAuth(event);
+  const { userId, token } = await requireAuth(event);
   const id = getRouterParam(event, "id");
 
   if (!id) {
@@ -51,7 +51,7 @@ export default defineEventHandler(async (event) => {
 
   const { name, icon } = body.data;
 
-  const supabase = serverSupabaseServiceRole<Database>(event);
+  const supabase = getUserSupabase(token);
 
   // Обновляем только если категория принадлежит пользователю
   const { data, error } = await supabase

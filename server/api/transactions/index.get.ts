@@ -10,21 +10,21 @@
  * 2. `Query Parsing`: Чтение параметров `startDate` и `endDate` (или установка дефолтных).
  * 3. `Database Query`: Выборка транзакций пользователя с джойном категорий (`category:categories(name, type, icon)`).
  * 4. `Formatting`: Прогон результатов через `formatTransaction` для приведения типов (amount).
- * 
+ *
  * ### Параметры запроса:
  * - `startDate?: string` — начальная дата выборки (ISO).
  * - `endDate?: string` — конечная дата выборки (ISO).
- * 
+ *
  * ### Ошибки:
  * - `401 Unauthorized`: Отсутствует или недействителен JWT токен.
  * - `500 Internal Server Error`: Ошибка базы данных.
  */
-import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "~/types/database.types";
+
+import { getUserSupabase } from "~~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
-  const userId = await requireAuth(event);
-  const supabase = serverSupabaseServiceRole<Database>(event);
+  const { userId, token } = await requireAuth(event);
+  const supabase = getUserSupabase(token);
 
   const query = getQuery(event);
 

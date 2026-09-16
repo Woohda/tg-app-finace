@@ -10,20 +10,20 @@
  * 2. `Validation`: Извлечение `id` из параметров роута.
  * 3. `Dependency Check`: Проверка наличия связанных транзакций в БД.
  * 4. `Deletion`: Удаление категории, если она принадлежит текущему пользователю.
- * 
+ *
  * ### Параметры запроса:
  * - `id` (в URL) — идентификатор удаляемой категории.
- * 
+ *
  * ### Ошибки:
  * - `400 Bad Request`: Не указан ID или к категории привязаны транзакции (нарушение foreign key).
  * - `401 Unauthorized`: Отсутствует или недействителен JWT токен.
  * - `500 Internal Server Error`: Ошибка базы данных.
  */
-import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "~/types/database.types";
+
+import { getUserSupabase } from "~~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
-  const userId = await requireAuth(event);
+  const { userId, token } = await requireAuth(event);
   const id = getRouterParam(event, "id");
 
   if (!id) {
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const supabase = serverSupabaseServiceRole<Database>(event);
+  const supabase = getUserSupabase(token);
 
   // Проверяем наличие хотя бы 1 транзакции (LIMIT 1) для оптимизации
   const { data: existingTx, error: txError } = await supabase

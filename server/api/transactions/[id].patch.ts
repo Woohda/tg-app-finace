@@ -8,27 +8,28 @@
  * 1. `Authentication`: Проверка JWT токена и извлечение `userId`.
  * 2. `Validation`: Чтение `id` из URL и валидация тела через Zod (`transactionPatchSchema`).
  * 3. `Database Update`: Обновление переданных полей в БД с привязкой к `user_id`.
- * 
+ *
  * ### Параметры запроса:
  * - `id` (в URL) — идентификатор транзакции.
  * - В теле запроса могут быть: `amount`, `category_id`, `date`, `description`, `type`.
- * 
+ *
  * ### Ошибки:
  * - `400 Bad Request`: Ошибка валидации данных или отсутствие ID.
  * - `401 Unauthorized`: Отсутствует или недействителен JWT токен.
  * - `500 Internal Server Error`: Ошибка выполнения обновления в БД.
- * 
+ *
  * ### Особенности:
  * - Обновляются только транзакции текущего пользователя (защита через `user_id`).
  * - Возвращает обновленную транзакцию, прогнанную через `formatTransaction`.
  */
-import { serverSupabaseServiceRole } from "#supabase/server";
+
 import type { Database } from "~/types/database.types";
 import { transactionPatchSchema } from "~/types/validate";
+import { getUserSupabase } from "~~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
-  const userId = await requireAuth(event);
-  const supabase = serverSupabaseServiceRole<Database>(event);
+  const { userId, token } = await requireAuth(event);
+  const supabase = getUserSupabase(token);
 
   const id = getRouterParam(event, "id");
   if (!id) {

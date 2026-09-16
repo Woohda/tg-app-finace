@@ -34,7 +34,7 @@ export async function requireAuth(
   ) => unknown
     ? E
     : never,
-): Promise<string> {
+): Promise<{ userId: string; token: string }> {
   const authHeader = getHeader(event, "authorization");
 
   if (!authHeader?.startsWith("Bearer ")) {
@@ -56,7 +56,7 @@ export async function requireAuth(
       throw new Error("Отсутствует sub в токене");
     }
 
-    return payload.sub;
+    return { userId: payload.sub, token };
   } catch (err) {
     console.error("requireAuth: JWT verification failed:", err);
     throw createError({
