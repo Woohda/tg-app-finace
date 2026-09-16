@@ -1,6 +1,17 @@
 /**
  * @module server/utils/db
  * @fileoverview Утилиты для работы с базой данных вне контекста HTTP-запроса Nuxt.
+ * @description
+ * Предоставляет синглтон-клиент Supabase для использования в фоновых задачах или Telegram-боте,
+ * где недоступен контекст `H3Event`.
+ * ---
+ * ### Логика работы:
+ * 1. Пытается найти переменные окружения `SUPABASE_URL` и `SUPABASE_KEY`.
+ * 2. Создает клиента Supabase с Service Role (полный доступ в обход RLS).
+ * 3. Кеширует инстанс в `supabaseInstance`.
+ * 
+ * ### Особенности:
+ * - Клиент обладает административными правами, использовать с осторожностью.
  */
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "~/types/database.types";

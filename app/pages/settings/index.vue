@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { computed } from "vue";
-
 /**
  * @module app/pages/settings
  * @fileoverview Экран настроек профиля и приложения
@@ -8,6 +6,7 @@ import { computed } from "vue";
  * Отображает профиль Telegram, позволяет выйти из аккаунта и предоставляет
  * навигацию к управлению бюджетом и категориями.
  */
+import { computed } from "vue";
 const { user, tgUser, logout } = useAuth();
 const isLoading = useGlobalLoading();
 

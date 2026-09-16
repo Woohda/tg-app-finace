@@ -1,4 +1,16 @@
 <script setup lang="ts">
+/**
+ * @module app/components/modal/ScanEditModal
+ * @fileoverview Вспомогательное окно для редактирования отсканированных позиций из чека.
+ * @description
+ * Позволяет пользователю проверить и откорректировать данные конкретной товарной позиции, 
+ * полученной от AI-парсера, перед массовым сохранением в БД.
+ * ---
+ * ### Логика работы:
+ * 1. Принимает `item` (ScannedTransaction) через props.
+ * 2. Позволяет изменить сумму, категорию и название (описание).
+ * 3. Возвращает измененный объект через событие `save`.
+ */
 import { computed } from "vue";
 import { Calendar } from "@lucide/vue";
 import GlassModal from "~/components/modal/GlassModal.vue";

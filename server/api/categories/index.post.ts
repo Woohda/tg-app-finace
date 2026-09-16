@@ -24,10 +24,6 @@
  * ### Особенности:
  * - `user_id` всегда берётся из верифицированного JWT токена; клиент не может подменить автора или создать глобальную категорию
  *
- * ### Зависимости:
- * - `requireAuth` из `~/server/utils/requireAuth`
- * - `serverSupabaseServiceRole` из `#supabase/server`
- * - `Database` из `~/app/types/database.types`
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
 import type { Database } from "~/types/database.types";
@@ -36,8 +32,10 @@ import { categorySchema } from "~/types/validate";
 export default defineEventHandler(async (event) => {
   const userId = await requireAuth(event);
 
-  const body = await readValidatedBody(event, (body) => categorySchema.safeParse(body));
-  
+  const body = await readValidatedBody(event, (body) =>
+    categorySchema.safeParse(body),
+  );
+
   if (!body.success) {
     throw createError({
       statusCode: 400,

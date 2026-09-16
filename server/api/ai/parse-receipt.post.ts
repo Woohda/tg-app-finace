@@ -3,9 +3,24 @@
  * @fileoverview API-эндпоинт для распознавания чеков через Google Gemini (AI)
  * @description
  * Принимает изображение чека (base64) и использует LLM для извлечения
- * финансовых транзакций. Реализует сложный механизм отказоустойчивости:
- * каскадный перебор нескольких моделей (Flash Lite, Flash) и API-ключей
- * (`geminiApiKey`, `geminiApiKey2`) для обхода ограничений (Rate Limit 429/503).
+ * финансовых транзакций. Реализует сложный механизм отказоустойчивости.
+ * ---
+ * ### Логика работы:
+ * 1. `Authentication`: Валидация JWT токена пользователя.
+ * 2. `Body Parsing`: Парсинг base64-изображения чека через Zod.
+ * 3. `AI Generation`: Отправка запроса к Google Gemini. Используется каскадный перебор моделей (Flash Lite -> Flash) и ключей, чтобы обходить 429/503 ошибки Rate Limit.
+ * 4. `Response`: Возврат массива распознанных транзакций.
+ * 
+ * ### Параметры запроса:
+ * - `imageBase64: string` — base64-строка изображения (содержащая `data:image/...`).
+ * 
+ * ### Ошибки:
+ * - `400 Bad Request` — неверный формат изображения.
+ * - `401 Unauthorized` — нет доступа.
+ * - `500 Internal Server Error` — ошибка AI, исчерпание лимитов или сбой парсинга JSON от LLM.
+ * 
+ * ### Зависимости:
+ * - `@google/genai` (SDK для Gemini)
  */
 import { GoogleGenAI, Type } from "@google/genai";
 import { serverSupabaseServiceRole } from "#supabase/server";

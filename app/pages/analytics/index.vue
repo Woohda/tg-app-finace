@@ -1,6 +1,4 @@
 <script setup lang="ts">
-import { BarChart3 } from "@lucide/vue";
-
 /**
  * @module app/pages/analytics
  * @fileoverview Экран аналитики и отчетов
@@ -8,6 +6,7 @@ import { BarChart3 } from "@lucide/vue";
  * Отображает графики и сводную статистику по тратам и доходам пользователя.
  * Находится в разработке.
  */
+import { BarChart3 } from "@lucide/vue";
 </script>
 
 <template>

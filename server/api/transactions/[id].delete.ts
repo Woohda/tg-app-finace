@@ -1,9 +1,24 @@
 /**
  * @module server/api/transactions/[id].delete
- * @fileoverview Удаление транзакции по ID
+ * @fileoverview Серверный обработчик DELETE-запроса для удаления транзакции
  * @description
- * Удаляет транзакцию, принадлежащую текущему пользователю.
- * Ownership: удаляются только транзакции текущего пользователя.
+ * Удаляет транзакцию по её идентификатору.
+ * ---
+ * ### Логика работы:
+ * 1. `Authentication`: Проверка JWT токена и извлечение `userId`.
+ * 2. `Validation`: Чтение `id` из параметров маршрута.
+ * 3. `Database Deletion`: Удаление записи из таблицы `transactions` с проверкой `user_id`.
+ * 
+ * ### Параметры запроса:
+ * - `id` (в URL) — идентификатор транзакции.
+ * 
+ * ### Ошибки:
+ * - `400 Bad Request`: Не передан ID транзакции.
+ * - `401 Unauthorized`: Отсутствует или недействителен JWT токен.
+ * - `500 Internal Server Error`: Ошибка удаления из базы данных.
+ * 
+ * ### Особенности:
+ * - Безопасность: `user_id: userId` гарантирует, что пользователь не может удалить чужую транзакцию.
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
 import type { Database } from "~/types/database.types";

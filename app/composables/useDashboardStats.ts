@@ -1,3 +1,17 @@
+/**
+ * @module app/composables/useDashboardStats
+ * @fileoverview Вычисление и получение статистики для дашборда
+ * 
+ * @description
+ * Подготавливает данные для визуализации на главном экране. 
+ * Принимает реактивный список транзакций и вычисляет историю баланса 
+ * и топ-5 категорий расходов. Параллельно запрашивает агрегированную сводку с сервера.
+ * 
+ * ### Логика:
+ * - `balanceHistory`: Аккумулирует изменения баланса по датам для графика.
+ * - `expensesByCategory`: Группирует расходы по категориям, возвращает топ-5 с присвоенными цветами.
+ * - `recentTransactions`: Возвращает 5 последних транзакций.
+ */
 import { computed } from "vue";
 import type { Ref, ComputedRef } from "vue";
 import type { Transaction } from "./useTransactions";

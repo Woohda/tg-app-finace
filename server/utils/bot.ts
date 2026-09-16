@@ -1,6 +1,17 @@
 /**
  * @module server/utils/bot
  * @fileoverview Инициализация Telegram-бота и регистрация команд (Grammy).
+ * @description
+ * Синглтон для создания и настройки инстанса `Bot` из библиотеки Grammy.
+ * Регистрирует базовые команды (`/start`) и подключает обработчики (`handleBotTextMessage`).
+ * ---
+ * ### Логика работы:
+ * 1. Создает бота с переданным токеном.
+ * 2. Настраивает меню кнопки (кнопка `Open App` слева от поля ввода).
+ * 3. Регистрирует текстовые и callback слушатели.
+ * 
+ * ### Особенности:
+ * - `configuredToken` используется для пересоздания инстанса при изменении токена (например, в dev-режиме).
  */
 import { Bot } from "grammy";
 import { handleBotTextMessage, handleBotCallbackQuery } from "./botHandlers";

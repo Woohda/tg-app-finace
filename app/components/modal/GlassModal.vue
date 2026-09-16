@@ -1,7 +1,14 @@
 <script setup lang="ts">
 /**
- * @module app/components/GlassModal
- * @fileoverview Переиспользуемое гласс-модальное окно
+ * @module app/components/modal/GlassModal
+ * @fileoverview Базовый переиспользуемый UI-компонент модального окна в стиле Glassmorphism.
+ * @description
+ * Предоставляет обертку для других модальных окон (например, `TransactionModal`).
+ * Поддерживает анимации появления/скрытия (Transition) и разные позиции (`center` / `bottom`).
+ * ---
+ * ### Логика работы:
+ * 1. Использует Teleport в `body` для обхода проблем с `z-index` в CSS.
+ * 2. Блокирует прокрутку страницы (`document.body.style.overflow = "hidden"`) при открытии.
  */
 import { cn } from "~/utils";
 import { X } from "@lucide/vue";

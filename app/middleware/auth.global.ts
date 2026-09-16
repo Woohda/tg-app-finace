@@ -1,3 +1,11 @@
+/**
+ * @module app/middleware/auth.global
+ * @fileoverview Глобальный middleware для проверки авторизации
+ * @description
+ * Перехватывает все переходы по роутам на стороне клиента.
+ * Если пользователь не авторизован (нет токена в `useAuth`), принудительно 
+ * перенаправляет на страницу `/login`.
+ */
 export default defineNuxtRouteMiddleware((to) => {
   const { isAuthenticated } = useAuth();
 

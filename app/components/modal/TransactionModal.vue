@@ -1,4 +1,17 @@
 <script setup lang="ts">
+/**
+ * @module app/components/modal/TransactionModal
+ * @fileoverview Глобальное модальное окно создания/редактирования транзакций.
+ * @description
+ * Обеспечивает форму добавления новой транзакции или редактирования существующей.
+ * Интегрировано с `useTransactionModal` (глобальный стейт) для вызова из любой точки приложения.
+ * Поддерживает парсинг чеков (переход на камеру) и валидацию данных через Zod.
+ * ---
+ * ### Логика работы:
+ * 1. Управляется глобальным стейтом `useTransactionModal`.
+ * 2. Если `editId` задан, работает в режиме редактирования (загружает данные транзакции).
+ * 3. Отправляет данные через `useTransactions().addTransaction` или `updateTransaction`.
+ */
 import { ref, computed, watch, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 import { Calendar, RussianRuble, Camera } from "@lucide/vue";

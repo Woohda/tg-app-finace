@@ -1,29 +1,16 @@
 /**
  * @module app/composables/useTransactionView
- * @fileoverview Composable для фильтрации и агрегации транзакций
- * @description
- * Принимает реактивный список транзакций из `useTransactions` и предоставляет:
- * - фильтрацию по периодам (день, неделя, месяц)
- * - месячные агрегации (расходы, доходы, баланс)
- * - расчет бюджетного процента
- * ---
- * ### Логика работы:
- * 1. Получает список транзакций
- * 2. Фильтрует их согласно выбранному периоду (`activePeriod`)
- * 3. Высчитывает агрегации (доходы, расходы) за месяц
- * 4. Все computed свойства кешируются Vue и пересчитываются только при изменении зависимостей.
- *
- * ### API:
- * - `activePeriod: Ref<PeriodType>`: Текущий выбранный период отображения
- * - `periodOptions: PeriodOption[]`: Доступные опции периодов для UI
- * - `filteredTransactions: ComputedRef<Transaction[]>`: Транзакции за выбранный период
- * - `monthlyExpenses: ComputedRef<number>`: Сумма расходов за месяц
- * - `monthlyIncome: ComputedRef<number>`: Сумма доходов за месяц
- * - `monthlyBalance: ComputedRef<number>`: Баланс за месяц (доходы - расходы)
- * - `budgetProgress: ComputedRef<number>`: Процент расхода бюджета (0-100)
+ * @fileoverview Управление фильтрацией и агрегацией транзакций
  * 
- * ### Зависимости:
- * - `useTransactions` (тип `Transaction`)
+ * @description
+ * Принимает реактивный список транзакций и предоставляет computed свойства
+ * для агрегации данных (доходы, расходы, баланс) за выбранный месяц.
+ * Также рассчитывает процент выполнения бюджета.
+ * 
+ * ### Логика:
+ * - Выполняет фильтрацию по дням/неделям для списков.
+ * - Выполняет подсчет `monthlyExpense` и `monthlyIncome` для аналитики.
+ * - Сравнивает `monthlyExpense` с `monthlyBudget` для прогресс-бара.
  */
 import { ref, computed } from "vue";
 import type { Ref, ComputedRef } from "vue";

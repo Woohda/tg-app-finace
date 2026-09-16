@@ -1,6 +1,28 @@
 /**
  * @module server/api/transactions/index.post
- * @fileoverview Добавление новой транзакции
+ * @fileoverview Серверный обработчик POST-запроса для создания транзакции
+ * @description
+ * Валидирует и добавляет новую транзакцию в базу данных, привязывая её к текущему пользователю.
+ * ---
+ * ### Логика работы:
+ * 1. `Authentication`: Проверка JWT токена.
+ * 2. `Validation`: Проверка тела запроса через Zod (`transactionBackendSchema`).
+ * 3. `Database Insert`: Добавление записи в `transactions` с `user_id`.
+ * 
+ * ### Параметры запроса:
+ * - `amount: number` — сумма транзакции.
+ * - `type: "income" | "expense"` — тип.
+ * - `category_id: string` — UUID категории.
+ * - `date: string` — ISO дата.
+ * - `description?: string` — комментарий (опционально).
+ * 
+ * ### Ошибки:
+ * - `400 Bad Request`: Ошибка валидации параметров.
+ * - `401 Unauthorized`: Отсутствует или недействителен JWT токен.
+ * - `500 Internal Server Error`: Ошибка при вставке в БД.
+ * 
+ * ### Особенности:
+ * - Возвращает созданную транзакцию, отформатированную через `formatTransaction`.
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
 import type { Database } from "~/types/database.types";
