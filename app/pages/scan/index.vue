@@ -192,7 +192,7 @@ const saveAll = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-5 pb-7 relative">
+  <div class="flex flex-col gap-5 relative">
     <!-- Header -->
     <div class="flex items-center justify-center gap-3 relative">
       <div class="flex flex-col text-center">

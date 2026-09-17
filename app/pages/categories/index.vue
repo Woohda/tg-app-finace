@@ -197,7 +197,7 @@ const executeDelete = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-5 pb-5 relative">
+  <div class="flex flex-col gap-5 relative">
     <!-- Header -->
     <div class="flex items-center justify-center gap-3 relative">
       <NuxtLink
