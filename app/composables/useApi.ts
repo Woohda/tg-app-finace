@@ -33,7 +33,7 @@ export const useApi = () => {
         $fetch("/api/bot/log-error", {
           method: "POST",
           body: {
-            message: `[API Error] ${request}`,
+            message: `[API Error] ${request}: ${e instanceof Error ? e.message : String(e)}`,
             stack: e instanceof Error ? e.stack : String(e),
             url: window.location.href,
           }
