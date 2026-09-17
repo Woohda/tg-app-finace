@@ -1,6 +1,4 @@
 <script setup lang="ts" generic="T extends string = string">
-import { cn } from "~/utils";
-
 /**
  * @module app/components/GlassSegmentedControl
  * @fileoverview Неоморфный переключатель сегментов (Segmented Control / Pill Switcher)
@@ -44,27 +42,43 @@ function selectOption(id: T) {
 </script>
 
 <template>
-  <div
-    class="flex items-center p-1.25 justify-between glass-milky rounded-full shadow-glass-inner"
-    :class="size === 'sm' ? '' : 'w-full'"
-  >
-    <Button
-      v-for="opt in options"
+  <!-- Контейнер с flex, выравнивающий элементы в центре -->
+  <div class="flex items-center justify-center">
+    <GlassButton
+      v-for="(opt, index) in options"
       :key="getOptionId(opt)"
+      variant="soft"
       type="button"
-      variant="ghost"
-      :class="
-        cn(
-          'font-bold rounded-full transition-all duration-200 cursor-pointer text-center select-none shadow-none h-auto focus-visible:ring-0',
-          size === 'sm' ? 'px-3 py-1 text-xs' : 'flex-1 py-1.5 text-sm',
-          modelValue === getOptionId(opt)
-            ? 'glass-glow text-white hover:text-white'
-            : 'text-text-secondary hover:text-text-primary hover:bg-transparent bg-transparent',
-        )
-      "
+      class="relative rounded-full flex items-center justify-center cursor-pointer select-none transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
+      :class="[
+        // Размеры
+        size === 'sm' ? 'px-5 py-1.25 text-xs' : 'px-7 py-1.5 text-sm',
+        'h-auto',
+        // Нахлест соседних карточек (кроме первой)
+        index > 0 ? '-ml-5' : '',
+
+        // Стили для Активного и Неактивного состояния
+        modelValue === getOptionId(opt)
+          ? 'z-20 scale-100 opacity-100 shadow-[0_4px_20px_rgba(225,29,72,0.3)]! text-text-primary blur-0'
+          : 'z-10 scale-90 opacity-80 text-text-secondary blur-[1px] hover:blur-0 hover:opacity-90',
+      ]"
       @click="selectOption(getOptionId(opt))"
     >
-      {{ getOptionLabel(opt) }}
-    </Button>
+      <!-- Фон (общий для активного и неактивного) -->
+      <div
+        class="absolute inset-0 rounded-full transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] -z-10"
+        :class="[
+          modelValue === getOptionId(opt)
+            ? 'glass-pill'
+            : 'bg-white/20 border border-transparent backdrop-blur-md',
+        ]"
+      />
+      <span
+        class="relative z-10 font-bold tracking-wide whitespace-nowrap transition-colors duration-300"
+        style="font-family: var(--font-sans)"
+      >
+        {{ getOptionLabel(opt) }}
+      </span>
+    </GlassButton>
   </div>
 </template>

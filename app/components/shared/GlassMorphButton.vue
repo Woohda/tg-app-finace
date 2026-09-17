@@ -43,8 +43,8 @@ watch(
     :disabled="disabled || state !== 'idle'"
     :class="
       cn(
-        'relative flex items-center justify-center overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]',
-        'outline-none focus-visible:ring-1 focus-visible:ring-text-accent',
+        'relative flex items-center justify-center py-4 rounded-full overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]',
+        'outline-none a11y-focus',
         // Размеры и форма
         state === 'idle'
           ? 'h-12 w-full px-5 rounded-pill'
@@ -65,7 +65,7 @@ watch(
           ],
 
         // Состояние Успеха (всегда белое яркое свечение)
-        state === 'success' && ['glass-panel text-text-accent'],
+        state === 'success' && ['glass-milky text-text-accent'],
 
         props.class,
       )

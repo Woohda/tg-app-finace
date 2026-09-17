@@ -60,7 +60,10 @@ const handleLogout = async () => {
     </GlassCard>
 
     <div class="flex flex-col gap-3">
-      <NuxtLink to="/categories" class="block">
+      <NuxtLink
+        to="/categories"
+        class="block a11y-focus rounded-3xl focus-visible:outline-offset-4"
+      >
         <GlassCard
           class="p-5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
         >
@@ -83,7 +86,10 @@ const handleLogout = async () => {
         </GlassCard>
       </NuxtLink>
 
-      <NuxtLink to="/budget" class="block">
+      <NuxtLink
+        to="/budget"
+        class="block a11y-focus rounded-3xl focus-visible:outline-offset-4"
+      >
         <GlassCard
           class="p-5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
         >

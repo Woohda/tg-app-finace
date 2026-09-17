@@ -68,10 +68,15 @@ const currentLabel = computed(() =>
     <!-- Селектор месяца -->
     <MonthSelector :date="currentDate" @prev="prevMonth" @next="nextMonth" />
 
-    <GlassCard class="flex flex-col gap-1 relative overflow-hidden h-49">
-      <div class="z-10 flex justify-between items-start">
+    <GlassCard
+      class="flex flex-col justify-between relative overflow-hidden h-38"
+    >
+      <div class="z-10 relative pointer-events-none">
         <!-- Состояние загрузки: Скелетоны текста -->
-        <div v-if="pending && transactions.length === 0" class="flex flex-col gap-2 py-1">
+        <div
+          v-if="pending && transactions.length === 0"
+          class="flex flex-col gap-2 py-1"
+        >
           <Skeleton class="w-30 h-4" />
           <Skeleton class="w-40 h-9" />
           <Skeleton class="w-20 h-3" />
@@ -79,7 +84,7 @@ const currentLabel = computed(() =>
 
         <!-- Загруженное состояние: Текст баланса -->
         <div v-else class="fade-in">
-          <p class="text-text-secondary text-sm font-semibold mb-px">
+          <p class="text-text-secondary text-[12px] font-semibold mb-1">
             {{ currentLabel }}
           </p>
           <h2 class="text-3xl font-extrabold text-text-primary tracking-tight">
@@ -87,21 +92,26 @@ const currentLabel = computed(() =>
           </h2>
         </div>
       </div>
-      <BudgetGauge
+
+      <!-- Переключатель режима: Бюджет / Потрачено -->
+      <div class="z-20 relative">
+        <GlassSegmentedControl
+          v-model="viewMode"
+          :options="[
+            { id: 'spent', label: 'Траты' },
+            { id: 'budget', label: 'Бюджет' },
+          ]"
+          size="sm"
+          class="w-44 h-8"
+        />
+      </div>
+
+      <!-- Фоновое "дышащее" пятно Aurora -->
+      <AuroraBudget
         :percent="monthlyBudgetPercent"
         :budget="monthlyBudget"
         :spent="monthlyExpense"
-        class="absolute top-15 left-13"
-      />
-      <!-- Переключатель режима: Бюджет / Потрачено -->
-      <GlassSegmentedControl
-        v-model="viewMode"
-        :options="[
-          { id: 'spent', label: 'Траты' },
-          { id: 'budget', label: 'Бюджет' },
-        ]"
-        size="sm"
-        class="w-37 h-8 mt-2 absolute left-24 bottom-5 -translate-x-1/2"
+        class="z-0"
       />
     </GlassCard>
 
@@ -121,7 +131,10 @@ const currentLabel = computed(() =>
       </div>
 
       <!-- Скелетоны транзакций (загрузка) -->
-      <div v-if="pending && transactions.length === 0" class="flex flex-col gap-3">
+      <div
+        v-if="pending && transactions.length === 0"
+        class="flex flex-col gap-3"
+      >
         <TransactionSkeletonList :count="4" mode="list" />
       </div>
 

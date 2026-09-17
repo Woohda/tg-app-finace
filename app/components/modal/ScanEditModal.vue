@@ -76,7 +76,7 @@ const save = () => {
       <!-- Переключатель типа транзакции (чтобы можно было поменять, если ИИ ошибся) -->
       <div class="flex gap-2 p-1 bg-surface-primary/10 rounded-xl">
         <button
-          class="flex-1 py-2 text-sm font-medium rounded-lg transition-colors"
+          class="flex-1 py-2 text-sm font-medium rounded-lg transition-colors outline-none a11y-focus"
           :class="
             localItem.type === 'expense'
               ? 'bg-text-primary text-bg-primary shadow-sm'
@@ -87,7 +87,7 @@ const save = () => {
           Расход
         </button>
         <button
-          class="flex-1 py-2 text-sm font-medium rounded-lg transition-colors"
+          class="flex-1 py-2 text-sm font-medium rounded-lg transition-colors outline-none a11y-focus"
           :class="
             localItem.type === 'income'
               ? 'bg-text-accent text-white shadow-sm'
@@ -127,7 +127,7 @@ const save = () => {
         />
       </div>
 
-      <GlassMorphButton variant="primary" class="py-4 mt-2" @click="save">
+      <GlassMorphButton variant="primary" @click="save">
         Сохранить изменения
       </GlassMorphButton>
     </div>

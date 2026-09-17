@@ -12,7 +12,7 @@ defineProps<{
 <template>
   <NuxtLink
     :to="to"
-    class="relative flex flex-col items-center justify-center w-16 h-15 transition-all duration-300 rounded-3xl outline-none focus-visible:ring-1 focus-visible:ring-text-accent"
+    class="relative flex flex-col items-center justify-center w-16 h-15 transition-all duration-300 rounded-3xl outline-none a11y-focus"
     :class="
       isActive
         ? 'text-text-accent'
@@ -23,7 +23,7 @@ defineProps<{
     <!-- Активный фон (овал) -->
     <div
       v-if="isActive"
-      class="absolute inset-0 bg-white/40 rounded-3xl shadow-[inset_0_2px_3px_rgba(255,255,255,0.8)] border border-white/50 -z-10"
+      class="absolute inset-0 glass-pill rounded-3xl -z-10"
     />
 
     <component
