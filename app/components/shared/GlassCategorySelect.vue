@@ -32,6 +32,16 @@ const value = computed({
 });
 
 const isFocused = ref(false);
+
+const handleFocus = (e: FocusEvent) => {
+  isFocused.value = true;
+  setTimeout(() => {
+    (e.target as HTMLElement)?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, 300);
+};
 </script>
 
 <template>
@@ -69,7 +79,7 @@ const isFocused = ref(false);
         value ? 'text-text-primary' : 'text-text-secondary',
         $slots.icon || icon ? 'pl-10 pr-10' : 'pr-10',
       ]"
-      @focus="isFocused = true"
+      @focus="handleFocus"
       @blur="isFocused = false"
     >
       <option value="" disabled>Категория</option>
