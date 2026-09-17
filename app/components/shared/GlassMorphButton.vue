@@ -53,7 +53,7 @@ watch(
         // Цвета (primary)
         variant === 'primary' &&
           state !== 'success' && [
-            'glass-glow text-white font-medium',
+            'glass-glow text-white font-medium border-none',
             'active:scale-[0.97]',
           ],
 

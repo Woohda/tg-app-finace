@@ -8,7 +8,15 @@ const props = defineProps<{
   label?: string;
   placeholder?: string;
   type?: string;
-  inputmode?: "none" | "text" | "tel" | "url" | "email" | "numeric" | "decimal" | "search";
+  inputmode?:
+    | "none"
+    | "text"
+    | "tel"
+    | "url"
+    | "email"
+    | "numeric"
+    | "decimal"
+    | "search";
   icon?: string | object | Component;
   step?: string | number;
 }>();
@@ -67,7 +75,6 @@ defineExpose({ focus });
         :placeholder="placeholder"
         :class="[
           'relative z-10 bg-transparent rounded-full px-5 text-text-primary font-medium outline-none border-none transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu',
-          type === 'date' ? 'text-sm' : 'text-base',
           $slots.icon || icon ? 'pl-10' : '',
           'focus:shadow-[0_4px_20px_rgba(225,29,72,0.3)]!',
         ]"
