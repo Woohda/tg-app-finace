@@ -76,6 +76,9 @@ defineExpose({ focus });
         :class="[
           'relative z-10 bg-transparent rounded-full px-5 text-text-primary font-medium outline-none border-none transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu',
           $slots.icon || icon ? 'pl-10' : '',
+          type === 'date'
+            ? 'text-base py-0 min-h-10 appearance-none leading-normal'
+            : 'text-base',
           'focus:shadow-[0_4px_20px_rgba(225,29,72,0.3)]!',
         ]"
         @focus="isFocused = true"
