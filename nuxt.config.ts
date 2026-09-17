@@ -52,6 +52,7 @@ export default defineNuxtConfig({
     webAppUrl: process.env.WEB_APP_URL,
     geminiApiKey: process.env.GEMINI_API_KEY,
     geminiApiKey2: process.env.GEMINI_API_KEY2,
+    adminTgId: process.env.ADMIN_TG_ID,
   },
   supabase: {
     // Отключаем встроенный редирект на /login — авторизация через собственный JWT

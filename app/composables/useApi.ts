@@ -27,6 +27,19 @@ export const useApi = () => {
       return (await $fetch<T>(request, { ...options, headers })) as T;
     } catch (e: unknown) {
       const err = e as { response?: { status?: number } };
+      
+      // Логируем все ошибки, кроме 401 (так как мы их обрабатываем)
+      if (import.meta.client && err.response?.status !== 401) {
+        $fetch("/api/bot/log-error", {
+          method: "POST",
+          body: {
+            message: `[API Error] ${request}`,
+            stack: e instanceof Error ? e.stack : String(e),
+            url: window.location.href,
+          }
+        }).catch(() => {});
+      }
+
       if (err.response?.status === 401) {
         // Защита от бесконечного цикла, если упал сам логин
         if (request.includes("/api/auth/")) {
