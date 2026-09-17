@@ -13,14 +13,11 @@ type Category = Database["public"]["Tables"]["categories"]["Row"];
 
 export const useCategories = () => {
   const { token } = useAuth();
+  const api = useApi();
 
   const categories = useGlobalCategories();
   const isLoading = ref(false);
   const error = ref<string | null>(null);
-
-  const authHeaders = computed(() => ({
-    Authorization: `Bearer ${token.value}`,
-  }));
 
   const sortCategories = (cats: Category[]) => {
     cats.sort((a, b) => {
@@ -44,9 +41,7 @@ export const useCategories = () => {
     error.value = null;
 
     try {
-      const data = await $fetch<Category[]>("/api/categories", {
-        headers: authHeaders.value,
-      });
+      const data = await api<Category[]>("/api/categories");
       categories.value = data;
     } catch (e: unknown) {
       console.error("Ошибка загрузки категорий:", e);
@@ -70,9 +65,8 @@ export const useCategories = () => {
     error.value = null;
 
     try {
-      const newCategory = await $fetch<Category>("/api/categories", {
+      const newCategory = await api<Category>("/api/categories", {
         method: "POST",
-        headers: authHeaders.value,
         body: { name, type, icon },
       });
 
@@ -96,9 +90,8 @@ export const useCategories = () => {
     error.value = null;
 
     try {
-      const updated = await $fetch<Category>(`/api/categories/${id}`, {
+      const updated = await api<Category>(`/api/categories/${id}`, {
         method: "PUT",
-        headers: authHeaders.value,
         body: { name, icon },
       });
 
@@ -124,9 +117,8 @@ export const useCategories = () => {
     error.value = null;
 
     try {
-      await $fetch(`/api/categories/${id}`, {
+      await api(`/api/categories/${id}`, {
         method: "DELETE",
-        headers: authHeaders.value,
       });
 
       categories.value = categories.value.filter((c) => c.id !== id);
