@@ -41,7 +41,7 @@ const emit = defineEmits<{
         :class="[
           modelValue === 'income'
             ? 'glass-pill'
-            : 'bg-white/70 border border-transparent backdrop-blur-sm',
+            : 'bg-white/40 border border-transparent backdrop-blur-sm',
         ]"
       />
       <BanknoteArrowUp
@@ -67,7 +67,7 @@ const emit = defineEmits<{
         :class="[
           modelValue === 'expense'
             ? 'glass-pill'
-            : 'bg-white/70 border border-transparent backdrop-blur-sm',
+            : 'bg-white/40 border border-transparent backdrop-blur-sm',
         ]"
       />
       <BanknoteArrowDown

@@ -35,6 +35,11 @@ export const useCategories = () => {
       return;
     }
 
+    // Если категории уже загружены в глобальный стейт, не запрашиваем их снова
+    if (categories.value.length > 0) {
+      return;
+    }
+
     isLoading.value = true;
     error.value = null;
 

@@ -8,7 +8,15 @@ const props = defineProps<{
   label?: string;
   placeholder?: string;
   type?: string;
-  inputmode?: "none" | "text" | "tel" | "url" | "email" | "numeric" | "decimal" | "search";
+  inputmode?:
+    | "none"
+    | "text"
+    | "tel"
+    | "url"
+    | "email"
+    | "numeric"
+    | "decimal"
+    | "search";
   icon?: string | object | Component;
   step?: string | number;
 }>();
@@ -29,6 +37,17 @@ const focus = () => {
   if (inputCompRef.value?.inputRef) {
     inputCompRef.value.inputRef.focus();
   }
+};
+
+const handleFocus = (e: FocusEvent) => {
+  isFocused.value = true;
+  // Задержка позволяет клавиатуре выехать и изменить размер окна
+  setTimeout(() => {
+    (e.target as HTMLElement)?.scrollIntoView({
+      behavior: "smooth",
+      block: "center",
+    });
+  }, 300);
 };
 
 defineExpose({ focus });
@@ -67,11 +86,11 @@ defineExpose({ focus });
         :placeholder="placeholder"
         :class="[
           'relative z-10 bg-transparent rounded-full px-5 text-text-primary font-medium outline-none border-none transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu',
-          type === 'date' ? 'text-sm' : 'text-base',
           $slots.icon || icon ? 'pl-10' : '',
+          type === 'date' ? 'py-0 min-h-10 appearance-none leading-normal' : '',
           'focus:shadow-[0_4px_20px_rgba(225,29,72,0.3)]!',
         ]"
-        @focus="isFocused = true"
+        @focus="handleFocus"
         @blur="isFocused = false"
       />
     </div>
