@@ -14,7 +14,7 @@ export const categorySchema = z.object({
     .string()
     .min(1, "Введите название категории")
     .max(50, "Название слишком длинное"),
-  icon: z.string().max(10, "Иконка слишком длинная").optional().nullable(),
+  icon: z.string().min(1, "Выберите эмодзи").max(10, "Иконка слишком длинная"),
   type: z.enum(["expense", "income"]),
 });
 
@@ -23,7 +23,7 @@ export const categoryUpdateSchema = z.object({
     .string()
     .min(1, "Введите название категории")
     .max(50, "Название слишком длинное"),
-  icon: z.string().max(10, "Иконка слишком длинная").optional().nullable(),
+  icon: z.string().min(1, "Выберите эмодзи").max(10, "Иконка слишком длинная"),
 });
 
 // --- Transactions ---

@@ -11,9 +11,11 @@
  * 2. Позволяет изменить сумму, категорию и название (описание).
  * 3. Возвращает измененный объект через событие `save`.
  */
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { Calendar } from "@lucide/vue";
 import type { Database } from "~/types/database.types";
+import { transactionFrontendSchema } from "~/types/validate";
+import { formatZodError } from "~/utils/zod";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
 interface ScannedTransaction {
@@ -38,6 +40,7 @@ const emit = defineEmits<{
 }>();
 
 const localItem = ref<ScannedTransaction | null>(null);
+const formError = ref<string | null>(null);
 
 watch(
   () => props.item,
@@ -47,6 +50,7 @@ watch(
     } else {
       localItem.value = null;
     }
+    formError.value = null;
   },
   { immediate: true },
 );
@@ -59,7 +63,21 @@ const filteredCategories = computed(() => {
 
 const save = () => {
   if (localItem.value) {
-    emit("save", localItem.value);
+    const result = transactionFrontendSchema.safeParse({
+      amount: Number(localItem.value.amount),
+      categoryId: localItem.value.categoryId || "",
+      date: localItem.value.date || "",
+      type: localItem.value.type,
+      name: localItem.value.name,
+    });
+
+    if (!result.success) {
+      formError.value = formatZodError(result.error);
+      return;
+    }
+    
+    formError.value = null;
+    emit("save", { ...localItem.value, amount: Number(localItem.value.amount) });
   }
 };
 </script>
@@ -84,12 +102,12 @@ const save = () => {
         :categories="filteredCategories"
       />
 
-      <div class="flex gap-3">
+      <div class="w-full flex gap-3">
         <GlassInput
           v-model="localItem.date"
           type="date"
           :icon="Calendar"
-          class="min-w-0 pr-px"
+          class="max-w-36 pr-px"
         />
         <GlassInput
           v-model="localItem.amount"
@@ -102,6 +120,10 @@ const save = () => {
       </div>
 
       <GlassTypeSelector v-model="localItem.type" />
+
+      <div v-if="formError" class="text-text-accent text-sm text-center">
+        {{ formError }}
+      </div>
 
       <GlassMorphButton variant="primary" @click="save">
         Сохранить изменения
