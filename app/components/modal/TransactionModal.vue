@@ -223,7 +223,8 @@ const handleFileUpload = async (event: Event) => {
       <GlassInput
         ref="amountInputRef"
         v-model="amount"
-        type="number"
+        type="text"
+        inputmode="decimal"
         step="0.01"
         label="Сумма"
         placeholder="0.00"
