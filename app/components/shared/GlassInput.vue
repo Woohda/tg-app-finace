@@ -40,7 +40,7 @@ defineExpose({ focus });
     }}</label>
     <div
       :class="[
-        'relative flex items-center group transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu',
+        'relative flex items-center group transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu glass-pill rounded-full',
         value || isFocused
           ? 'blur-0 opacity-100'
           : 'blur-[0.5px] opacity-70 hover:blur-0 hover:opacity-100',
@@ -66,7 +66,7 @@ defineExpose({ focus });
         :step="step"
         :placeholder="placeholder"
         :class="[
-          'relative z-10 bg-transparent rounded-full px-5 text-text-primary font-medium text-base outline-none border-none transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu glass-pill',
+          'relative z-10 bg-transparent rounded-full px-5 text-text-primary font-medium text-base outline-none border-none transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu',
           $slots.icon || icon ? 'pl-10' : '',
           'focus:shadow-[0_4px_20px_rgba(225,29,72,0.3)]!',
         ]"
