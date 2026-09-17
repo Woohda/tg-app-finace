@@ -62,6 +62,7 @@ const close = () => {
           :class="
             cn(
               'w-full max-w-90 mb-3 p-5 flex flex-col gap-5 glass-milky',
+              'max-h-[85dvh] overflow-y-auto scrollbar-hide',
               position === 'bottom'
                 ? 'animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200'
                 : 'animate-in zoom-in-95 duration-200',

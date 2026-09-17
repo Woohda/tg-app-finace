@@ -57,7 +57,8 @@ const { openModal } = useTransactionModal();
 
 <template>
   <div
-    class="absolute bottom-5 left-1/2 -translate-x-1/2 w-full max-w-97 px-2.75 z-50 pointer-events-none transition-opacity duration-200"
+    class="absolute left-1/2 -translate-x-1/2 w-full max-w-97 px-2.75 z-50 pointer-events-none transition-opacity duration-200"
+    style="bottom: calc(1.25rem + env(safe-area-inset-bottom))"
   >
     <nav
       class="relative h-19 glass-milky rounded-[38px] px-4 flex items-center justify-between pointer-events-auto"

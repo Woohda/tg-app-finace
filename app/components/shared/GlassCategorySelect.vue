@@ -38,15 +38,11 @@ const isFocused = ref(false);
   <div
     :class="[
       'relative w-full group transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu',
-      value || isFocused
-        ? 'blur-0 opacity-100'
-        : 'blur-[0.5px] opacity-70 hover:blur-0 hover:opacity-100',
+      value || isFocused ? 'opacity-100' : 'opacity-70 hover:opacity-100',
     ]"
   >
     <!-- Активный фон (овал) -->
-    <div
-      class="absolute inset-0 glass-pill rounded-full pointer-events-none"
-    />
+    <div class="absolute inset-0 glass-pill rounded-full pointer-events-none" />
 
     <div
       v-if="$slots.icon"
