@@ -23,7 +23,7 @@ onMounted(() => {
     >
       <main
         class="flex-1 overflow-y-auto p-5 relative z-10 scrollbar-hide"
-        style="padding-bottom: calc(7.2rem + env(safe-area-inset-bottom))"
+        style="padding-bottom: calc(7.5rem + env(safe-area-inset-bottom))"
       >
         <slot />
       </main>
