@@ -32,7 +32,7 @@ const emit = defineEmits<{
       :class="[
         modelValue === 'income'
           ? 'z-20 scale-100 opacity-100 shadow-[0_4px_20px_rgba(225,29,72,0.3)]! text-text-accent blur-0'
-          : 'z-10 scale-90 opacity-80 text-text-secondary blur-[1.2px] hover:blur-0 hover:opacity-90',
+          : 'z-10 scale-90 opacity-80 text-text-secondary blur-[1px] hover:blur-0 hover:opacity-90',
       ]"
     >
       <!-- Фон (общий для активного и неактивного) -->
@@ -41,7 +41,7 @@ const emit = defineEmits<{
         :class="[
           modelValue === 'income'
             ? 'glass-pill'
-            : 'bg-white/40 border border-transparent backdrop-blur-sm',
+            : 'bg-white/20 border border-transparent backdrop-blur-sm',
         ]"
       />
       <BanknoteArrowUp
@@ -58,7 +58,7 @@ const emit = defineEmits<{
       :class="[
         modelValue === 'expense'
           ? 'z-20 scale-100 opacity-100 shadow-[0_4px_20px_rgba(225,29,72,0.3)]! text-text-accent blur-0'
-          : 'z-10 scale-90 opacity-80 text-text-secondary blur-[1.2px] hover:blur-0 hover:opacity-90',
+          : 'z-10 scale-90 opacity-80 text-text-secondary blur-[1px] hover:blur-0 hover:opacity-90',
       ]"
     >
       <!-- Фон (общий для активного и неактивного) -->
@@ -67,7 +67,7 @@ const emit = defineEmits<{
         :class="[
           modelValue === 'expense'
             ? 'glass-pill'
-            : 'bg-white/40 border border-transparent backdrop-blur-sm',
+            : 'bg-white/20 border border-transparent backdrop-blur-sm',
         ]"
       />
       <BanknoteArrowDown

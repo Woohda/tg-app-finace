@@ -7,19 +7,16 @@
  * Все изменения мутируют глобальное состояние (`useGlobalBudget`), 
  * чтобы данные мгновенно отображались по всему приложению.
  */
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import { parseApiError } from "~/utils/api";
 
 export const useBudgets = () => {
   const { token } = useAuth();
+  const api = useApi();
 
   const budget = useGlobalBudget();
   const isLoading = ref(false);
   const error = ref<string | null>(null);
-
-  const authHeaders = computed(() => ({
-    Authorization: `Bearer ${token.value}`,
-  }));
 
   const fetchBudget = async () => {
     if (!token.value || isLoading.value) return;
@@ -28,9 +25,7 @@ export const useBudgets = () => {
     error.value = null;
 
     try {
-      const data = await $fetch<{ amount: number }>("/api/budgets", {
-        headers: authHeaders.value,
-      });
+      const data = await api<{ amount: number }>("/api/budgets");
       if (data && data.amount > 0) {
         budget.value = data.amount;
       }
@@ -49,9 +44,8 @@ export const useBudgets = () => {
     error.value = null;
 
     try {
-      const data = await $fetch<{ amount: number }>("/api/budgets", {
+      const data = await api<{ amount: number }>("/api/budgets", {
         method: "POST",
-        headers: authHeaders.value,
         body: { amount },
       });
 

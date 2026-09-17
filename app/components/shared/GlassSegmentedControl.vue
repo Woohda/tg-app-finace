@@ -49,7 +49,7 @@ function selectOption(id: T) {
       :key="getOptionId(opt)"
       variant="soft"
       type="button"
-      class="relative rounded-full flex items-center justify-center cursor-pointer select-none transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
+      class="relative rounded-full flex items-center justify-center cursor-pointer select-none transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
       :class="[
         // Размеры
         size === 'sm' ? 'px-5 py-1.25 text-xs' : 'px-7 py-1.5 text-sm',
@@ -66,7 +66,7 @@ function selectOption(id: T) {
     >
       <!-- Фон (общий для активного и неактивного) -->
       <div
-        class="absolute inset-0 rounded-full transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] -z-10"
+        class="absolute inset-0 rounded-full transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] -z-10"
         :class="[
           modelValue === getOptionId(opt)
             ? 'glass-pill'

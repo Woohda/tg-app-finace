@@ -25,11 +25,7 @@ export const useTransactions = (options?: {
   startDate?: Ref<Date>;
   endDate?: Ref<Date>;
 }) => {
-  const { token } = useAuth();
-
-  const authHeaders = computed(() => ({
-    Authorization: `Bearer ${token.value}`,
-  }));
+  const api = useApi();
 
   const query = computed(() => {
     const q: Record<string, string> = {};
@@ -53,12 +49,11 @@ export const useTransactions = (options?: {
     pending,
     error,
     refresh,
-  } = useFetch<Transaction[]>("/api/transactions", {
-    headers: authHeaders,
-    query,
-    key: cacheKey.value,
-    watch: [query, txVersion],
-  });
+  } = useAsyncData<Transaction[]>(
+    cacheKey.value,
+    () => api("/api/transactions", { query: query.value }),
+    { watch: [query, txVersion] },
+  );
 
   const transactions = computed(() => rawTransactions.value || []);
 
@@ -81,9 +76,8 @@ export const useTransactions = (options?: {
     if (pending.value)
       return { success: false, error: "Запрос уже выполняется" };
     try {
-      const newTx = await $fetch<Transaction>("/api/transactions", {
+      const newTx = await api<Transaction>("/api/transactions", {
         method: "POST",
-        headers: authHeaders.value,
         body: data,
       });
       if (rawTransactions.value) {
@@ -111,9 +105,8 @@ export const useTransactions = (options?: {
     if (pending.value)
       return { success: false, error: "Запрос уже выполняется" };
     try {
-      const updated = await $fetch<Transaction>(`/api/transactions/${id}`, {
+      const updated = await api<Transaction>(`/api/transactions/${id}`, {
         method: "PATCH",
-        headers: authHeaders.value,
         body: data,
       });
       if (rawTransactions.value) {
@@ -135,9 +128,8 @@ export const useTransactions = (options?: {
     if (pending.value)
       return { success: false, error: "Запрос уже выполняется" };
     try {
-      await $fetch(`/api/transactions/${id}`, {
+      await api(`/api/transactions/${id}`, {
         method: "DELETE",
-        headers: authHeaders.value,
       });
       if (rawTransactions.value) {
         rawTransactions.value = rawTransactions.value.filter(

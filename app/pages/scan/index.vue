@@ -23,7 +23,6 @@ interface ScannedTransaction {
 }
 
 const router = useRouter();
-const { token } = useAuth();
 const scanResults = useState<ScannedTransaction[]>("scanResults", () => []);
 const txVersion = useGlobalTransactionsVersion();
 
@@ -169,11 +168,9 @@ const saveAll = async () => {
       return;
     }
 
-    const res = await $fetch("/api/transactions/bulk", {
+    const api = useApi();
+    const res = await api("/api/transactions/bulk", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${token.value}`,
-      },
       body: { transactions: transactionsToSave },
     });
 
@@ -195,7 +192,7 @@ const saveAll = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-5 pb-5 relative">
+  <div class="flex flex-col gap-5 pb-7 relative">
     <!-- Header -->
     <div class="flex items-center justify-center gap-3 relative">
       <div class="flex flex-col text-center">

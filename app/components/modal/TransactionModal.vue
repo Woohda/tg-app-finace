@@ -187,11 +187,9 @@ const handleFileUpload = async (event: Event) => {
       return;
     }
 
-    const res = await $fetch("/api/ai/parse-receipt", {
+    const api = useApi();
+    const res = await api<{ transactions?: ScannedTransaction[] }>("/api/ai/parse-receipt", {
       method: "POST",
-      headers: {
-        Authorization: `Bearer ${currentToken.replace(/['"]+/g, "")}`,
-      },
       body: { image: base64Data },
     });
 
