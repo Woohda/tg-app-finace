@@ -101,12 +101,10 @@ const removeItemById = (id: string) => {
 
 // -- Удаление всей группы --
 const removeGroupById = (groupId: string) => {
-  editableItems.value = editableItems.value.filter(
-    (i) => {
-      const key = `${i.type}_${i.categoryId || "unknown"}`;
-      return key !== groupId;
-    }
-  );
+  editableItems.value = editableItems.value.filter((i) => {
+    const key = `${i.type}_${i.categoryId || "unknown"}`;
+    return key !== groupId;
+  });
   if (editableItems.value.length === 0) {
     scanResults.value = [];
     router.push("/");
@@ -182,7 +180,8 @@ const saveAll = async () => {
     if (res) {
       scanResults.value = [];
       clearNuxtData(
-        (key) => typeof key === "string" && key.startsWith("transactions-list-")
+        (key) =>
+          typeof key === "string" && key.startsWith("transactions-list-"),
       );
       txVersion.value++;
       router.push("/");
@@ -264,7 +263,6 @@ const saveAll = async () => {
 
     <GlassMorphButton
       variant="primary"
-      class="py-4 rounded-full text-lg shadow-xl"
       :state="isSaving ? 'loading' : 'idle'"
       @click="saveAll"
     >

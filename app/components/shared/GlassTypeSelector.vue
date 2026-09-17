@@ -21,30 +21,60 @@ const emit = defineEmits<{
 <template>
   <RadioGroupRoot
     :model-value="modelValue"
-    class="flex gap-5 w-full"
+    class="flex items-center justify-center w-5/6 mx-auto"
     aria-label="Тип транзакции"
     @update:model-value="emit('update:modelValue', $event as string)"
   >
+    <!-- Доход -->
     <RadioGroupItem
       value="income"
-      class="group flex-1 flex flex-col items-center justify-center gap-px py-2 rounded-4xl glass-panel border-[0.5px] border-white/50 border-b-transparent border-r-transparent transition-all duration-300 ease-in-out outline-none data-[state=checked]:shadow-glass-inner data-[state=checked]:bg-white/40 focus-visible:ring-1 focus-visible:ring-text-accent"
+      class="group relative flex-1 flex flex-col items-center justify-center gap-px py-1.5 rounded-4xl transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] outline-none cursor-pointer select-none bg-transparent!"
+      :class="[
+        modelValue === 'income'
+          ? 'z-20 scale-100 opacity-100 shadow-[0_4px_20px_rgba(225,29,72,0.3)]! text-text-accent blur-0'
+          : 'z-10 scale-90 opacity-60 text-text-secondary blur-[1.2px] hover:blur-0 hover:opacity-90',
+      ]"
     >
+      <!-- Фон (общий для активного и неактивного) -->
+      <div
+        class="absolute inset-0 rounded-4xl transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] -z-10"
+        :class="[
+          modelValue === 'income'
+            ? 'glass-pill'
+            : 'bg-white/20 border border-transparent backdrop-blur-md'
+        ]"
+      />
       <BanknoteArrowUp
-        class="size-10 transition-colors duration-300 group-data-[state=checked]:text-text-accent"
+        class="relative z-10 size-9 transition-colors duration-500"
         stroke-width="1.5"
       />
-      <span class="text-sm text-text-secondary">Доход</span>
+      <span class="relative z-10 text-sm text-text-secondary">Доход</span>
     </RadioGroupItem>
 
+    <!-- Расход -->
     <RadioGroupItem
       value="expense"
-      class="group flex-1 flex flex-col items-center justify-center gap-px py-2 rounded-4xl glass-panel border-[0.5px] border-white/50 border-b-transparent border-r-transparent transition-all duration-300 ease-in-out outline-none data-[state=checked]:shadow-glass-inner data-[state=checked]:bg-white/40 focus-visible:ring-1 focus-visible:ring-text-accent"
+      class="group relative flex-1 flex flex-col items-center justify-center gap-px py-1.5 rounded-4xl transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] outline-none cursor-pointer select-none -ml-4 bg-transparent!"
+      :class="[
+        modelValue === 'expense'
+          ? 'z-20 scale-100 opacity-100 shadow-[0_4px_20px_rgba(225,29,72,0.3)]! text-text-accent blur-0'
+          : 'z-10 scale-90 opacity-60 text-text-secondary blur-[1.2px] hover:blur-0 hover:opacity-90',
+      ]"
     >
+      <!-- Фон (общий для активного и неактивного) -->
+      <div
+        class="absolute inset-0 rounded-4xl transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] -z-10"
+        :class="[
+          modelValue === 'expense'
+            ? 'glass-pill'
+            : 'bg-white/20 border border-transparent backdrop-blur-md'
+        ]"
+      />
       <BanknoteArrowDown
-        class="size-10 transition-colors duration-300 group-data-[state=checked]:text-text-accent"
+        class="relative z-10 size-9 transition-colors duration-500"
         stroke-width="1.5"
       />
-      <span class="text-sm text-text-secondary">Трата</span>
+      <span class="relative z-10 text-sm text-text-secondary">Трата</span>
     </RadioGroupItem>
   </RadioGroupRoot>
 </template>

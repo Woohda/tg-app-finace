@@ -232,7 +232,7 @@ const handleFileUpload = async (event: Event) => {
 
       <!-- Category -->
       <div class="flex flex-col gap-1">
-        <label class="text-sm font-bold text-text-primary pl-2"
+        <label class="text-xs font-bold text-text-primary pl-2"
           >Категория</label
         >
         <GlassCategorySelect
@@ -265,7 +265,6 @@ const handleFileUpload = async (event: Event) => {
       <GlassMorphButton
         type="submit"
         variant="primary"
-        class="py-4 rounded-full"
         :state="buttonState"
         :disabled="pending"
       >

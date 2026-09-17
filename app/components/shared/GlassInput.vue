@@ -1,12 +1,5 @@
 <script setup lang="ts">
-/**
- * @module app/components/shared/GlassInput
- * @fileoverview Универсальное поле ввода в стиле Glassmorphism
- * @description
- * Кастомный инпут для форм (сумма, название и др.). Поддерживает иконку слева,
- * кастомные placeholder и label. Имеет единый закругленный дизайн (glass-milky).
- */
-import { computed } from "vue";
+import { computed, ref } from "vue";
 import type { Component } from "vue";
 import { Input } from "~/components/ui/input";
 
@@ -28,6 +21,7 @@ const value = computed({
   set: (val) => emits("update:modelValue", val),
 });
 
+const isFocused = ref(false);
 const inputCompRef = ref<InstanceType<typeof Input> | null>(null);
 
 const focus = () => {
@@ -41,13 +35,20 @@ defineExpose({ focus });
 
 <template>
   <div class="flex flex-col gap-1">
-    <label v-if="label" class="text-sm font-bold text-text-primary pl-3">{{
+    <label v-if="label" class="text-xs font-bold text-text-primary pl-3">{{
       label
     }}</label>
-    <div class="relative flex items-center">
+    <div
+      :class="[
+        'relative flex items-center group transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu',
+        value || isFocused
+          ? 'blur-0 opacity-100'
+          : 'blur-[0.5px] opacity-70 hover:blur-0 hover:opacity-100',
+      ]"
+    >
       <div
         v-if="$slots.icon || icon"
-        class="absolute left-3 flex items-center justify-center text-text-secondary pointer-events-none z-10"
+        class="absolute z-10 left-3 flex items-center justify-center text-text-secondary pointer-events-none transition-colors duration-500"
       >
         <slot name="icon">
           <component
@@ -55,9 +56,7 @@ defineExpose({ focus });
             v-if="typeof icon === 'object' || typeof icon === 'function'"
             class="size-5"
           />
-          <span v-else class="font-bold text-lg text-text-primary">{{
-            icon
-          }}</span>
+          <span v-else class="font-bold text-lg">{{ icon }}</span>
         </slot>
       </div>
       <Input
@@ -67,10 +66,12 @@ defineExpose({ focus });
         :step="step"
         :placeholder="placeholder"
         :class="[
-          'glass-milky rounded-full px-5 text-text-primary font-medium text-base outline-none border-none transition-all duration-300 ease-in-out focus-visible:ring-1 focus-visible:ring-text-accent',
-          $slots.icon || icon ? 'pl-9' : '',
-          value ? 'shadow-glass-inner bg-white/40' : '',
+          'relative z-10 bg-transparent rounded-full px-5 text-text-primary font-medium text-base outline-none border-none transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu glass-pill',
+          $slots.icon || icon ? 'pl-10' : '',
+          'focus:shadow-[0_4px_20px_rgba(225,29,72,0.3)]!',
         ]"
+        @focus="isFocused = true"
+        @blur="isFocused = false"
       />
     </div>
   </div>

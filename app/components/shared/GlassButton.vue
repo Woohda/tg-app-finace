@@ -29,7 +29,7 @@ const props = withDefaults(defineProps<Props>(), {
     :disabled="disabled"
     :class="
       cn(
-        'transition-all duration-200 ease-out outline-none focus-visible:ring-2 focus-visible:ring-text-accent focus-visible:ring-offset-2 focus-visible:ring-offset-transparent',
+        'transition-all duration-200 ease-out glass-pill',
         // Основная (акцентный градиент + стеклянный объём)
         variant === 'primary' && [
           'text-white font-medium tracking-wide text-xs',
@@ -38,7 +38,7 @@ const props = withDefaults(defineProps<Props>(), {
         ],
         // Мягкая (матовое стекло)
         variant === 'soft' && [
-          'glass-milky text-text-primary font-medium',
+          'glass-pill text-text-primary font-medium',
           'active:scale-[0.97]',
         ],
         // Контурная (прозрачная с тонкой рамкой)

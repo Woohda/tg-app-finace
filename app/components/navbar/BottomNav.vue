@@ -79,15 +79,9 @@ const { openModal } = useTransactionModal();
         <!-- Выпуклая матовая кнопка с блюром -->
         <GlassButton
           type="button"
-          variant="primary"
-          class="size-17 rounded-full flex items-center justify-center text-text-accent text-4xl font-light active:scale-90 transition-transform outline-none focus-visible:ring-1 focus-visible:ring-text-accent pointer-events-auto"
-          style="
-            background: rgba(238, 238, 238, 1);
-            box-shadow:
-              8px 8px 16px rgba(130, 115, 105, 0.22),
-              inset 3px 3px 8px rgba(255, 255, 255, 1),
-              inset -4px -4px 10px rgba(130, 115, 105, 0.15);
-          "
+          variant="soft"
+          class="size-17 rounded-full flex items-center justify-center text-text-accent text-4xl font-light active:scale-90 transition-transform pointer-events-auto outline-none a11y-focus glass-pill backdrop-blur-3xl"
+          style="background-color: rgba(242, 242, 242, 0.9)"
           aria-label="Добавить операцию"
           @click="openModal()"
         >

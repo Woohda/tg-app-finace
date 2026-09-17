@@ -107,7 +107,10 @@ const segments = computed(() => {
   <GlassCard>
     <div class="flex justify-between items-center mb-3">
       <h3 class="text-xl font-extrabold text-text-primary">Расходы</h3>
-      <NuxtLink to="/finreports" class="text-text-secondary">
+      <NuxtLink
+        to="/finreports"
+        class="text-text-secondary a11y-focus rounded-md"
+      >
         <ChartColumn :stroke-width="1.5" />
       </NuxtLink>
     </div>
