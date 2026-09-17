@@ -73,32 +73,6 @@ const save = () => {
     @close="emit('close')"
   >
     <div v-if="localItem" class="flex flex-col gap-3 px-2">
-      <!-- Переключатель типа транзакции (чтобы можно было поменять, если ИИ ошибся) -->
-      <div class="flex gap-2 p-1 bg-surface-primary/10 rounded-xl">
-        <button
-          class="flex-1 py-2 text-sm font-medium rounded-lg transition-colors outline-none a11y-focus"
-          :class="
-            localItem.type === 'expense'
-              ? 'bg-text-primary text-bg-primary shadow-sm'
-              : 'text-text-secondary hover:text-text-primary'
-          "
-          @click="localItem.type = 'expense'"
-        >
-          Расход
-        </button>
-        <button
-          class="flex-1 py-2 text-sm font-medium rounded-lg transition-colors outline-none a11y-focus"
-          :class="
-            localItem.type === 'income'
-              ? 'bg-text-accent text-white shadow-sm'
-              : 'text-text-secondary hover:text-text-primary'
-          "
-          @click="localItem.type = 'income'"
-        >
-          Доход
-        </button>
-      </div>
-
       <GlassInput
         v-model="localItem.name"
         type="text"
@@ -115,7 +89,7 @@ const save = () => {
           v-model="localItem.date"
           type="date"
           :icon="Calendar"
-          class="max-w-35"
+          class="min-w-0 pr-px"
         />
         <GlassInput
           v-model="localItem.amount"
@@ -123,9 +97,11 @@ const save = () => {
           step="0.01"
           placeholder="0.00"
           icon="₽"
-          class="flex-1 w-full"
+          class="min-w-0"
         />
       </div>
+
+      <GlassTypeSelector v-model="localItem.type" />
 
       <GlassMorphButton variant="primary" @click="save">
         Сохранить изменения
