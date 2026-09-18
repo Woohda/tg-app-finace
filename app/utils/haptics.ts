@@ -3,7 +3,7 @@
  * @fileoverview Обёртки для тактильного отклика Telegram (HapticFeedback)
  */
 
-export const useHaptic = () => {
+export const getHapticFeedback = () => {
   const isAvailable = () => {
     return (
       typeof window !== "undefined" &&

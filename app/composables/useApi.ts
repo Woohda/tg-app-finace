@@ -9,7 +9,7 @@
 import { useAuth } from "./useAuth";
 
 export const useApi = () => {
-  const { token, initTelegramAuth, devLogin, logout } = useAuth();
+  const { token, initTelegramAuth, devLogin, logout, user } = useAuth();
   const router = useRouter();
 
   const api = async <T>(
@@ -27,7 +27,7 @@ export const useApi = () => {
       return (await $fetch<T>(request, { ...options, headers })) as T;
     } catch (e: unknown) {
       const err = e as { response?: { status?: number } };
-      
+
       // Логируем все ошибки, кроме 401 (так как мы их обрабатываем)
       if (import.meta.client && err.response?.status !== 401) {
         $fetch("/api/bot/log-error", {
@@ -36,7 +36,8 @@ export const useApi = () => {
             message: `[API Error] ${request}: ${e instanceof Error ? e.message : String(e)}`,
             stack: e instanceof Error ? e.stack : String(e),
             url: window.location.href,
-          }
+            userId: user.value?.telegram_id || user.value?.id || "Unknown",
+          },
         }).catch(() => {});
       }
 

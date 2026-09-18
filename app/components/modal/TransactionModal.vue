@@ -14,19 +14,17 @@
  */
 import { ref, computed, watch, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
+
 import { Calendar, RussianRuble, Camera } from "@lucide/vue";
 import { transactionFrontendSchema } from "~/types/validate";
 import { formatZodError } from "~/utils/zod";
-import {
-  useTransactionModal,
-  type ScannedTransaction,
-} from "~/composables/useTransactionModal";
+
+import { useTransactionModal } from "~/composables/useTransactionModal";
 
 const router = useRouter();
+
 const { addTransaction, updateTransaction, transactions } = useTransactions();
-const { token } = useAuth();
 const { isOpen, editId, closeModal } = useTransactionModal();
-const scanResults = useState<ScannedTransaction[]>("scanResults", () => []);
 
 const isEditMode = computed(() => !!editId.value);
 
@@ -135,6 +133,7 @@ const submit = async () => {
 
   if (res.success) {
     buttonState.value = "success";
+
     setTimeout(() => {
       closeModal();
       if (!isEditMode.value) {
@@ -143,7 +142,8 @@ const submit = async () => {
     }, 1000);
   } else {
     buttonState.value = "idle";
-    errorMsg.value = res.error || "Ошибка при сохранении";
+    const errText = res.error || "Ошибка при сохранении";
+    errorMsg.value = errText;
   }
 };
 
@@ -153,60 +153,8 @@ watch(type, () => {
   }
 });
 
-// -- Логика сканирования чека --
-const fileInput = ref<HTMLInputElement | null>(null);
-const isScanning = ref(false);
-const scanError = ref("");
-
-const triggerScan = () => {
-  fileInput.value?.click();
-};
-
-const handleFileUpload = async (event: Event) => {
-  const file = (event.target as HTMLInputElement).files?.[0];
-  if (!file) return;
-
-  isScanning.value = true;
-  scanError.value = "";
-
-  try {
-    const reader = new FileReader();
-    const base64Promise = new Promise<string>((resolve, reject) => {
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = (error) => reject(error);
-    });
-    reader.readAsDataURL(file);
-    const base64Data = await base64Promise;
-
-    const currentToken = token.value || useCookie("auth_token").value;
-
-    if (!currentToken || currentToken === "null") {
-      scanError.value =
-        "Ошибка авторизации: токен отсутствует. Зайдите заново (Dev Login).";
-      isScanning.value = false;
-      return;
-    }
-
-    const api = useApi();
-    const res = await api<{ transactions?: ScannedTransaction[] }>("/api/ai/parse-receipt", {
-      method: "POST",
-      body: { image: base64Data },
-    });
-
-    if (res && res.transactions) {
-      scanResults.value = res.transactions;
-      closeModal();
-      router.push("/scan");
-    } else {
-      throw new Error("Неверный формат ответа");
-    }
-  } catch (e) {
-    scanError.value = parseApiError(e, "Ошибка распознавания чека");
-  } finally {
-    isScanning.value = false;
-    if (fileInput.value) fileInput.value.value = ""; // reset
-  }
-};
+const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
+  useReceiptScanner();
 </script>
 
 <template>
