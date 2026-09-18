@@ -19,9 +19,9 @@ import { Calendar, RussianRuble, Camera } from "@lucide/vue";
 import { transactionFrontendSchema } from "~/types/validate";
 import { formatZodError } from "~/utils/zod";
 
-import { useTransactionModal } from "~/composables/useTransactionModal";
-
 const router = useRouter();
+const toast = useAppToast();
+const notifications = useNotifications();
 
 const { addTransaction, updateTransaction, transactions } = useTransactions();
 const { isOpen, editId, closeModal } = useTransactionModal();
@@ -133,6 +133,17 @@ const submit = async () => {
 
   if (res.success) {
     buttonState.value = "success";
+    toast.success(
+      isEditMode.value ? "Изменения сохранены" : "Транзакция добавлена"
+    );
+
+    // Пишем в историю уведомлений
+    if (!isEditMode.value) {
+      notifications.add(type.value === "expense" ? "Списание" : "Пополнение", {
+        message: `${name.value || "Без названия"}: ${amount.value} ₽`,
+        type: type.value,
+      });
+    }
 
     setTimeout(() => {
       closeModal();
@@ -144,6 +155,7 @@ const submit = async () => {
     buttonState.value = "idle";
     const errText = res.error || "Ошибка при сохранении";
     errorMsg.value = errText;
+    toast.error("Не удалось сохранить", errText);
   }
 };
 
