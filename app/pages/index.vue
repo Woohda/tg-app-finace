@@ -16,7 +16,8 @@ const { user, tgUser } = useAuth();
 const { hasUnread } = useNotifications();
 const { startDate, endDate } = useDateFilter();
 const { transactions, pending } = useTransactions({ startDate, endDate });
-const { balance, monthlyExpense } = useTransactionView(transactions);
+const { balance, monthlyExpense, monthlyIncome } =
+  useTransactionView(transactions);
 const {
   balanceHistory,
   expensesByCategory,
@@ -73,7 +74,10 @@ const percentChange = computed(() => dashboardStats.value?.percentChange || 0);
       </p>
     </div>
 
-    <!-- 1. Секция баланса -->
+    <!-- 1. Сводка доходов и расходов -->
+    <MonthlySummary :income="monthlyIncome" :expense="monthlyExpense" />
+
+    <!-- 2. Секция баланса -->
     <BalanceCard
       :balance="balance"
       :percent-change="percentChange"
