@@ -3,8 +3,9 @@
  * @fileoverview Управление пользовательскими категориями
  * 
  * @description
- * - `useAuth` из `~/composables/useAuth` (доступ к JWT токену)
- * - `Database` из `~/types/database.types` (типизация строк таблицы `categories`)
+ * Обеспечивает получение, создание, удаление и сортировку пользовательских категорий.
+ * Инкапсулирует взаимодействие с API (`/api/categories`) и кеширует список
+ * в глобальное состояние `useGlobalCategories`.
  */
 import type { Database } from "~/types/database.types";
 import { parseApiError } from "~/utils/api";

@@ -1,3 +1,11 @@
+/**
+ * @module app/composables/useAppToast
+ * @fileoverview Управление всплывающими уведомлениями (Toast)
+ *
+ * @description
+ * Предоставляет методы для вызова временных всплывающих сообщений (успех, ошибка, инфо).
+ * В отличие от `useNotifications`, эти сообщения исчезают и не сохраняются в истории.
+ */
 import { ref } from "vue";
 
 export type ToastType = "success" | "error" | "info";

@@ -1,8 +1,4 @@
 <script setup lang="ts">
-import type { Component } from "vue";
-import { Home, ChartColumn, Plus, ReceiptText, Settings } from "@lucide/vue";
-import { useTransactionModal } from "~/composables/useTransactionModal";
-
 /**
  * @module app/components/BottomNav
  * @fileoverview Нижняя панель навигации (Floating Glassmorphism Bottom Navigation)
@@ -10,6 +6,9 @@ import { useTransactionModal } from "~/composables/useTransactionModal";
  * Закрепленная плавающая панель навигации на базе NuxtLink и иконок Lucide.
  * Включает левый блок (Главная, Аналитика), центральную кнопку «+» и правый блок (История, Настройки).
  */
+import type { Component } from "vue";
+import { Home, ChartColumn, Plus, ReceiptText, Settings } from "@lucide/vue";
+import { useTransactionModal } from "~/composables/useTransactionModal";
 
 const route = useRoute();
 

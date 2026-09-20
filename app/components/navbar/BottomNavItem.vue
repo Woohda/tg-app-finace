@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * @module app/components/navbar/BottomNavItem
+ * @fileoverview Элемент навигации для BottomNav.
+ * @description
+ * Рендерит иконку и подпись (label). Анимируется при активном состоянии (scale).
+ */
 import type { Component } from "vue";
 
 defineProps<{
