@@ -7,10 +7,10 @@
  * Все изменения мутируют глобальное состояние (`useGlobalBudget`),
  * чтобы данные мгновенно отображались по всему приложению.
  */
-import { ref } from "vue";
+import { ref, computed, type Ref } from "vue";
 import { parseApiError } from "~/utils/api";
 
-export const useBudgets = () => {
+export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
   const { token } = useAuth();
   const api = useApi();
   const toast = useAppToast();
@@ -69,11 +69,36 @@ export const useBudgets = () => {
     }
   };
 
+  const lastDayOfMonth = computed(() => {
+    const today = new Date();
+    const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    return last.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+  });
+
+  const daysLeft = computed(() => {
+    const today = new Date();
+    const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+    return Math.max(1, last.getDate() - today.getDate() + 1);
+  });
+
+  const remainder = computed(() => {
+    if (options?.monthlyExpense === undefined) return 0;
+    return (budget.value || 0) - options.monthlyExpense.value;
+  });
+
+  const dailyGuideline = computed(() => {
+    return remainder.value > 0 ? remainder.value / daysLeft.value : 0;
+  });
+
   return {
     budget,
     isLoading,
     error,
     fetchBudget,
     updateBudget,
+    lastDayOfMonth,
+    daysLeft,
+    remainder,
+    dailyGuideline,
   };
 };

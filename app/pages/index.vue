@@ -8,24 +8,42 @@
  * - Распределение топ-5 расходов по категориям (ExpensesDonut)
  * - Список последних транзакций
  */
-import { computed } from "vue";
-import { getGreeting } from "~/utils";
+import { computed, onMounted } from "vue";
 import { Bell, ReceiptText } from "@lucide/vue";
 
 const { user, tgUser } = useAuth();
 const { hasUnread } = useNotifications();
 const { startDate, endDate } = useDateFilter();
 const { transactions, pending } = useTransactions({ startDate, endDate });
-const { balance, monthlyExpense, monthlyIncome } =
-  useTransactionView(transactions);
-const {
-  balanceHistory,
-  expensesByCategory,
-  recentTransactions,
-  dashboardStats,
-} = useDashboardStats(transactions);
+const { monthlyExpense, monthlyIncome } = useTransactionView(transactions);
+const { balanceHistory, expensesByCategory, recentTransactions } =
+  useDashboardStats(transactions);
 
-const greeting = getGreeting();
+const {
+  budget,
+  fetchBudget,
+  isLoading: budgetLoading,
+  remainder: budgetRemainder,
+  lastDayOfMonth,
+  dailyGuideline,
+} = useBudgets({ monthlyExpense });
+
+onMounted(() => {
+  if (!budget.value) {
+    fetchBudget();
+  }
+});
+
+const currentDate = computed(() => {
+  const d = new Date();
+  const weekday = d.toLocaleDateString("ru-RU", { weekday: "long" });
+  const dayMonth = d.toLocaleDateString("ru-RU", {
+    day: "numeric",
+    month: "long",
+  });
+  return `${weekday}, ${dayMonth}`;
+});
+
 const userName = computed(() => {
   if (tgUser.value?.first_name) {
     return tgUser.value.first_name;
@@ -38,12 +56,12 @@ const userName = computed(() => {
 
 const avatarUrl = computed(() => tgUser.value?.photo_url || null);
 
-// 1. Данные баланса (используем реальный текущий баланс)
-const percentChange = computed(() => dashboardStats.value?.percentChange || 0);
+// // 1. Данные баланса (используем реальный текущий баланс)
+// const percentChange = computed(() => dashboardStats.value?.percentChange || 0);
 </script>
 
 <template>
-  <div class="relative flex flex-col gap-5">
+  <div class="relative flex flex-col gap-4">
     <div class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <Avatar :src="avatarUrl" />
@@ -65,25 +83,28 @@ const percentChange = computed(() => dashboardStats.value?.percentChange || 0);
     </div>
 
     <!-- Текст приветствия -->
-    <div>
-      <h1 class="text-3xl font-extrabold text-text-primary tracking-tight">
-        {{ greeting.replace(",", "") }}!
-      </h1>
-      <p class="text-text-secondary text-sm font-medium mt-1">
-        Ваш финансовый обзор
-      </p>
+    <div class="flex flex-col gap-2">
+      <div class="flex flex-col">
+        <p class="text-lg text-text-secondary tracking-tight">
+          Привет, сегодня
+        </p>
+        <p class="text-[24px] text-text-primary tracking-tight">
+          {{ currentDate }}
+        </p>
+      </div>
+
+      <!-- 1. Секция баланса (Остаток бюджета) -->
+      <BalanceCard
+        :amount="budgetRemainder"
+        :daily-guideline="dailyGuideline"
+        :last-day-of-month="lastDayOfMonth"
+        :history="balanceHistory"
+        :is-loading="pending || budgetLoading"
+      />
     </div>
 
-    <!-- 1. Сводка доходов и расходов -->
+    <!-- 2. Сводка доходов и расходов -->
     <MonthlySummary :income="monthlyIncome" :expense="monthlyExpense" />
-
-    <!-- 2. Секция баланса -->
-    <BalanceCard
-      :balance="balance"
-      :percent-change="percentChange"
-      :history="balanceHistory"
-      :is-loading="pending"
-    />
 
     <!-- Главный контент: Топ-5 категорий расходов -->
     <ExpensesDonut

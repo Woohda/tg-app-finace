@@ -33,7 +33,7 @@ const getIcon = (type: string) => {
 // Выбор цвета в зависимости от типа
 const getColor = (type: string) => {
   if (type === "expense") return "text-text-accent";
-  if (type === "income") return "text-green-400";
+  if (type === "income") return "text-green-500";
   if (type === "error") return "text-red-400";
   return "text-blue-400";
 };
