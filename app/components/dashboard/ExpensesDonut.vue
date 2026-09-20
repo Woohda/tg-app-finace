@@ -11,6 +11,11 @@
  * - Стилистика: 3D Gummy/Plastic (эффект леденцов, цветные объемные тени)
  * - Резиновая (прогрессивная) ширина легенды с обрезанием длинного текста.
  * - Индивидуальные gap-отступы между SVG-кривыми с минимальной длиной сегмента.
+ * ---
+ * ### Логика работы:
+ * 1. Получение категорий и общей суммы расходов через пропсы.
+ * 2. Передача данных в `useDonutMath` для вычисления SVG-кривых.
+ * 3. Отрисовка SVG кольца, бликов и теней на основе вычисленных данных.
  */
 import { computed } from "vue";
 import { formatAmount } from "~/utils";
@@ -31,12 +36,7 @@ const props = defineProps<{
   totalExpense?: number;
 }>();
 
-const radius = 67;
-const circumference = 2 * Math.PI * radius;
-
-const strokeWidth = 24;
-const visualGap = 0.5;
-const minDash = strokeWidth + visualGap;
+const categoriesRef = computed(() => props.categories);
 
 const donutTotal = computed(() =>
   props.categories.reduce((acc, cat) => acc + cat.amount, 0),
@@ -46,61 +46,7 @@ const displayTotal = computed(() =>
   props.totalExpense !== undefined ? props.totalExpense : donutTotal.value,
 );
 
-const segments = computed(() => {
-  const numCats = props.categories.length;
-  if (numCats === 0) return [];
-
-  const totalMinDash = numCats * minDash;
-  const remainingCircumference = Math.max(0, circumference - totalMinDash);
-
-  let accumulatedOffset = 0;
-
-  // Масштабы для бликов и теней (чтобы они идеально совпадали с углом базового кольца)
-  const scaleHighlight = 63 / radius;
-  const scaleSharp = 59 / radius;
-  const scaleShadow = 73 / radius;
-
-  return props.categories.map((cat) => {
-    const fraction =
-      donutTotal.value > 0 ? cat.amount / donutTotal.value : 1 / numCats;
-    const dashLength = minDash + fraction * remainingCircumference;
-    const visibleLength = Math.max(0, dashLength - minDash);
-
-    const strokeDasharray = `${visibleLength} ${circumference}`;
-    const strokeDashoffset = -accumulatedOffset;
-
-    // Смещения для 3D бликов и теней
-    const highlightDasharray = `${visibleLength * scaleHighlight} ${circumference * scaleHighlight}`;
-    const highlightDashoffset = -accumulatedOffset * scaleHighlight;
-
-    const sharpDasharray = `${visibleLength * scaleSharp} ${circumference * scaleSharp}`;
-    const sharpDashoffset = -accumulatedOffset * scaleSharp;
-
-    const shadowDasharray = `${visibleLength * scaleShadow} ${circumference * scaleShadow}`;
-    const shadowDashoffset = -accumulatedOffset * scaleShadow;
-
-    const midAngle = (accumulatedOffset + visibleLength / 2) / radius;
-    const pxX = 80 + radius * Math.sin(midAngle);
-    const pxY = 80 - radius * Math.cos(midAngle);
-
-    accumulatedOffset += dashLength;
-
-    return {
-      ...cat,
-      strokeDasharray,
-      strokeDashoffset,
-      highlightDasharray,
-      highlightDashoffset,
-      sharpDasharray,
-      sharpDashoffset,
-      shadowDasharray,
-      shadowDashoffset,
-      iconX: Number(((pxX / 160) * 100).toFixed(2)),
-      iconY: Number(((pxY / 160) * 100).toFixed(2)),
-      IconComponent: useCategoryIcon(cat.icon || "❔"),
-    };
-  });
-});
+const { segments, radius, strokeWidth } = useDonutMath(categoriesRef, donutTotal);
 </script>
 
 <template>
