@@ -1,3 +1,17 @@
+/**
+ * @module app/composables/useReceiptScanner
+ * @fileoverview Логика сканирования чеков
+ *
+ * @description
+ * Обеспечивает интерфейс для выбора изображения (input file), отправки его
+ * на сервер для парсинга через AI, и отображения результатов в модалке.
+ *
+ * ### Логика работы:
+ * 1. Открывает нативный диалог выбора файлов.
+ * 2. Конвертирует изображение в Base64.
+ * 3. Отправляет на эндпоинт `/api/ai/parse-receipt`.
+ * 4. Записывает результат в `scanResults` и закрывает основную модалку (для открытия модалки результатов).
+ */
 import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useTransactionModal, type ScannedTransaction } from "~/composables/useTransactionModal";

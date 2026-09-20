@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/**
+ * @module app/components/shared/GlassInput
+ * @fileoverview Поле ввода в стиле Glassmorphism.
+ * @description
+ * Обертка над базовым компонентом `Input`, добавляющая лэйбл, иконки (start/end)
+ * и стилизацию (полупрозрачный фон, мягкие тени).
+ */
 import { computed, ref } from "vue";
 import type { Component } from "vue";
 import { Input } from "~/components/ui/input";

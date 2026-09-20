@@ -26,7 +26,7 @@ const {
   monthlyBudget,
   monthlyExpense,
   monthlyBudgetPercent,
-} = useTransactionView(transactions);
+} = useTransactionView(transactions, { currentDate });
 
 const deletingId = ref<string | null>(null);
 
@@ -74,7 +74,7 @@ const currentLabel = computed(() =>
       <div class="z-10 relative pointer-events-none">
         <!-- Состояние загрузки: Скелетоны текста -->
         <div
-          v-if="pending && transactions.length === 0"
+          v-if="pending"
           class="flex flex-col gap-2 py-1"
         >
           <Skeleton class="w-30 h-4" />
@@ -82,7 +82,6 @@ const currentLabel = computed(() =>
           <Skeleton class="w-20 h-3" />
         </div>
 
-        <!-- Загруженное состояние: Текст баланса -->
         <div v-else class="fade-in">
           <p class="text-text-secondary text-[12px] font-semibold mb-1">
             {{ currentLabel }}
@@ -132,7 +131,7 @@ const currentLabel = computed(() =>
 
       <!-- Скелетоны транзакций (загрузка) -->
       <div
-        v-if="pending && transactions.length === 0"
+        v-if="pending"
         class="flex flex-col gap-3"
       >
         <TransactionSkeletonList :count="4" mode="list" />

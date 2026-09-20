@@ -256,7 +256,7 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
   <!-- Модалка загрузки для чека -->
   <GlassModal :is-open="isScanning" position="center" :show-close="false">
     <p class="text-text-primary font-medium text-center animate-pulse">
-      Читаю чек... <br />Магия нейросетей работает ✨
+      Распознаю скриншот... <br />Магия нейросетей работает ✨
     </p>
   </GlassModal>
 </template>

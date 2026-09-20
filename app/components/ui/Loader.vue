@@ -1,3 +1,12 @@
+<script setup lang="ts">
+/**
+ * @module app/components/ui/Loader
+ * @fileoverview Индикатор загрузки
+ * @description
+ * Отображает анимированный индикатор загрузки с использованием box-shadow.
+ */
+</script>
+
 <template>
   <div class="w-2 aspect-square rounded-full bg-current loader" />
 </template>

@@ -1,4 +1,10 @@
 <script setup lang="ts">
+/**
+ * @module app/components/dashboard/MonthlySummary
+ * @fileoverview Краткая сводка доходов и расходов за месяц.
+ * @description
+ * Отображает две карточки: Доходы и Расходы, подсвечивая ту, сумма в которой больше.
+ */
 import { computed } from "vue";
 import { BanknoteArrowUp, BanknoteArrowDown } from "@lucide/vue";
 import { formatAmount } from "~/utils";

@@ -1,4 +1,17 @@
+/**
+ * @module app/composables/useNotifications
+ * @fileoverview Управление уведомлениями (Toast-сообщениями)
+ *
+ * @description
+ * Обеспечивает сохранение истории уведомлений в `localStorage` и предоставляет
+ * методы для их добавления и очистки. Используется в связке с `ToastContainer.vue`.
+ *
+ * ### Логика работы:
+ * 1. Хранит историю в `localStorage` (`app-notifications`).
+ * 2. Метод `add` создает уведомление с уникальным ID.
+ */
 import { useLocalStorage } from "@vueuse/core";
+import { computed } from "vue";
 
 export interface NotificationItem {
   id: string;

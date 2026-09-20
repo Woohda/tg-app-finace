@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/**
+ * @module app/components/analytics/AuroraBudget
+ * @fileoverview Фоновое "дышащее" пятно для отображения состояния бюджета.
+ * @description
+ * Отображает анимированный радиальный градиент. Меняет цвет от сине-фиолетового 
+ * (бюджет в норме) к оранжево-красному (бюджет превышен) в зависимости от процента трат.
+ */
 import { computed } from "vue";
 
 interface Props {

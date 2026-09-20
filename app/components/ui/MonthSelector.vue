@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/**
+ * @module app/components/ui/MonthSelector
+ * @fileoverview Селектор месяца для навигации по отчетам.
+ * @description
+ * Отображает текущий выбранный месяц и год, предоставляет кнопки
+ * для переключения на предыдущий и следующий месяц.
+ */
 import { ChevronLeft, ChevronRight } from "@lucide/vue";
 
 defineProps<{

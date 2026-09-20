@@ -12,7 +12,7 @@
  * - Выполняет подсчет `monthlyExpense` и `monthlyIncome` для аналитики.
  * - Сравнивает `monthlyExpense` с `monthlyBudget` для прогресс-бара.
  */
-import { ref, computed } from "vue";
+import { ref, computed, watch } from "vue";
 import type { Ref, ComputedRef } from "vue";
 import type { Transaction } from "./useTransactions";
 
@@ -42,8 +42,24 @@ function getPeriodStart(period: PeriodType): Date {
 
 export const useTransactionView = (
   transactions: ComputedRef<Transaction[]> | Ref<Transaction[]>,
+  options?: { currentDate?: Ref<Date> }
 ) => {
   const activePeriod = ref<PeriodType>("week");
+
+  if (options?.currentDate) {
+    watch(
+      options.currentDate,
+      (newDate) => {
+        const now = new Date();
+        const isCurrentMonth =
+          newDate.getMonth() === now.getMonth() &&
+          newDate.getFullYear() === now.getFullYear();
+
+        activePeriod.value = isCurrentMonth ? "week" : "month";
+      },
+      { immediate: true }
+    );
+  }
 
   const periods: PeriodOption[] = [
     { id: "day", label: "День" },

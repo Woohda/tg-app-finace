@@ -1,3 +1,18 @@
+<script setup lang="ts">
+/**
+ * @module app/components/ui/Skeleton
+ * @fileoverview Компонент скелетной загрузки (Skeleton loader).
+ * @description
+ * Отображает мерцающий блок для индикации процесса загрузки контента.
+ * Использует glassmorphism стили.
+ */
+defineOptions({ inheritAttrs: false });
+
+withDefaults(defineProps<{ rounded?: string }>(), {
+  rounded: "rounded-md",
+});
+</script>
+
 <template>
   <div
     class="relative overflow-hidden bg-white/40 backdrop-blur-md"
@@ -11,14 +26,6 @@
     <div class="absolute inset-0 shimmer-glare" />
   </div>
 </template>
-
-<script setup lang="ts">
-defineOptions({ inheritAttrs: false });
-
-withDefaults(defineProps<{ rounded?: string }>(), {
-  rounded: "rounded-md",
-});
-</script>
 
 <style scoped>
 .shimmer-glare {

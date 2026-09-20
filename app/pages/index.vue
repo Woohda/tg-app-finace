@@ -85,7 +85,7 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
     <!-- Текст приветствия -->
     <div class="flex flex-col gap-2">
       <div class="flex flex-col">
-        <p class="text-lg text-text-secondary tracking-tight">
+        <p class="text-lg text-text-secondary tracking-tight -mb-1.5">
           Привет, сегодня
         </p>
         <p class="text-[24px] text-text-primary tracking-tight">
@@ -95,6 +95,7 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
 
       <!-- 1. Секция баланса (Остаток бюджета) -->
       <BalanceCard
+        v-if="budget"
         :amount="budgetRemainder"
         :daily-guideline="dailyGuideline"
         :last-day-of-month="lastDayOfMonth"

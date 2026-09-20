@@ -1,9 +1,9 @@
 <script setup lang="ts">
 /**
- * @module app/layouts/default
- * @fileoverview Базовый layout для всего приложения с нижним навигационным меню (Mobile-First).
+ * @module app/layouts/clean
+ * @fileoverview Чистый layout без нижней панели навигации.
  * @description
- * Обеспечивает отображение контента страниц и закрепленного нижнего меню.
+ * Используется для модальных страниц или экранов сканирования чека.
  */
 import { onMounted } from "vue";
 

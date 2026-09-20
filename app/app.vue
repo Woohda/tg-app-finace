@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/**
+ * @module app/app
+ * @fileoverview Корневой компонент приложения.
+ * @description
+ * Обеспечивает отображение глобальных компонентов (ToastContainer, TransactionModal)
+ * и базового лоадера во время переходов между страницами.
+ */
 const isLoading = useGlobalLoading();
 const nuxtApp = useNuxtApp();
 

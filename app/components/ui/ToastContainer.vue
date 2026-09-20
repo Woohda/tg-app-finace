@@ -1,4 +1,11 @@
 <script setup lang="ts">
+/**
+ * @module app/components/ui/ToastContainer
+ * @fileoverview Контейнер для отображения всплывающих уведомлений (Toasts).
+ * @description
+ * Рендерит список активных уведомлений из глобального стейта `useAppToast`.
+ * Поддерживает анимации появления/исчезновения.
+ */
 import { useAppToast } from "~/composables/useAppToast";
 import { CheckCircle2, AlertCircle, Info, X } from "@lucide/vue";
 
