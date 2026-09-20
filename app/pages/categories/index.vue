@@ -5,22 +5,16 @@
  * @description
  * Отображает списки доходов и расходов. Позволяет добавлять новые категории
  * через модальное окно и удалять существующие (если нет связанных транзакций).
+ * ---
+ * ### Логика работы:
+ * 1. Получение списков категорий с бэкенда через `useCategories`.
+ * 2. Отрисовка двух секций: расходы и доходы.
+ * 3. Открытие модальных окон для создания, редактирования и удаления категорий.
  */
-import { ref, computed, onMounted, watch } from "vue";
-import { ChevronLeft, Flame, Plus, SquarePen } from "@lucide/vue";
-import { categorySchema } from "~/types/validate";
-import { formatZodError } from "~/utils/zod";
+import { ref, computed, onMounted } from "vue";
+import { ChevronLeft, Plus } from "@lucide/vue";
 
-const {
-  categories,
-  error,
-  fetchCategories,
-  createCategory,
-  updateCategory,
-  deleteCategory,
-} = useCategories();
-
-const { transactions } = useTransactions();
+const { categories, fetchCategories } = useCategories();
 
 onMounted(() => {
   fetchCategories();
@@ -50,149 +44,44 @@ const sections = computed(() => [
 const isFormOpen = ref(false);
 const isEditMode = ref(false);
 const editingId = ref<string | null>(null);
-
-const formName = ref("");
-const formIcon = ref("");
-const formType = ref<"expense" | "income">("expense");
-const formError = ref<string | null>(null);
-const formButtonState = ref<"idle" | "loading" | "success">("idle");
-const nameInputRef = ref<{ focus: () => void } | null>(null);
-// Оставляем только один эмодзи/символ при вводе
-watch(formIcon, (newVal) => {
-  if (newVal) {
-    // Array.from правильно разбивает строку с учетом составных эмодзи
-    const glyphs = Array.from(newVal);
-    if (glyphs.length > 1) {
-      formIcon.value = glyphs[0] || "";
-    }
-  }
-});
+const initialName = ref("");
+const initialIcon = ref("");
+const initialType = ref<"expense" | "income">("expense");
 
 const openCreateForm = (type: "expense" | "income" = "expense") => {
   isEditMode.value = false;
   editingId.value = null;
-  formName.value = "";
-  formIcon.value = "";
-  formType.value = type;
-  formError.value = null;
-  formButtonState.value = "idle";
+  initialName.value = "";
+  initialIcon.value = "";
+  initialType.value = type;
   isFormOpen.value = true;
-  setTimeout(() => {
-    nameInputRef.value?.focus();
-  }, 100);
 };
 
 const openEditForm = (category: (typeof categories.value)[0]) => {
   isEditMode.value = true;
   editingId.value = category.id;
-  formName.value = category.name;
-  formIcon.value = category.icon || "";
-  formType.value = category.type as "expense" | "income";
-  formError.value = null;
-  formButtonState.value = "idle";
+  initialName.value = category.name;
+  initialIcon.value = category.icon || "";
+  initialType.value = category.type as "expense" | "income";
   isFormOpen.value = true;
-  setTimeout(() => {
-    nameInputRef.value?.focus();
-  }, 100);
 };
 
 const closeForm = () => {
   isFormOpen.value = false;
 };
 
-const submitForm = async () => {
-  const result = categorySchema.safeParse({
-    name: formName.value.trim(),
-    icon: formIcon.value.trim(),
-    type: formType.value,
-  });
-
-  if (!result.success) {
-    formError.value = formatZodError(result.error);
-    return;
-  }
-
-  const existingCategory = categories.value.find(
-    (c) => c.name.toLowerCase() === result.data.name.toLowerCase(),
-  );
-
-  if (existingCategory) {
-    if (!isEditMode.value || existingCategory.id !== editingId.value) {
-      formError.value = "Категория с таким именем уже существует";
-      return;
-    }
-  }
-
-  formError.value = null;
-  formButtonState.value = "loading";
-
-  let success = false;
-  if (isEditMode.value && editingId.value) {
-    success = await updateCategory(
-      editingId.value,
-      result.data.name,
-      result.data.icon || "",
-    );
-  } else {
-    const newCat = await createCategory(
-      result.data.name,
-      result.data.type,
-      result.data.icon || "",
-    );
-    success = !!newCat;
-  }
-
-  if (success) {
-    formButtonState.value = "success";
-    setTimeout(() => {
-      closeForm();
-      formButtonState.value = "idle";
-    }, 1200);
-  } else {
-    formButtonState.value = "idle";
-    formError.value = error.value || "Произошла ошибка";
-  }
-};
-
+// Состояние модалки удаления
 const isDeleteModalOpen = ref(false);
 const deletingCategoryId = ref<string | null>(null);
-const deleteButtonState = ref<"idle" | "loading" | "success">("idle");
 
 const confirmDelete = (id: string) => {
   deletingCategoryId.value = id;
-  const hasTransactions = transactions.value.some((t) => t.categoryId === id);
-  if (hasTransactions) {
-    error.value =
-      "Невозможно удалить категорию, так как с ней связаны транзакции. Сначала удалите их или перенесите в другую категорию.";
-  } else {
-    error.value = null;
-  }
   isDeleteModalOpen.value = true;
 };
 
 const cancelDelete = () => {
   isDeleteModalOpen.value = false;
   deletingCategoryId.value = null;
-  error.value = null;
-  deleteButtonState.value = "idle";
-};
-
-const executeDelete = async () => {
-  if (!deletingCategoryId.value) return;
-
-  deleteButtonState.value = "loading";
-  const success = await deleteCategory(deletingCategoryId.value);
-
-  if (success) {
-    deleteButtonState.value = "success";
-    setTimeout(() => {
-      isDeleteModalOpen.value = false;
-      deletingCategoryId.value = null;
-      deleteButtonState.value = "idle";
-    }, 1200);
-  } else {
-    deleteButtonState.value = "idle";
-  }
 };
 </script>
 
@@ -268,86 +157,21 @@ const executeDelete = async () => {
     </div>
 
     <!-- Модалка формы -->
-    <GlassModal
+    <CategoryFormModal
       :is-open="isFormOpen"
-      :title="isEditMode ? 'Редактировать' : 'Новая категория'"
-      position="bottom"
+      :is-edit-mode="isEditMode"
+      :category-id="editingId"
+      :initial-name="initialName"
+      :initial-icon="initialIcon"
+      :initial-type="initialType"
       @close="closeForm"
-    >
-      <form class="flex flex-col gap-4" @submit.prevent="submitForm">
-        <div class="flex gap-3">
-          <GlassInput
-            ref="nameInputRef"
-            v-model="formName"
-            type="text"
-            label="Название"
-            placeholder="Например, Продукты"
-            class="w-full"
-          />
-          <GlassInput
-            v-model="formIcon"
-            type="text"
-            label="Эмодзи"
-            placeholder="💸"
-            maxlength="2"
-            class="w-15 mr-2"
-          />
-        </div>
-
-        <GlassTypeSelector v-if="!isEditMode" v-model="formType" />
-
-        <div v-if="formError" class="text-text-accent text-sm text-center">
-          {{ formError }}
-        </div>
-
-        <GlassMorphButton
-          type="submit"
-          variant="primary"
-          :state="formButtonState"
-        >
-          <span>{{
-            isEditMode ? "💾 Сохранить изменения" : "✨ Создать"
-          }}</span>
-          <template v-if="!isEditMode" #success>
-            <SquarePen :stroke-width="1.5" />
-          </template>
-        </GlassMorphButton>
-      </form>
-    </GlassModal>
+    />
 
     <!-- Модалка удаления -->
-    <GlassModal
+    <CategoryDeleteModal
       :is-open="isDeleteModalOpen"
-      :show-close="false"
-      position="center"
+      :category-id="deletingCategoryId"
       @close="cancelDelete"
-    >
-      <div class="flex flex-col gap-2 text-center">
-        <h2 class="text-text-primary text-xl font-bold">
-          {{ error ? "Удаление невозможно" : "Удалить категорию?" }}
-        </h2>
-        <p class="text-text-secondary text-sm">
-          {{ error ? error : "Вы уверены, что хотите удалить эту категорию?" }}
-        </p>
-      </div>
-
-      <div class="flex gap-3 mt-2">
-        <GlassButton variant="soft" class="flex-1" @click="cancelDelete">
-          {{ error ? "Ок" : "Отмена" }}
-        </GlassButton>
-        <div v-if="!error" class="flex-1 flex justify-center">
-          <GlassMorphButton
-            variant="delete"
-            :state="deleteButtonState"
-            @click="executeDelete"
-          >
-            <span>🧨 Сжечь</span>
-            <template #success>
-              <Flame :stroke-width="1.5" />
-            </template>
-          </GlassMorphButton>
-        </div>
-      </div>
-    </GlassModal>
+    />
   </div>
 </template>

@@ -53,24 +53,26 @@ const getColor = (type: string) => {
       <div
         class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1"
       >
-        <GlassButton
-          v-if="hasUnread"
-          variant="soft"
-          size="icon"
-          class="px-2"
-          @click="markAllAsRead"
-        >
-          <CheckCheck class="text-text-primary" :stroke-width="1.5" />
-        </GlassButton>
-        <GlassButton
-          v-if="history.length > 0"
-          variant="soft"
-          size="icon"
-          class="px-2"
-          @click="clear"
-        >
-          <Trash2 class="text-text-accent" :stroke-width="1.5" />
-        </GlassButton>
+        <ClientOnly>
+          <GlassButton
+            v-if="hasUnread"
+            variant="soft"
+            size="icon"
+            class="px-2"
+            @click="markAllAsRead"
+          >
+            <CheckCheck class="text-text-primary" :stroke-width="1.5" />
+          </GlassButton>
+          <GlassButton
+            v-if="history.length > 0"
+            variant="soft"
+            size="icon"
+            class="px-2"
+            @click="clear"
+          >
+            <Trash2 class="text-text-accent" :stroke-width="1.5" />
+          </GlassButton>
+        </ClientOnly>
       </div>
 
       <div class="flex flex-col text-center">
@@ -83,59 +85,61 @@ const getColor = (type: string) => {
 
     <!-- Content -->
     <div class="flex flex-col pb-safe">
-      <div
-        v-if="history.length === 0"
-        class="flex flex-col items-center justify-center h-64 opacity-50 gap-4"
-      >
-        <Bell class="w-16 h-16 text-text-secondary" :stroke-width="1" />
-        <p class="text-text-secondary text-center max-w-50">
-          У вас пока нет новых уведомлений
-        </p>
-      </div>
+      <ClientOnly>
+        <div
+          v-if="history.length === 0"
+          class="flex flex-col items-center justify-center h-64 opacity-50 gap-4"
+        >
+          <Bell class="w-16 h-16 text-text-secondary" :stroke-width="1" />
+          <p class="text-text-secondary text-center max-w-50">
+            У вас пока нет новых уведомлений
+          </p>
+        </div>
 
-      <div v-else class="flex flex-col gap-2.5">
-        <TransitionGroup name="list">
-          <GlassCard
-            v-for="item in history"
-            :key="item.id"
-            class="flex items-center gap-3 py-2 px-4 shadow-sm relative transition-opacity duration-300"
-            :class="[item.isRead ? 'opacity-60' : '']"
-          >
-            <!-- Индикатор непрочитанного -->
-            <div
-              v-if="!item.isRead"
-              class="absolute inset-0 bg-linear-to-l from-accent-notification/45 to-transparent pointer-events-none rounded-[inherit]"
-            />
-            <!-- Иконка -->
-            <div class="shrink-0">
-              <component
-                :is="getIcon(item.type)"
-                class="w-6 h-6"
-                :class="getColor(item.type)"
-                :stroke-width="2"
+        <div v-else class="flex flex-col gap-2.5">
+          <TransitionGroup name="list">
+            <GlassCard
+              v-for="item in history"
+              :key="item.id"
+              class="flex items-center gap-3 py-2 px-4 shadow-sm relative transition-opacity duration-300"
+              :class="[item.isRead ? 'opacity-60' : '']"
+            >
+              <!-- Индикатор непрочитанного -->
+              <div
+                v-if="!item.isRead"
+                class="absolute inset-0 bg-linear-to-l from-accent-notification/45 to-transparent pointer-events-none rounded-[inherit]"
               />
-            </div>
-
-            <!-- Текст -->
-            <div class="flex flex-col gap-0.5 flex-1 min-w-0">
-              <div class="flex justify-between items-start gap-2">
-                <span class="text-sm font-bold text-text-primary truncate">{{
-                  item.title
-                }}</span>
-                <span class="text-[10px] text-text-secondary shrink-0 pt-0.5">{{
-                  formatDate(item.date)
-                }}</span>
+              <!-- Иконка -->
+              <div class="shrink-0">
+                <component
+                  :is="getIcon(item.type)"
+                  class="w-6 h-6"
+                  :class="getColor(item.type)"
+                  :stroke-width="2"
+                />
               </div>
-              <span
-                v-if="item.message"
-                class="text-xs text-text-secondary leading-snug"
-              >
-                {{ item.message }}
-              </span>
-            </div>
-          </GlassCard>
-        </TransitionGroup>
-      </div>
+
+              <!-- Текст -->
+              <div class="flex flex-col gap-0.5 flex-1 min-w-0">
+                <div class="flex justify-between items-start gap-2">
+                  <span class="text-sm font-bold text-text-primary truncate">{{
+                    item.title
+                  }}</span>
+                  <span class="text-[10px] text-text-secondary shrink-0 pt-0.5">{{
+                    formatDate(item.date)
+                  }}</span>
+                </div>
+                <span
+                  v-if="item.message"
+                  class="text-xs text-text-secondary leading-snug"
+                >
+                  {{ item.message }}
+                </span>
+              </div>
+            </GlassCard>
+          </TransitionGroup>
+        </div>
+      </ClientOnly>
     </div>
   </div>
 </template>
