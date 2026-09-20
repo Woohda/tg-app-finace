@@ -4,12 +4,13 @@ import {
   Bell,
   Trash2,
   ShieldAlert,
-  ArrowDownToLine,
-  ArrowUpToLine,
+  BanknoteArrowDown,
+  BanknoteArrowUp,
   BellRing,
+  CheckCheck,
 } from "@lucide/vue";
 
-const { history, clear } = useNotifications();
+const { history, clear, hasUnread, markAllAsRead } = useNotifications();
 
 const formatDate = (isoStr: string) => {
   const date = new Date(isoStr);
@@ -23,17 +24,17 @@ const formatDate = (isoStr: string) => {
 
 // Выбор иконки в зависимости от типа
 const getIcon = (type: string) => {
-  if (type === "expense") return ArrowDownToLine;
-  if (type === "income") return ArrowUpToLine;
+  if (type === "expense") return BanknoteArrowDown;
+  if (type === "income") return BanknoteArrowUp;
   if (type === "error") return ShieldAlert;
   return BellRing;
 };
 
 // Выбор цвета в зависимости от типа
 const getColor = (type: string) => {
-  if (type === "expense") return "text-red-400";
+  if (type === "expense") return "text-text-accent";
   if (type === "income") return "text-green-400";
-  if (type === "error") return "text-text-accent";
+  if (type === "error") return "text-red-400";
   return "text-blue-400";
 };
 </script>
@@ -49,15 +50,28 @@ const getColor = (type: string) => {
         <ChevronLeft class="text-text-primary -ml-px" :stroke-width="1.5" />
       </NuxtLink>
 
-      <GlassButton
-        v-if="history.length > 0"
-        variant="soft"
-        size="icon"
-        class="px-2 absolute right-0 top-1/2 -translate-y-1/2"
-        @click="clear"
+      <div
+        class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1"
       >
-        <Trash2 class="text-text-accent" :stroke-width="1.5" />
-      </GlassButton>
+        <GlassButton
+          v-if="hasUnread"
+          variant="soft"
+          size="icon"
+          class="px-2"
+          @click="markAllAsRead"
+        >
+          <CheckCheck class="text-text-primary" :stroke-width="1.5" />
+        </GlassButton>
+        <GlassButton
+          v-if="history.length > 0"
+          variant="soft"
+          size="icon"
+          class="px-2"
+          @click="clear"
+        >
+          <Trash2 class="text-text-accent" :stroke-width="1.5" />
+        </GlassButton>
+      </div>
 
       <div class="flex flex-col text-center">
         <h1 class="text-text-primary text-xl font-bold tracking-tight">
@@ -84,13 +98,19 @@ const getColor = (type: string) => {
           <GlassCard
             v-for="item in history"
             :key="item.id"
-            class="flex items-start gap-4 p-4 shadow-sm"
+            class="flex items-start gap-3 p-3 shadow-sm relative transition-opacity duration-300"
+            :class="[item.isRead ? 'opacity-60' : '']"
           >
+            <!-- Индикатор непрочитанного -->
+            <div
+              v-if="!item.isRead"
+              class="absolute inset-0 bg-linear-to-l from-accent-notification/45 to-transparent pointer-events-none rounded-[inherit]"
+            />
             <!-- Иконка -->
             <div class="mt-1 shrink-0">
               <component
                 :is="getIcon(item.type)"
-                class="w-5 h-5"
+                class="w-6 h-6"
                 :class="getColor(item.type)"
                 :stroke-width="2"
               />

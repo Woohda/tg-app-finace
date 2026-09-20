@@ -13,6 +13,7 @@ import { getGreeting } from "~/utils";
 import { Bell, ReceiptText } from "@lucide/vue";
 
 const { user, tgUser } = useAuth();
+const { hasUnread } = useNotifications();
 const { startDate, endDate } = useDateFilter();
 const { transactions, pending } = useTransactions({ startDate, endDate });
 const { balance, monthlyExpense } = useTransactionView(transactions);
@@ -37,7 +38,6 @@ const userName = computed(() => {
 const avatarUrl = computed(() => tgUser.value?.photo_url || null);
 
 // 1. Данные баланса (используем реальный текущий баланс)
-// TODO: Расчет исторического графика по дням на бэкенде. Пока строим кумулятивный график из транзакций
 const percentChange = computed(() => dashboardStats.value?.percentChange || 0);
 </script>
 
@@ -56,7 +56,10 @@ const percentChange = computed(() => dashboardStats.value?.percentChange || 0);
         class="w-12 h-12 rounded-full glass-milky flex items-center justify-center relative active:scale-95 transition-transform shrink-0 a11y-focus border-[0.5px] border-white/50"
       >
         <Bell class="w-6 h-6 text-text-secondary" />
-        <div class="absolute top-2 right-2 w-2.5 h-2.5 bg-text-accent rounded-full border-2 border-[#E5E9F0]"/>
+        <div
+          v-if="hasUnread"
+          class="absolute top-2 right-2 w-2.5 h-2.5 bg-text-accent rounded-full border-2 border-[#E5E9F0]"
+        />
       </NuxtLink>
     </div>
 

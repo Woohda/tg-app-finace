@@ -134,12 +134,12 @@ const submit = async () => {
   if (res.success) {
     buttonState.value = "success";
     toast.success(
-      isEditMode.value ? "Изменения сохранены" : "Транзакция добавлена"
+      isEditMode.value ? "Изменения сохранены" : "Транзакция добавлена",
     );
 
     // Пишем в историю уведомлений
     if (!isEditMode.value) {
-      notifications.add(type.value === "expense" ? "Списание" : "Пополнение", {
+      notifications.add(type.value === "expense" ? "Трата" : "Пополнение", {
         message: `${name.value || "Без названия"}: ${amount.value} ₽`,
         type: type.value,
       });
