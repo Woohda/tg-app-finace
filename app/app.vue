@@ -18,6 +18,7 @@ onMounted(() => {
   </NuxtLayout>
 
   <TransactionModal />
+  <ToastContainer />
 
   <Transition name="fade">
     <div

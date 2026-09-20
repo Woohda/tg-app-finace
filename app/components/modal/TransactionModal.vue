@@ -19,9 +19,8 @@ import { Calendar, RussianRuble, Camera } from "@lucide/vue";
 import { transactionFrontendSchema } from "~/types/validate";
 import { formatZodError } from "~/utils/zod";
 
-import { useTransactionModal } from "~/composables/useTransactionModal";
-
 const router = useRouter();
+const toast = useAppToast();
 
 const { addTransaction, updateTransaction, transactions } = useTransactions();
 const { isOpen, editId, closeModal } = useTransactionModal();
@@ -144,6 +143,7 @@ const submit = async () => {
     buttonState.value = "idle";
     const errText = res.error || "Ошибка при сохранении";
     errorMsg.value = errText;
+    toast.error("Не удалось сохранить", errText);
   }
 };
 

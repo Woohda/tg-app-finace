@@ -22,6 +22,7 @@ interface Props {
   type: "income" | "expense";
   date: string;
   interactive?: boolean;
+  showFullDate?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -29,6 +30,7 @@ const props = withDefaults(defineProps<Props>(), {
   interactive: false,
   icon: undefined,
   subtitle: undefined,
+  showFullDate: false,
 });
 
 const emit = defineEmits<{
@@ -37,7 +39,9 @@ const emit = defineEmits<{
 }>();
 
 const formattedAmount = computed(() => formatAmount(props.amount, props.type));
-const formattedDate = computed(() => formatDate(props.date));
+const formattedDate = computed(() =>
+  formatDate(props.date, props.showFullDate),
+);
 
 // --- Логика свайпа ---
 const offsetX = ref(0);

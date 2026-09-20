@@ -23,17 +23,27 @@ export function formatAmount(
   return `${formatted} ₽`;
 }
 
-export function formatPercent(percent: number, suffix: string = "к прошлому месяцу"): string {
+export function formatPercent(
+  percent: number,
+  suffix: string = "к прошлому месяцу",
+): string {
   const prefix = percent > 0 ? "+" : "";
   // Округление до десятых (убираем лишние нули в конце, если число целое)
   const rounded = Number(percent.toFixed(1));
   return `${prefix}${rounded}% ${suffix}`.trim();
 }
 
-export function formatDate(str: string): string {
+export function formatDate(str: string, fullDate: boolean = false): string {
   const date = new Date(str);
   const today = new Date();
   const yesterday = new Date();
+  if (fullDate) {
+    return date.toLocaleDateString("ru-RU", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
+    });
+  }
   yesterday.setDate(today.getDate() - 1);
 
   if (date.toDateString() === today.toDateString()) return "Сегодня";

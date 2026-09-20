@@ -75,9 +75,12 @@ const save = () => {
       formError.value = formatZodError(result.error);
       return;
     }
-    
+
     formError.value = null;
-    emit("save", { ...localItem.value, amount: Number(localItem.value.amount) });
+    emit("save", {
+      ...localItem.value,
+      amount: Number(localItem.value.amount),
+    });
   }
 };
 </script>
@@ -107,7 +110,7 @@ const save = () => {
           v-model="localItem.date"
           type="date"
           :icon="Calendar"
-          class="max-w-36 pr-px"
+          class="max-w-38 pr-px"
         />
         <GlassInput
           v-model="localItem.amount"

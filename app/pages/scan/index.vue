@@ -12,6 +12,10 @@ import { computed, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Sparkles, RussianRuble, Trash2 } from "@lucide/vue";
 
+definePageMeta({
+  layout: "clean",
+});
+
 interface ScannedTransaction {
   id?: string;
   type: "expense" | "income";
@@ -24,7 +28,7 @@ interface ScannedTransaction {
 
 const router = useRouter();
 const scanResults = useState<ScannedTransaction[]>("scanResults", () => []);
-const txVersion = useGlobalTransactionsVersion();
+const { addBulkTransactions } = useTransactions();
 
 // Категории для маппинга
 const { categories, fetchCategories } = useCategories();
@@ -168,26 +172,26 @@ const saveAll = async () => {
       return;
     }
 
-    const api = useApi();
-    const res = await api("/api/transactions/bulk", {
-      method: "POST",
-      body: { transactions: transactionsToSave },
-    });
+    const res = await addBulkTransactions(transactionsToSave);
 
-    if (res) {
+    if (res.success) {
       scanResults.value = [];
-      clearNuxtData(
-        (key) =>
-          typeof key === "string" && key.startsWith("transactions-list-"),
-      );
-      txVersion.value++;
-      router.push("/");
+      setTimeout(() => {
+        router.push("/");
+      }, 700);
+    } else {
+      saveError.value = res.error || "Ошибка при сохранении";
     }
-  } catch (e) {
-    saveError.value = parseApiError(e, "Ошибка при сохранении");
+  } catch {
+    saveError.value = "Неизвестная ошибка";
   } finally {
     isSaving.value = false;
   }
+};
+
+const cancelAll = () => {
+  scanResults.value = [];
+  router.push("/");
 };
 </script>
 
@@ -249,6 +253,7 @@ const saveAll = async () => {
             :amount="item.amount"
             :type="item.type"
             :date="item.date!"
+            :show-full-date="true"
             interactive
             class="transition-colors px-2 py-1.5"
             @click="openEditModal(item)"
@@ -268,6 +273,10 @@ const saveAll = async () => {
         <RussianRuble :stroke-width="2" />
       </template>
     </GlassMorphButton>
+
+    <GlassButton variant="soft" class="w-full font-medium" @click="cancelAll">
+      Отменить
+    </GlassButton>
 
     <ScanEditModal
       :is-open="isEditModalOpen"

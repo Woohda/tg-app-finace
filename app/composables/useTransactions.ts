@@ -26,6 +26,8 @@ export const useTransactions = (options?: {
   endDate?: Ref<Date>;
 }) => {
   const api = useApi();
+  const toast = useAppToast();
+  const notifications = useNotifications();
 
   const query = computed(() => {
     const q: Record<string, string> = {};
@@ -85,6 +87,15 @@ export const useTransactions = (options?: {
       }
       clearOtherCaches();
       txVersion.value++;
+
+      toast.success("Транзакция добавлена");
+      notifications.add(newTx.categoryName, {
+        message: newTx.name
+          ? `${newTx.name}: ${newTx.amount} ₽`
+          : `${newTx.amount} ₽`,
+        type: newTx.type,
+      });
+
       return { success: true };
     } catch (e: unknown) {
       console.error("Ошибка при добавлении:", e);
@@ -117,6 +128,14 @@ export const useTransactions = (options?: {
       }
       clearOtherCaches();
       txVersion.value++;
+
+      const txName = updated.name || updated.categoryName;
+      toast.success("Транзакция обновлена");
+      notifications.add("Транзакция изменена", {
+        message: `${txName} : ${updated.amount} ₽`,
+        type: updated.type,
+      });
+
       return { success: true };
     } catch (e: unknown) {
       console.error("Ошибка при обновлении:", e);
@@ -131,16 +150,67 @@ export const useTransactions = (options?: {
       await api(`/api/transactions/${id}`, {
         method: "DELETE",
       });
+      let deletedTx: Transaction | undefined;
       if (rawTransactions.value) {
+        deletedTx = rawTransactions.value.find((t) => t.id === id);
         rawTransactions.value = rawTransactions.value.filter(
           (t) => t.id !== id,
         );
       }
       clearOtherCaches();
       txVersion.value++;
+
+      toast.success("Транзакция удалена");
+      if (deletedTx) {
+        const txName = deletedTx.name || deletedTx.categoryName;
+        notifications.add("Транзакция удалена", {
+          message: `${txName}: ${deletedTx.amount} ₽`,
+          type: "system",
+        });
+      }
+
       return { success: true };
     } catch (e: unknown) {
       console.error("Ошибка при удалении:", e);
+      return { success: false, error: parseApiError(e, "Ошибка сервера") };
+    }
+  };
+
+  const addBulkTransactions = async (
+    transactionsToSave: {
+      amount: number;
+      category_id: string;
+      type: "income" | "expense" | string;
+      date: string;
+      name?: string;
+    }[],
+  ) => {
+    if (pending.value)
+      return { success: false, error: "Запрос уже выполняется" };
+    try {
+      const newTransactions = await api<Transaction[]>(
+        "/api/transactions/bulk",
+        {
+          method: "POST",
+          body: { transactions: transactionsToSave },
+        },
+      );
+
+      clearOtherCaches();
+      txVersion.value++;
+
+      toast.success(`Успешно добавлено: ${transactionsToSave.length} шт.`);
+
+      newTransactions.forEach((t) => {
+        notifications.add(t.categoryName, {
+          message: t.name ? `${t.name}: ${t.amount} ₽` : `${t.amount} ₽`,
+          type: t.type as "expense" | "income",
+        });
+      });
+
+      return { success: true };
+    } catch (e: unknown) {
+      console.error("Ошибка при массовом добавлении:", e);
       return { success: false, error: parseApiError(e, "Ошибка сервера") };
     }
   };
@@ -153,5 +223,6 @@ export const useTransactions = (options?: {
     addTransaction,
     updateTransaction,
     deleteTransaction,
+    addBulkTransactions,
   };
 };
