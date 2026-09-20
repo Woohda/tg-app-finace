@@ -1,10 +1,10 @@
 /**
  * @module app/composables/useBudgets
  * @fileoverview Управление месячным бюджетом пользователя
- * 
+ *
  * @description
  * Загружает и обновляет лимит бюджета через API.
- * Все изменения мутируют глобальное состояние (`useGlobalBudget`), 
+ * Все изменения мутируют глобальное состояние (`useGlobalBudget`),
  * чтобы данные мгновенно отображались по всему приложению.
  */
 import { ref } from "vue";
@@ -13,6 +13,8 @@ import { parseApiError } from "~/utils/api";
 export const useBudgets = () => {
   const { token } = useAuth();
   const api = useApi();
+  const toast = useAppToast();
+  const notifications = useNotifications();
 
   const budget = useGlobalBudget();
   const isLoading = ref(false);
@@ -51,6 +53,11 @@ export const useBudgets = () => {
 
       if (data && data.amount > 0) {
         budget.value = data.amount;
+        toast.success("Бюджет сохранен");
+        notifications.add("Бюджет обновлен", {
+          message: `Новый лимит: ${data.amount} ₽`,
+          type: "system",
+        });
       }
       return true;
     } catch (e: unknown) {

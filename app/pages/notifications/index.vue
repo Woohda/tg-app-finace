@@ -40,7 +40,7 @@ const getColor = (type: string) => {
 </script>
 
 <template>
-  <div class="flex flex-col h-full gap-5">
+  <div class="flex flex-col gap-5">
     <!-- Header -->
     <div class="flex items-center justify-center gap-3 relative shrink-0">
       <NuxtLink
@@ -82,7 +82,7 @@ const getColor = (type: string) => {
     </div>
 
     <!-- Content -->
-    <div class="flex-1 overflow-y-auto pb-safe">
+    <div class="flex flex-col pb-safe">
       <div
         v-if="history.length === 0"
         class="flex flex-col items-center justify-center h-64 opacity-50 gap-4"
@@ -93,12 +93,12 @@ const getColor = (type: string) => {
         </p>
       </div>
 
-      <div v-else class="flex flex-col gap-3">
+      <div v-else class="flex flex-col gap-2.5">
         <TransitionGroup name="list">
           <GlassCard
             v-for="item in history"
             :key="item.id"
-            class="flex items-start gap-3 p-3 shadow-sm relative transition-opacity duration-300"
+            class="flex items-center gap-3 py-2 px-4 shadow-sm relative transition-opacity duration-300"
             :class="[item.isRead ? 'opacity-60' : '']"
           >
             <!-- Индикатор непрочитанного -->
@@ -107,7 +107,7 @@ const getColor = (type: string) => {
               class="absolute inset-0 bg-linear-to-l from-accent-notification/45 to-transparent pointer-events-none rounded-[inherit]"
             />
             <!-- Иконка -->
-            <div class="mt-1 shrink-0">
+            <div class="shrink-0">
               <component
                 :is="getIcon(item.type)"
                 class="w-6 h-6"

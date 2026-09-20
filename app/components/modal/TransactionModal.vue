@@ -21,7 +21,6 @@ import { formatZodError } from "~/utils/zod";
 
 const router = useRouter();
 const toast = useAppToast();
-const notifications = useNotifications();
 
 const { addTransaction, updateTransaction, transactions } = useTransactions();
 const { isOpen, editId, closeModal } = useTransactionModal();
@@ -133,17 +132,6 @@ const submit = async () => {
 
   if (res.success) {
     buttonState.value = "success";
-    toast.success(
-      isEditMode.value ? "Изменения сохранены" : "Транзакция добавлена",
-    );
-
-    // Пишем в историю уведомлений
-    if (!isEditMode.value) {
-      notifications.add(type.value === "expense" ? "Трата" : "Пополнение", {
-        message: `${name.value || "Без названия"}: ${amount.value} ₽`,
-        type: type.value,
-      });
-    }
 
     setTimeout(() => {
       closeModal();

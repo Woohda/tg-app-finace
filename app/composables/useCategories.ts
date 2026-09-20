@@ -14,6 +14,8 @@ type Category = Database["public"]["Tables"]["categories"]["Row"];
 export const useCategories = () => {
   const { token } = useAuth();
   const api = useApi();
+  const toast = useAppToast();
+  const notifications = useNotifications();
 
   const categories = useGlobalCategories();
   const isLoading = ref(false);
@@ -72,6 +74,12 @@ export const useCategories = () => {
 
       categories.value.push(newCategory);
       sortCategories(categories.value);
+      
+      toast.success("Категория добавлена");
+      notifications.add("Новая категория", {
+        message: newCategory.name,
+        type: "system",
+      });
 
       return newCategory;
     } catch (e: unknown) {
@@ -100,6 +108,13 @@ export const useCategories = () => {
         categories.value[index] = updated;
         sortCategories(categories.value);
       }
+      
+      toast.success("Категория обновлена");
+      notifications.add("Категория изменена", {
+        message: updated.name,
+        type: "system",
+      });
+      
       return true;
     } catch (e: unknown) {
       console.error("Ошибка обновления категории:", e);
@@ -121,7 +136,17 @@ export const useCategories = () => {
         method: "DELETE",
       });
 
+      const cat = categories.value.find((c) => c.id === id);
       categories.value = categories.value.filter((c) => c.id !== id);
+      
+      toast.success("Категория удалена");
+      if (cat) {
+        notifications.add("Категория удалена", {
+          message: cat.name,
+          type: "system",
+        });
+      }
+      
       return true;
     } catch (e: unknown) {
       console.error("Ошибка удаления категории:", e);

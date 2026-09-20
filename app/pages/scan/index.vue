@@ -27,10 +27,8 @@ interface ScannedTransaction {
 }
 
 const router = useRouter();
-const toast = useAppToast();
-const notifications = useNotifications();
 const scanResults = useState<ScannedTransaction[]>("scanResults", () => []);
-const txVersion = useGlobalTransactionsVersion();
+const { addBulkTransactions } = useTransactions();
 
 // Категории для маппинга
 const { categories, fetchCategories } = useCategories();
@@ -174,35 +172,18 @@ const saveAll = async () => {
       return;
     }
 
-    const api = useApi();
-    const res = await api("/api/transactions/bulk", {
-      method: "POST",
-      body: { transactions: transactionsToSave },
-    });
+    const res = await addBulkTransactions(transactionsToSave);
 
-    if (res) {
-      toast.success(`Успешно сохранено: ${transactionsToSave.length} шт.`);
-
-      transactionsToSave.forEach((t) => {
-        notifications.add(t.type === "expense" ? "Трата" : "Пополнение", {
-          message: `${t.name || "Без названия"}: ${t.amount} ₽ (скан)`,
-          type: t.type as "expense" | "income",
-        });
-      });
-
+    if (res.success) {
       scanResults.value = [];
-      clearNuxtData(
-        (key) =>
-          typeof key === "string" && key.startsWith("transactions-list-"),
-      );
-      txVersion.value++;
-
       setTimeout(() => {
         router.push("/");
       }, 700);
+    } else {
+      saveError.value = res.error || "Ошибка при сохранении";
     }
-  } catch (e) {
-    saveError.value = parseApiError(e, "Ошибка при сохранении");
+  } catch {
+    saveError.value = "Неизвестная ошибка";
   } finally {
     isSaving.value = false;
   }

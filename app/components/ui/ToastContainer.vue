@@ -26,12 +26,12 @@ const colors = {
       <div
         v-for="toast in toasts"
         :key="toast.id"
-        class="w-full max-w-sm glass-milky rounded-2xl p-4 flex items-start gap-3 shadow-lg pointer-events-auto transition-all"
+        class="w-full max-w-sm glass-milky rounded-2xl p-4 flex items-center gap-2 shadow-lg pointer-events-auto transition-all"
       >
         <!-- Иконка -->
         <component
           :is="icons[toast.type]"
-          class="shrink-0 mt-0.5"
+          class="shrink-0"
           :class="colors[toast.type]"
           :stroke-width="2"
         />
@@ -41,7 +41,7 @@ const colors = {
           <p class="text-sm font-bold text-text-primary">{{ toast.title }}</p>
           <p
             v-if="toast.message"
-            class="text-xs text-text-secondary mt-0.5 line-clamp-2"
+            class="text-xs text-text-secondary line-clamp-2"
           >
             {{ toast.message }}
           </p>
@@ -49,10 +49,10 @@ const colors = {
 
         <!-- Кнопка закрытия -->
         <button
-          class="shrink-0 p-1 -mr-2 -mt-2 text-text-secondary active:scale-95 transition-transform opacity-70"
+          class="shrink-0 p-1 text-text-secondary active:scale-95 transition-transform"
           @click="remove(toast.id)"
         >
-          <X class="w-4 h-4" />
+          <X class="w-5 h-5" :stroke-width="1.5" />
         </button>
       </div>
     </TransitionGroup>
