@@ -6,6 +6,11 @@
  * Обеспечивает получение, создание, обновление и удаление транзакций через API.
  * Использует `useFetch` для автоматического реактивного обновления списка.
  * Поддерживает массовое добавление (`addBulkTransactions`).
+ *
+ * ### Логика работы:
+ * 1. Получение транзакций с поддержкой фильтрации по датам (startDate, endDate).
+ * 2. Реактивное обновление кеша при изменении дат.
+ * 3. Ручное управление кешем для CRUD операций (чтобы избегать лишних запросов).
  */
 import { computed, type Ref } from "vue";
 import { parseApiError } from "~/utils/api";
@@ -54,7 +59,13 @@ export const useTransactions = (options?: {
   } = useAsyncData<Transaction[]>(
     cacheKey.value,
     () => api("/api/transactions", { query: query.value }),
-    { watch: [query, txVersion] },
+    {
+      watch: [
+        () => options?.startDate?.value,
+        () => options?.endDate?.value,
+        txVersion,
+      ],
+    },
   );
 
   const transactions = computed(() => rawTransactions.value || []);
