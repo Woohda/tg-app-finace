@@ -12,6 +12,10 @@ import { computed, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Sparkles, RussianRuble, Trash2 } from "@lucide/vue";
 
+definePageMeta({
+  layout: "clean",
+});
+
 interface ScannedTransaction {
   id?: string;
   type: "expense" | "income";
@@ -23,6 +27,8 @@ interface ScannedTransaction {
 }
 
 const router = useRouter();
+const toast = useAppToast();
+const notifications = useNotifications();
 const scanResults = useState<ScannedTransaction[]>("scanResults", () => []);
 const txVersion = useGlobalTransactionsVersion();
 
@@ -175,19 +181,36 @@ const saveAll = async () => {
     });
 
     if (res) {
+      toast.success(`Успешно сохранено: ${transactionsToSave.length} шт.`);
+
+      transactionsToSave.forEach((t) => {
+        notifications.add(t.type === "expense" ? "Трата" : "Пополнение", {
+          message: `${t.name || "Без названия"}: ${t.amount} ₽ (скан)`,
+          type: t.type as "expense" | "income",
+        });
+      });
+
       scanResults.value = [];
       clearNuxtData(
         (key) =>
           typeof key === "string" && key.startsWith("transactions-list-"),
       );
       txVersion.value++;
-      router.push("/");
+
+      setTimeout(() => {
+        router.push("/");
+      }, 700);
     }
   } catch (e) {
     saveError.value = parseApiError(e, "Ошибка при сохранении");
   } finally {
     isSaving.value = false;
   }
+};
+
+const cancelAll = () => {
+  scanResults.value = [];
+  router.push("/");
 };
 </script>
 
@@ -249,6 +272,7 @@ const saveAll = async () => {
             :amount="item.amount"
             :type="item.type"
             :date="item.date!"
+            :show-full-date="true"
             interactive
             class="transition-colors px-2 py-1.5"
             @click="openEditModal(item)"
@@ -268,6 +292,10 @@ const saveAll = async () => {
         <RussianRuble :stroke-width="2" />
       </template>
     </GlassMorphButton>
+
+    <GlassButton variant="soft" class="w-full font-medium" @click="cancelAll">
+      Отменить
+    </GlassButton>
 
     <ScanEditModal
       :is-open="isEditModalOpen"

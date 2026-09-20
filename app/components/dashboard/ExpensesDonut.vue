@@ -230,7 +230,7 @@ const segments = computed(() => {
           >
             <component
               :is="seg.IconComponent"
-              class="text-sm text-white"
+              class="text-xs text-white"
               style="
                 filter: drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.3));
                 opacity: 1;
