@@ -12,8 +12,9 @@
  * 2. Реактивное обновление кеша при изменении дат.
  * 3. Ручное управление кешем для CRUD операций (чтобы избегать лишних запросов).
  */
-import { computed, type Ref } from "vue";
+import { computed, watch, type Ref } from "vue";
 import { parseApiError } from "~/utils/api";
+import { useLocalStorage } from "@vueuse/core";
 
 export interface Transaction {
   id: string;
@@ -70,6 +71,30 @@ export const useTransactions = (options?: {
 
   const transactions = computed(() => rawTransactions.value || []);
 
+  const knownTxIds = useLocalStorage<string[]>("app-known-tx-ids", []);
+
+  watch(transactions, (newVal) => {
+    if (!newVal || newVal.length === 0) return;
+
+    if (knownTxIds.value.length === 0) {
+      // Первый запуск на устройстве: просто запоминаем IDs
+      knownTxIds.value = newVal.map((t) => t.id).slice(0, 150);
+      return;
+    }
+
+    const unseen = newVal.filter((t) => !knownTxIds.value.includes(t.id));
+    if (unseen.length > 0) {
+      unseen.forEach((t) => {
+        notifications.add(`🤖 Бот: ${t.categoryName}`, {
+          message: t.name ? `${t.name}: ${t.amount} ₽` : `${t.amount} ₽`,
+          type: t.type,
+        });
+      });
+      const updated = [...unseen.map((t) => t.id), ...knownTxIds.value];
+      knownTxIds.value = updated.slice(0, 150);
+    }
+  }, { immediate: true });
+
   const clearOtherCaches = () => {
     clearNuxtData(
       (key) =>
@@ -93,6 +118,9 @@ export const useTransactions = (options?: {
         method: "POST",
         body: data,
       });
+      // Добавляем локально в известные до того, как сработает watch
+      knownTxIds.value.unshift(newTx.id);
+      
       if (rawTransactions.value) {
         rawTransactions.value.unshift(newTx);
       }
@@ -206,6 +234,10 @@ export const useTransactions = (options?: {
           body: { transactions: transactionsToSave },
         },
       );
+
+      // Добавляем массово добавленные транзакции в известные
+      const newIds = newTransactions.map(t => t.id);
+      knownTxIds.value = [...newIds, ...knownTxIds.value].slice(0, 150);
 
       clearOtherCaches();
       txVersion.value++;
