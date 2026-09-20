@@ -13,7 +13,8 @@ import { getGreeting } from "~/utils";
 import { Bell, ReceiptText } from "@lucide/vue";
 
 const { user, tgUser } = useAuth();
-const { transactions, pending } = useTransactions();
+const { startDate, endDate } = useDateFilter();
+const { transactions, pending } = useTransactions({ startDate, endDate });
 const { balance, monthlyExpense } = useTransactionView(transactions);
 const {
   balanceHistory,
@@ -49,12 +50,14 @@ const percentChange = computed(() => dashboardStats.value?.percentChange || 0);
       </div>
 
       <!-- Иконка колокольчика -->
-      <div
-        class="w-12 h-12 rounded-full glass-milky flex items-center justify-center text-text-primary shrink-0"
-        style="box-shadow: var(--shadow-glass-flat)"
+      <!-- Notifications -->
+      <NuxtLink
+        to="/notifications"
+        class="w-12 h-12 rounded-full glass-milky flex items-center justify-center relative active:scale-95 transition-transform shrink-0 a11y-focus border-[0.5px] border-white/50"
       >
         <Bell class="w-6 h-6 text-text-secondary" />
-      </div>
+        <div class="absolute top-2 right-2 w-2.5 h-2.5 bg-text-accent rounded-full border-2 border-[#E5E9F0]"/>
+      </NuxtLink>
     </div>
 
     <!-- Текст приветствия -->

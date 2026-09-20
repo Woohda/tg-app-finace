@@ -9,7 +9,7 @@
 import { watch } from "vue";
 import { Check } from "@lucide/vue";
 import { cn } from "~/utils";
-import { useHaptic } from "~/utils/haptics";
+import { getHapticFeedback } from "~/utils/haptics";
 
 interface Props {
   state?: "idle" | "loading" | "success";
@@ -25,7 +25,7 @@ const props = withDefaults(defineProps<Props>(), {
   class: undefined,
 });
 
-const haptic = useHaptic();
+const haptic = getHapticFeedback();
 
 watch(
   () => props.state,
@@ -107,7 +107,7 @@ watch(
 
     <!-- Контент: Success -->
     <Transition
-      enter-active-class="transition duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] delay-300"
+      enter-active-class="transition duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] delay-300"
       enter-from-class="opacity-0 scale-50"
       enter-to-class="opacity-100 scale-125"
       leave-active-class="transition duration-300 ease-in absolute"
