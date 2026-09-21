@@ -46,11 +46,7 @@ export const useTransactions = (options?: {
     return q;
   });
 
-
-
   const txVersion = useGlobalTransactionsVersion();
-
-  const instanceKey = useId();
 
   const {
     data: rawTransactions,
@@ -58,9 +54,10 @@ export const useTransactions = (options?: {
     error,
     refresh,
   } = useAsyncData<Transaction[]>(
-    `transactions-${instanceKey}`,
+    `transactions-${query.value.startDate || "all"}-${query.value.endDate || "all"}`,
     () => api("/api/transactions", { query: query.value }),
     {
+      deep: false,
       watch: [
         () => query.value.startDate,
         () => query.value.endDate,
@@ -73,29 +70,31 @@ export const useTransactions = (options?: {
 
   const knownTxIds = useLocalStorage<string[]>("app-known-tx-ids", []);
 
-  watch(transactions, (newVal) => {
-    if (!newVal || newVal.length === 0) return;
+  watch(
+    transactions,
+    (newVal) => {
+      if (!newVal || newVal.length === 0) return;
 
-    if (knownTxIds.value.length === 0) {
-      // Первый запуск на устройстве: просто запоминаем IDs
-      knownTxIds.value = newVal.map((t) => t.id).slice(0, 150);
-      return;
-    }
+      if (knownTxIds.value.length === 0) {
+        // Первый запуск на устройстве: просто запоминаем IDs
+        knownTxIds.value = newVal.map((t) => t.id).slice(0, 150);
+        return;
+      }
 
-    const unseen = newVal.filter((t) => !knownTxIds.value.includes(t.id));
-    if (unseen.length > 0) {
-      unseen.forEach((t) => {
-        notifications.add(`🤖 Бот: ${t.categoryName}`, {
-          message: t.name ? `${t.name}: ${t.amount} ₽` : `${t.amount} ₽`,
-          type: t.type,
+      const unseen = newVal.filter((t) => !knownTxIds.value.includes(t.id));
+      if (unseen.length > 0) {
+        unseen.forEach((t) => {
+          notifications.add(`🤖 Бот: ${t.categoryName}`, {
+            message: t.name ? `${t.name}: ${t.amount} ₽` : `${t.amount} ₽`,
+            type: t.type,
+          });
         });
-      });
-      const updated = [...unseen.map((t) => t.id), ...knownTxIds.value];
-      knownTxIds.value = updated.slice(0, 150);
-    }
-  }, { immediate: true });
-
-
+        const updated = [...unseen.map((t) => t.id), ...knownTxIds.value];
+        knownTxIds.value = updated.slice(0, 150);
+      }
+    },
+    { immediate: true },
+  );
 
   const addTransaction = async (data: {
     amount: number;
@@ -113,11 +112,10 @@ export const useTransactions = (options?: {
       });
       // Добавляем локально в известные до того, как сработает watch
       knownTxIds.value.unshift(newTx.id);
-      
+
       if (rawTransactions.value) {
         rawTransactions.value.unshift(newTx);
       }
-      txVersion.value++;
 
       toast.success("Транзакция добавлена");
       notifications.add(newTx.categoryName, {
@@ -157,7 +155,6 @@ export const useTransactions = (options?: {
           rawTransactions.value[index] = updated;
         }
       }
-      txVersion.value++;
 
       const txName = updated.name || updated.categoryName;
       toast.success("Транзакция обновлена");
@@ -187,7 +184,6 @@ export const useTransactions = (options?: {
           (t) => t.id !== id,
         );
       }
-      txVersion.value++;
 
       toast.success("Транзакция удалена");
       if (deletedTx) {
@@ -226,7 +222,7 @@ export const useTransactions = (options?: {
       );
 
       // Добавляем массово добавленные транзакции в известные
-      const newIds = newTransactions.map(t => t.id);
+      const newIds = newTransactions.map((t) => t.id);
       knownTxIds.value = [...newIds, ...knownTxIds.value].slice(0, 150);
 
       txVersion.value++;

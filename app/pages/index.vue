@@ -75,10 +75,12 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
         class="w-12 h-12 rounded-full glass-milky flex items-center justify-center relative active:scale-95 transition-transform shrink-0 a11y-focus border-[0.5px] border-white/50"
       >
         <Bell class="w-6 h-6 text-text-secondary" />
-        <div
-          v-if="hasUnread"
-          class="absolute top-2 right-2 w-2.5 h-2.5 bg-text-accent rounded-full border-2 border-[#E5E9F0]"
-        />
+        <ClientOnly>
+          <div
+            v-if="hasUnread"
+            class="absolute top-2 right-2 w-2.5 h-2.5 bg-text-accent rounded-full border-2 border-[#E5E9F0]"
+          />
+        </ClientOnly>
       </NuxtLink>
     </div>
 
@@ -151,6 +153,14 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
         <TransactionItem
           v-for="item in recentTransactions"
           :key="item.id"
+          v-memo="[
+            item.id,
+            item.amount,
+            item.name,
+            item.date,
+            item.categoryIcon,
+            item.type,
+          ]"
           :icon="item.categoryIcon"
           :title="item.name || item.categoryName"
           :amount="item.amount"

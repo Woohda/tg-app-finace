@@ -145,6 +145,7 @@ const currentLabel = computed(() =>
         <TransactionItem
           v-for="tx in filteredTransactions"
           :key="tx.id"
+          v-memo="[tx.id, tx.amount, tx.name, tx.date, tx.categoryIcon, tx.type, deletingId === tx.id]"
           :icon="tx.categoryIcon"
           :title="tx.name || tx.categoryName"
           :subtitle="tx.name ? tx.categoryName : ''"

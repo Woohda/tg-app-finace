@@ -143,6 +143,7 @@ onClickOutside(itemRef, () => {
         transition: isSwiping
           ? 'none'
           : 'transform 0.5s cubic-bezier(0.32, 0.72, 0, 1)',
+        willChange: 'transform'
       }"
       @touchstart.passive="onTouchStart"
       @touchmove.passive="onTouchMove"
