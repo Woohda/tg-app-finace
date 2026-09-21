@@ -130,7 +130,7 @@ export const useAnalyticsPeriod = (
   });
 
   const monthsLabel = computed(() => {
-    const month = startDate.value.toLocaleDateString("ru-RU", {
+    const month = prevStartDate.value.toLocaleDateString("ru-RU", {
       month: "long",
     });
     // Формируем предложный падеж (в январе, в марте, в мае)
