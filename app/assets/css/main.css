@@ -17,10 +17,12 @@
   --color-accent-mid: #be123c; /* Насыщенный винный */
   --color-accent-end: #881337; /* Глубокий бордо */
   --color-accent-notification: #fdf4dc; /* Мягкий кремовый */
+  --color-accent-success: #10b981; /* Мягкий зеленый */
 
   --color-text-primary: #0f1c3f; /* Глубокий темно-синий (Midnight Blue) */
   --color-text-accent: #be123c; /* Винный для текста */
   --color-text-secondary: #5a6b8c; /* Сине-серый (подходит под новый primary) */
+  --color-text-success: #10b981; /* Мягкий зеленый */
 
   /* Тени — Glassmorphism (Парящее стекло) */
   --shadow-glass:

@@ -46,7 +46,10 @@ const displayTotal = computed(() =>
   props.totalExpense !== undefined ? props.totalExpense : donutTotal.value,
 );
 
-const { segments, radius, strokeWidth } = useDonutMath(categoriesRef, donutTotal);
+const { segments, radius, strokeWidth } = useDonutMath(
+  categoriesRef,
+  donutTotal,
+);
 </script>
 
 <template>
@@ -78,6 +81,63 @@ const { segments, radius, strokeWidth } = useDonutMath(categoriesRef, donutTotal
             viewBox="0 0 160 160"
           >
             <defs>
+              <filter
+                id="glass-inset"
+                x="-20%"
+                y="-20%"
+                width="140%"
+                height="140%"
+              >
+                <!-- border: 0.7px solid rgba(255, 255, 255, 0.4) -->
+                <feMorphology
+                  operator="dilate"
+                  radius="0.7"
+                  in="SourceAlpha"
+                  result="dilated"
+                />
+                <feComposite
+                  operator="out"
+                  in="dilated"
+                  in2="SourceAlpha"
+                  result="border-mask"
+                />
+                <feFlood
+                  flood-color="rgba(255, 255, 255, 0.4)"
+                  result="border-color"
+                />
+                <feComposite
+                  operator="in"
+                  in="border-color"
+                  in2="border-mask"
+                  result="border"
+                />
+
+                <!-- inset 0 2px 3px rgba(255, 255, 255, 0.4) -->
+                <feOffset dx="0" dy="2" in="SourceAlpha" />
+                <feGaussianBlur stdDeviation="1.5" result="offset-blur" />
+                <feComposite
+                  operator="out"
+                  in="SourceAlpha"
+                  in2="offset-blur"
+                  result="inverse"
+                />
+                <feFlood
+                  flood-color="rgba(255, 255, 255, 0.4)"
+                  result="inset-color"
+                />
+                <feComposite
+                  operator="in"
+                  in="inset-color"
+                  in2="inverse"
+                  result="inset"
+                />
+
+                <feMerge>
+                  <feMergeNode in="border" />
+                  <feMergeNode in="SourceGraphic" />
+                  <feMergeNode in="inset" />
+                </feMerge>
+              </filter>
               <filter id="blur-sm" x="-20%" y="-20%" width="140%" height="140%">
                 <feGaussianBlur stdDeviation="1.5" />
               </filter>
@@ -87,9 +147,9 @@ const { segments, radius, strokeWidth } = useDonutMath(categoriesRef, donutTotal
             </defs>
 
             <!-- Группа с отбрасываемой тенью -->
-            <g style="filter: drop-shadow(0px 6px 8px rgba(0, 0, 0, 0.22))">
+            <g style="filter: drop-shadow(0px 6px 8px rgba(0, 0, 0, 0.2))">
               <!-- 1. Базовые цветные сегменты -->
-              <g>
+              <g filter="url(#glass-inset)">
                 <circle
                   v-for="seg in segments"
                   :key="'base-' + seg.id"
@@ -136,7 +196,7 @@ const { segments, radius, strokeWidth } = useDonutMath(categoriesRef, donutTotal
                   fill="none"
                   stroke="white"
                   :stroke-width="4"
-                  stroke-opacity="0.15"
+                  stroke-opacity="0.4"
                   :stroke-dasharray="seg.highlightDasharray"
                   :stroke-dashoffset="seg.highlightDashoffset"
                   stroke-linecap="round"
@@ -155,7 +215,7 @@ const { segments, radius, strokeWidth } = useDonutMath(categoriesRef, donutTotal
                   fill="none"
                   stroke="white"
                   :stroke-width="1"
-                  stroke-opacity="0.25"
+                  stroke-opacity="0.3"
                   :stroke-dasharray="seg.sharpDasharray"
                   :stroke-dashoffset="seg.sharpDashoffset"
                   stroke-linecap="round"
@@ -178,8 +238,8 @@ const { segments, radius, strokeWidth } = useDonutMath(categoriesRef, donutTotal
               :is="seg.IconComponent"
               class="text-xs text-white"
               style="
-                filter: drop-shadow(0px 1px 3px rgba(0, 0, 0, 0.3));
-                opacity: 1;
+                filter: drop-shadow(0px 1px 3px rgba(255, 255, 255, 0.3));
+                opacity: 0.8;
               "
             />
           </div>
@@ -214,7 +274,7 @@ const { segments, radius, strokeWidth } = useDonutMath(categoriesRef, donutTotal
             class="w-2.5 h-2.5 rounded-full shrink-0 mt-1"
             :style="{
               backgroundColor: cat.color,
-              boxShadow: `0 0 8px ${cat.color}80`,
+              boxShadow: `inset 0 1px 2px rgba(255, 255, 255, 0.75)`,
             }"
           />
           <div class="flex flex-col gap-0.5 min-w-0">

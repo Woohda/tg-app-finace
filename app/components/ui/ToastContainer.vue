@@ -18,7 +18,7 @@ const icons = {
 };
 
 const colors = {
-  success: "text-green-400",
+  success: "text-text-success",
   error: "text-text-accent",
   info: "text-blue-400",
 };

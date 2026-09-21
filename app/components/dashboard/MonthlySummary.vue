@@ -38,7 +38,7 @@ const isIncomeBigger = computed(() => props.income >= props.expense);
       />
       <div
         class="flex items-center gap-1.5 transition-colors duration-300"
-        :class="isIncomeBigger ? 'text-green-500' : 'text-text-secondary'"
+        :class="isIncomeBigger ? 'text-text-success' : 'text-text-secondary'"
       >
         <BanknoteArrowUp class="w-6 h-6" stroke-width="1.5" />
         <span class="text-xs font-bold tracking-wide uppercase">Доходы</span>
