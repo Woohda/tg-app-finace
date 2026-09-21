@@ -23,8 +23,16 @@ export const useApi = () => {
       headers.Authorization = `Bearer ${token.value}`;
     }
 
+    // Детерминированно клонируем options, чтобы внутренности ofetch не мутировали оригинальный объект
+    const fetchOptions: Parameters<typeof $fetch>[1] = {
+      ...options,
+      headers,
+      retry: options?.retry ?? 1, // Нативный ретрай при сбросах соединения (load failed)
+      retryDelay: options?.retryDelay ?? 300,
+    };
+
     try {
-      return (await $fetch<T>(request, { ...options, headers })) as T;
+      return (await $fetch<T>(request, fetchOptions)) as T;
     } catch (e: unknown) {
       const err = e as { response?: { status?: number } };
 
@@ -60,8 +68,8 @@ export const useApi = () => {
 
         if (success) {
           // Повторяем запрос с новым токеном
-          headers.Authorization = `Bearer ${token.value}`;
-          return (await $fetch<T>(request, { ...options, headers })) as T;
+          fetchOptions.headers = { ...fetchOptions.headers, Authorization: `Bearer ${token.value}` };
+          return (await $fetch<T>(request, fetchOptions)) as T;
         } else {
           // Рефреш провалился - разлогиниваем
           logout();
