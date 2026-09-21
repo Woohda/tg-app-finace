@@ -72,8 +72,8 @@ const liquidClassBase = computed(() =>
 <style scoped>
 .safari-clip-fix {
   /* Safari fix for overflow: hidden with border-radius and CSS transforms */
-  -webkit-mask-image: url('data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=');
-  -webkit-backface-visibility: hidden;
+  -webkit-compatibility: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=");
+  -webkit-compatibility: hidden;
   transform: translateZ(0);
 }
 @keyframes wave-spin {
