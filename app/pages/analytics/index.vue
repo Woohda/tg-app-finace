@@ -34,7 +34,6 @@ const {
   forecast,
   avgDaily,
   categoryStats,
-  chartData,
 } = useAnalyticsData(period, startDate, endDate, prevStartDate, prevEndDate);
 
 // --- Индикатор темпа (Pacing Indicator) ---
@@ -189,7 +188,7 @@ const closeCategoryAnalytics = () => {
         </div>
       </GlassCard>
 
-      <!-- График -->
+      <!-- График
       <GlassCard class="p-5 flex flex-col gap-1">
         <div class="flex justify-between items-center">
           <h2
@@ -199,7 +198,7 @@ const closeCategoryAnalytics = () => {
           </h2>
         </div>
         <AnalyticsBarChart :data="chartData" />
-      </GlassCard>
+      </GlassCard> -->
 
       <!-- Топ категорий -->
       <div class="flex flex-col gap-3 mt-2">
