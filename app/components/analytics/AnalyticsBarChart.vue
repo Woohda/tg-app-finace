@@ -10,7 +10,7 @@
  * ### Логика работы:
  * 1. Получение массива точек {label, value}.
  * 2. Поиск максимального значения для расчета высоты баров (в процентах).
- * 3. Отрисовка SVG. Для больших периодов контейнер расширяется, позволяя скроллить график по горизонтали.
+ * 3. Отрисовка SVG. Подписи скрываются, если их слишком много (например, для 1М).
  */
 import { computed } from "vue";
 import type { ChartDataPoint } from "~/composables/useAnalyticsData";
@@ -19,6 +19,8 @@ import { formatAmount } from "~/utils";
 const props = defineProps<{
   data: ChartDataPoint[];
 }>();
+
+const uid = useId();
 
 const maxVal = computed(() => {
   if (!props.data || props.data.length === 0) return 0;
@@ -35,49 +37,62 @@ const shouldShowLabel = (index: number, total: number, label: string) => {
     return [1, 5, 10, 15, 20, 25, 30].includes(day);
   }
 
+  // Для 3 месяцев и больше
   return index % 5 === 0;
 };
 
 const svgWidth = 1000;
 const svgHeight = 400;
-const paddingY = 40; 
-const paddingX = 25; 
+const paddingY = 40; // место под числа сверху и лейблы снизу
+const paddingX = 25; // место по бокам, чтобы крайние лейблы не обрезались
 
 const chartHeight = svgHeight - paddingY * 2;
-
-const containerStyle = computed(() => {
-  return {
-    width: '100%',
-    aspectRatio: `${svgWidth} / ${svgHeight}`
-  };
-});
 
 const bars = computed(() => {
   if (maxVal.value === 0 || props.data.length === 0) return [];
 
   const len = props.data.length;
-  const gap = len <= 7 ? 24 : len <= 31 ? 8 : 4;
+
+  // Динамический отступ между барами в зависимости от периода
+  // Для недели (<=7) - отступы большие, для месяца (<=31) - поменьше, чтобы колбы были шире
+  const gap = len <= 7 ? 16 : len <= 31 ? 6 : 3;
+
   const totalGaps = (len - 1) * gap;
   const availableWidth = svgWidth - paddingX * 2;
-  
-  let barWidth = Math.max((availableWidth - totalGaps) / len, 2);
-  
-  // Ограничиваем ширину столбца, чтобы при 3-7 днях они не раздувались
-  if (barWidth > 80) {
-    barWidth = 80;
-  }
+  const barWidth = Math.max((availableWidth - totalGaps) / len, 2);
 
-  // Вычисляем реальную ширину всех столбцов для центрирования
-  const actualTotalWidth = len * barWidth + totalGaps;
-  const startX = (svgWidth - actualTotalWidth) / 2;
+  // Радиусы скругления — пропорциональны ширине столбца
+  const rTop = Math.min(40, barWidth * 0.4);
+  const rBot = Math.min(15, barWidth * 0.2);
+
+  // Параметры волны
+  let waveAmp = 4;
+  let waveLength = barWidth;
+
+  if (len < 7) {
+    // 3 месяца (3 очень широких столбца)
+    waveAmp = 10;
+    waveLength = barWidth * 2;
+  } else if (len === 7) {
+    // Неделя (7 столбцов)
+    waveAmp = 5;
+    waveLength = barWidth * 1.2;
+  } else {
+    // Месяц (~30 узких столбцов)
+    waveAmp = 2;
+    waveLength = 50;
+  }
 
   return props.data.map((d, i) => {
     const height = (d.value / maxVal.value) * chartHeight;
-    const x = startX + i * (barWidth + gap);
-    const y = paddingY + chartHeight - height;
+    const x = paddingX + i * (barWidth + gap);
 
+    // Делаем минимальную высоту, чтобы даже пустые дни были видны как точки/деревяшки
     const finalHeight = Math.max(height, 8);
-    const finalY = height === 0 ? paddingY + chartHeight - 8 : y;
+    const finalY =
+      height === 0
+        ? paddingY + chartHeight - 8
+        : paddingY + chartHeight - height;
 
     return {
       ...d,
@@ -85,6 +100,16 @@ const bars = computed(() => {
       y: finalY,
       width: barWidth,
       height: finalHeight,
+      waveLength, // прокидываем для анимации
+      flaskD: flaskPath(x, paddingY, barWidth, chartHeight, rTop, rBot),
+      waveLiquidD: liquidWavePath(
+        x,
+        finalY,
+        barWidth,
+        paddingY + chartHeight,
+        waveAmp,
+        waveLength,
+      ),
       showLabel: shouldShowLabel(i, props.data.length, d.label),
     };
   });
@@ -92,14 +117,16 @@ const bars = computed(() => {
 
 const valueFontSize = computed(() => {
   const len = props.data.length;
-  if (len <= 7) return 26;
+  if (len < 7) return 30;
+  if (len === 7) return 18;
   return 20;
 });
 
 const labelFontSize = computed(() => {
   const len = props.data.length;
-  if (len <= 7) return 28;
-  return 22;
+  if (len < 7) return 32;
+  if (len === 7) return 24;
+  return 23;
 });
 </script>
 
@@ -112,49 +139,107 @@ const labelFontSize = computed(() => {
       Нет данных за этот период
     </div>
 
-    <div v-else class="w-full">
-      <div class="relative w-full" :style="containerStyle">
-        <svg
-          class="absolute inset-0 w-full h-full overflow-visible"
-          :viewBox="`0 0 ${svgWidth} ${svgHeight}`"
-        >
-        <g v-for="(bar, idx) in bars" :key="idx">
-          <!-- Вся колба теперь собирается внутри одного CSS-контейнера -->
-          <!-- foreignObject расширен на 20px по ширине и 30px по высоте, чтобы тень не обрезалась SVG-рамкой -->
-          <foreignObject
-            :x="bar.x - 10"
-            :y="paddingY - 5"
-            :width="bar.width + 20"
-            :height="chartHeight + 30"
-          >
-            <div class="w-full h-full px-2.5 pt-1.25 pb-6.25">
-              <div
-                class="w-full h-full glass-flask relative overflow-hidden safari-clip-fix"
-                style="border-radius: 35px 35px 15px 15px"
-              >
-                <!-- Основная заливка (жидкость) внутри колбы -->
-                <div
-                  class="absolute bottom-0 w-full transition-all duration-500 ease-out flex flex-col"
-                  :class="bars.length <= 7 ? 'liquid-gradient-wave' : 'liquid-gradient-simple'"
-                  :style="{
-                    height: bar.height + 'px',
-                    animationDelay: '-' + idx * 1 + 's',
-                  }"
-                >
-                  <!-- Поверхность жидкости (мениск) -->
-                  <div
-                    class="w-full meniscus-gradient"
-                    style="height: min(100%, 20px)"
-                  />
-                </div>
+    <div v-else class="w-full overflow-hidden aspect-2.5/1">
+      <svg
+        class="w-full h-full overflow-visible"
+        :viewBox="`0 0 ${svgWidth} ${svgHeight}`"
+        preserveAspectRatio="none"
+      >
+        <defs>
+          <!-- Градиент жидкости (горизонтальный) -->
+          <linearGradient :id="uid + '-liquid'" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" style="stop-color: var(--color-accent-end)" />
+            <stop offset="25%" style="stop-color: var(--color-accent-mid)" />
+            <stop offset="45%" style="stop-color: var(--color-accent-start)" />
+            <stop offset="55%" style="stop-color: var(--color-accent-start)" />
+            <stop offset="75%" style="stop-color: var(--color-accent-mid)" />
+            <stop offset="100%" style="stop-color: var(--color-accent-end)" />
+          </linearGradient>
 
-                <!-- Общий цилиндрический 3D блик на всю колбу (поверх жидкости) -->
-                <div
-                  class="absolute inset-0 glass-shine-gradient pointer-events-none"
-                />
-              </div>
-            </div>
-          </foreignObject>
+          <!-- Стеклянный блик (вертикальные полосы по бокам колбы) -->
+          <linearGradient :id="uid + '-shine'" x1="0" y1="0" x2="1" y2="0">
+            <stop offset="0%" stop-color="white" stop-opacity="0.4" />
+            <stop offset="10%" stop-color="white" stop-opacity="0" />
+            <stop offset="90%" stop-color="white" stop-opacity="0" />
+            <stop offset="100%" stop-color="white" stop-opacity="0.25" />
+          </linearGradient>
+
+          <!-- Фон стеклянной колбы (вертикальный, сверху светлее) -->
+          <linearGradient :id="uid + '-flask'" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stop-color="white" stop-opacity="0.001" />
+            <stop offset="100%" stop-color="white" stop-opacity="0.05" />
+          </linearGradient>
+
+          <!-- Маски обрезки по форме колбы -->
+          <clipPath
+            v-for="(bar, idx) in bars"
+            :id="uid + '-clip-' + idx"
+            :key="'clip-' + idx"
+          >
+            <path :d="bar.flaskD" />
+          </clipPath>
+
+          <!-- Волновые маски per-bar (анимированный волнистый край жидкости) -->
+          <mask
+            v-for="(bar, idx) in bars"
+            :id="uid + '-wmask-' + idx"
+            :key="'wmask-' + idx"
+          >
+            <g>
+              <animateTransform
+                attributeName="transform"
+                type="translate"
+                :values="`0 0; ${-bar.waveLength} 0`"
+                dur="4s"
+                repeatCount="indefinite"
+                :begin="`${-idx}s`"
+              />
+              <path :d="bar.waveLiquidD" fill="white" />
+            </g>
+          </mask>
+        </defs>
+
+        <g v-for="(bar, idx) in bars" :key="idx">
+          <!-- Мягкая тень под колбой -->
+          <path
+            :d="bar.flaskD"
+            fill="none"
+            stroke="rgba(0,0,0,0.06)"
+            stroke-width="6"
+          />
+
+          <!-- Фон колбы (стекло) -->
+          <path
+            :d="bar.flaskD"
+            :fill="`url(#${uid}-flask)`"
+            stroke="rgba(255,255,255,0.005)"
+            stroke-width="1.5"
+          />
+
+          <!-- Внутренний блик (верхний край колбы, имитация box-shadow inset) -->
+          <path
+            :d="bar.flaskD"
+            fill="none"
+            stroke="rgba(255,255,255,0.5)"
+            stroke-width="2"
+            :clip-path="`url(#${uid}-clip-${idx})`"
+          />
+
+          <!-- Заливка жидкости: статичный rect с градиентом + анимированная волновая маска -->
+          <g :clip-path="`url(#${uid}-clip-${idx})`">
+            <!-- Статичный rect с градиентом (не двигается) -->
+            <rect
+              :x="bar.x"
+              :y="bar.y - 5"
+              :width="bar.width"
+              :height="paddingY + chartHeight - bar.y + 5"
+              :fill="`url(#${uid}-liquid)`"
+              :mask="`url(#${uid}-wmask-${idx})`"
+            />
+          </g>
+
+          <!-- Стеклянный блик поверх всего -->
+          <path :d="bar.flaskD" :fill="`url(#${uid}-shine)`" />
 
           <!-- Значение сверху -->
           <text
@@ -163,7 +248,7 @@ const labelFontSize = computed(() => {
             :y="bar.y - 15"
             text-anchor="middle"
             fill="var(--color-text-primary)"
-            :font-size="valueFontSize"
+            :style="{ fontSize: valueFontSize + 'px' }"
             font-weight="bold"
             font-family="var(--font-sans)"
             class="glass-text transition-all duration-500 ease-out"
@@ -175,131 +260,22 @@ const labelFontSize = computed(() => {
           <text
             v-if="bar.showLabel"
             :x="bar.x + bar.width / 2"
-            :y="svgHeight - 10"
+            :y="svgHeight - 3"
             text-anchor="middle"
             fill="var(--color-text-secondary)"
-            :font-size="labelFontSize"
+            :style="{ fontSize: labelFontSize + 'px' }"
             font-family="var(--font-sans)"
           >
             {{ bar.label }}
           </text>
         </g>
       </svg>
-      </div>
     </div>
   </div>
 </template>
 
 <style scoped>
-.safari-clip-fix {
-  -webkit-mask-image: -webkit-linear-gradient(white, white);
-  -webkit-mask-image: linear-gradient(white, white);
-  mask-image: linear-gradient(white, white);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
-  transform: translateZ(0);
-}
-
 .glass-text {
   filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.2));
-}
-
-.glass-flask {
-  background-color: rgba(255, 255, 255, 0.005);
-  box-shadow:
-    inset 0 2px 3px rgba(255, 255, 255, 0.7),
-    0px 6px 8px rgba(0, 0, 0, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-sizing: border-box;
-}
-
-.liquid-gradient-simple {
-  background: linear-gradient(
-    to right,
-    var(--color-accent-end) 0%,
-    var(--color-accent-mid) 20%,
-    var(--color-accent-start) 46%,
-    var(--color-accent-start) 52%,
-    var(--color-accent-mid) 80%,
-    var(--color-accent-end) 100%
-  );
-  border-top-left-radius: 8px;
-  border-top-right-radius: 8px;
-}
-
-.liquid-gradient-wave {
-  background: linear-gradient(
-    to right,
-    var(--color-accent-end) 0%,
-    var(--color-accent-mid) 20%,
-    var(--color-accent-start) 46%,
-    var(--color-accent-start) 52%,
-    var(--color-accent-mid) 80%,
-    var(--color-accent-end) 100%
-  );
-
-  /* Две маски: волна сверху (двухцикловый SVG) и сплошная заливка ниже волны */
-  -webkit-mask-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10' preserveAspectRatio='none'%3E%3Cpath d='M0,5 C8.3,10 16.6,10 25,5 C33.3,0 41.6,0 50,5 C58.3,10 66.6,10 75,5 C83.3,0 91.6,0 100,5 L100,10 L0,10 Z' fill='black'/%3E%3C/svg%3E"),
-    linear-gradient(black, black);
-  mask-image:
-    url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 10' preserveAspectRatio='none'%3E%3Cpath d='M0,5 C8.3,10 16.6,10 25,5 C33.3,0 41.6,0 50,5 C58.3,10 66.6,10 75,5 C83.3,0 91.6,0 100,5 L100,10 L0,10 Z' fill='black'/%3E%3C/svg%3E"),
-    linear-gradient(black, black);
-
-  -webkit-mask-size:
-    300% 6px,
-    100% 100%;
-  mask-size:
-    300% 6px,
-    100% 100%;
-
-  -webkit-mask-position:
-    0% 0,
-    0 6px;
-  mask-position:
-    0% 0,
-    0 6px;
-
-  -webkit-mask-repeat: repeat-x, no-repeat;
-  mask-repeat: repeat-x, no-repeat;
-
-  animation: wave-animation 3.5s linear infinite;
-}
-
-@keyframes wave-animation {
-  0% {
-    -webkit-mask-position:
-      0% 0,
-      0 6px;
-    mask-position:
-      0% 0,
-      0 6px;
-  }
-  100% {
-    -webkit-mask-position:
-      75% 0,
-      0 6px;
-    mask-position:
-      75% 0,
-      0 6px;
-  }
-}
-
-.meniscus-gradient {
-  background: linear-gradient(
-    to bottom,
-    rgba(255, 255, 255, 0.1) 0%,
-    rgba(255, 255, 255, 0) 100%
-  );
-}
-
-.glass-shine-gradient {
-  background: linear-gradient(
-    to right,
-    rgba(255, 255, 255, 0.4) 0%,
-    rgba(255, 255, 255, 0) 10%,
-    rgba(255, 255, 255, 0) 90%,
-    rgba(255, 255, 255, 0.3) 100%
-  );
 }
 </style>

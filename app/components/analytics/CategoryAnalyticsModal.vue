@@ -68,7 +68,26 @@ const close = () => emit("close");
 
 <template>
   <GlassModal :is-open="isOpen" position="bottom" @close="close">
-    <div class="flex flex-col gap-5 pt-2">
+    <template #header>
+      <div class="flex items-center gap-3">
+        <div
+          class="w-11 h-11 flex items-center justify-center bg-white/50 rounded-full shadow-sm text-base"
+        >
+          {{ currentCategory?.categoryIcon || "📂" }}
+        </div>
+        <div class="flex flex-col">
+          <h2 class="text-text-primary text-base font-bold tracking-tight">
+            {{ currentCategory?.categoryName || "Категория" }}
+          </h2>
+          <p
+            class="text-text-secondary text-xs uppercase tracking-wide font-semibold mt-0.5"
+          >
+            Аналитика
+          </p>
+        </div>
+      </div>
+    </template>
+    <div class="flex flex-col gap-5">
       <!-- Лоадер -->
       <div v-if="pending" class="flex flex-col gap-4">
         <Skeleton class="w-full h-24 rounded-2xl" />
@@ -76,25 +95,6 @@ const close = () => emit("close");
       </div>
 
       <div v-else class="flex flex-col gap-5">
-        <!-- Шапка категории -->
-        <div class="flex items-center gap-3">
-          <div
-            class="w-12 h-12 flex items-center justify-center bg-white/50 rounded-full shadow-sm text-2xl"
-          >
-            {{ currentCategory?.categoryIcon || "📂" }}
-          </div>
-          <div class="flex flex-col">
-            <h2 class="text-text-primary text-xl font-bold tracking-tight">
-              {{ currentCategory?.categoryName || "Категория" }}
-            </h2>
-            <p
-              class="text-text-secondary text-xs uppercase tracking-wide font-semibold mt-0.5"
-            >
-              Аналитика
-            </p>
-          </div>
-        </div>
-
         <!-- Сводка -->
         <GlassCard class="p-4 flex justify-between items-center">
           <div class="flex flex-col gap-1">

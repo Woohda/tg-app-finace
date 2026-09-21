@@ -1,50 +1,88 @@
 <script setup lang="ts">
 import { computed } from "vue";
+import { liquidWavePath } from "~/utils/svgPaths";
 
 const props = defineProps<{
-  value: number; // 0 to 100
+  value: number;
   label: string;
   amount: string;
   color?: "accent" | "green";
 }>();
 
+const uid = useId();
+
 const boundedValue = computed(() => Math.min(Math.max(props.value, 0), 100));
 
-const liquidClassBase = computed(() =>
-  props.color === "green" ? "bg-accent-success" : "bg-accent-mid",
-);
+// SVG dimensions
+const size = 112;
+
+// Расчет Y-координаты поверхности жидкости
+const yBase = computed(() => {
+  // Немного сдвигаем границы, чтобы при 0% и 100% жидкость выглядела красиво
+  const val = boundedValue.value;
+  const minV = 5;
+  const maxV = 105;
+  return maxV - (val / 100) * (maxV - minV);
+});
+
+// Генерируем 3 волны для реалистичного параллакс-эффекта
+const waves = computed(() => [
+  {
+    d: liquidWavePath(0, yBase.value + 2, size, size, 5, 150),
+    w: 150,
+    dur: "5s",
+    opacity: 0.85,
+    reverse: true,
+  },
+  {
+    d: liquidWavePath(0, yBase.value + 5, size, size, 4, 90),
+    w: 90,
+    dur: "3.5s",
+    opacity: 0.55,
+    reverse: false,
+  },
+]);
+
+const liquidColor = "var(--color-accent-mid)";
 </script>
 
 <template>
   <!-- Объемная сфера -->
   <div
-    class="relative w-28 h-28 shrink-0 rounded-full overflow-hidden border border-white/15 shadow-[0_10px_20px_rgba(0,0,0,0.15),inset_0_-8px_16px_rgba(0,0,0,0.25),inset_0_6px_12px_rgba(255,255,255,0.1)] bg-transparent backdrop-blur-sm flex flex-col items-center justify-center safari-clip-fix"
+    class="relative w-28 h-28 shrink-0 rounded-full border border-white/15 shadow-[0_10px_20px_rgba(0,0,0,0.15),inset_0_-8px_16px_rgba(0,0,0,0.25),inset_0_6px_12px_rgba(255,255,255,0.1)] bg-transparent backdrop-blur-sm flex flex-col items-center justify-center"
   >
     <!-- Подсветка жидкости со дна -->
     <div
       class="absolute bottom-0 w-full h-1/2 opacity-30 blur-[15px]"
-      :class="liquidClassBase"
+      :style="{ backgroundColor: liquidColor }"
     />
 
-    <!-- Многослойная жидкость -->
-    <!-- Задняя волна (очень медленная, прозрачная) -->
-    <div
-      class="absolute w-[200%] h-[200%] rounded-[46%] animate-wave-slow transition-all duration-1000 ease-out opacity-45 mix-blend-multiply"
-      :class="liquidClassBase"
-      :style="{ top: `${100 - boundedValue}%`, left: '-50%' }"
-    />
-    <!-- Средняя волна (плавная) -->
-    <div
-      class="absolute w-[200%] h-[200%] rounded-[44%] animate-wave-medium transition-all duration-1000 ease-out opacity-65 mix-blend-multiply"
-      :class="liquidClassBase"
-      :style="{ top: `${100 - boundedValue + 2}%`, left: '-50%' }"
-    />
-    <!-- Передняя волна (основная) -->
-    <div
-      class="absolute w-[200%] h-[200%] rounded-[42%] animate-wave-fast transition-all duration-1000 ease-out opacity-90"
-      :class="liquidClassBase"
-      :style="{ top: `${100 - boundedValue + 4}%`, left: '-50%' }"
-    />
+    <!-- Многослойная жидкость (Pure SVG) -->
+    <svg class="absolute inset-0 w-full h-full" viewBox="0 0 112 112">
+      <defs>
+        <clipPath :id="uid + '-circle'">
+          <circle cx="56" cy="56" r="56" />
+        </clipPath>
+      </defs>
+      <g :clip-path="`url(#${uid}-circle)`">
+        <g
+          v-for="(wave, idx) in waves"
+          :key="idx"
+          :opacity="wave.opacity"
+          :fill="liquidColor"
+          style="mix-blend-mode: multiply"
+        >
+          <animateTransform
+            attributeName="transform"
+            type="translate"
+            :values="wave.reverse ? `${-wave.w} 0; 0 0` : `0 0; ${-wave.w} 0`"
+            :dur="wave.dur"
+            repeatCount="indefinite"
+          />
+          <path :d="wave.d" />
+        </g>
+      </g>
+    </svg>
 
     <!-- Текст -->
     <span
@@ -60,41 +98,17 @@ const liquidClassBase = computed(() =>
 
     <!-- Глянцевый блик (Стекло) -->
     <div
-      class="absolute top-1 left-[15%] w-[70%] h-[30%] rounded-[50%] bg-linear-to-b from-white/0 to-transparent pointer-events-none"
+      class="absolute top-1 left-[15%] w-[70%] h-[30%] rounded-[50%] bg-linear-to-b from-white/20 to-transparent pointer-events-none"
     />
     <!-- Отражение на дне -->
     <div
-      class="absolute bottom-0 w-full h-[25%] bg-linear-to-t from-white/25 to-transparent pointer-events-none mix-blend-overlay"
+      class="absolute bottom-0 w-full h-[25%] bg-linear-to-t from-white/25 to-transparent pointer-events-none mix-blend-overlay rounded-b-full"
     />
   </div>
 </template>
 
 <style scoped>
-.safari-clip-fix {
-  /* Safari fix for overflow: hidden with border-radius and CSS transforms */
-  -webkit-mask-image: -webkit-radial-gradient(white, black);
-  -webkit-mask-image: -webkit-linear-gradient(white, white);
-  -webkit-mask-image: linear-gradient(white, white);
-  mask-image: linear-gradient(white, white);
-  -webkit-backface-visibility: hidden;
-  backface-visibility: hidden;
+.liquid-sphere-safari-fix {
   transform: translateZ(0);
-}
-@keyframes wave-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
-}
-.animate-wave-slow {
-  animation: wave-spin 13s linear infinite;
-}
-.animate-wave-medium {
-  animation: wave-spin 10s linear infinite reverse;
-}
-.animate-wave-fast {
-  animation: wave-spin 8s linear infinite;
 }
 </style>

@@ -117,7 +117,7 @@ export const useAnalyticsPeriod = (
     }
     switch (period.value) {
       case "1W":
-        return "к прошлой";
+        return "к прошлой неделе";
       case "3M":
         return "к прошлому периоду";
       case "6M":
