@@ -84,7 +84,7 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
 
     <!-- Текст приветствия -->
     <div class="flex flex-col gap-2">
-      <div class="flex flex-col">
+      <div class="flex flex-col pl-5">
         <p class="text-lg text-text-secondary tracking-tight -mb-1.5">
           Привет, сегодня
         </p>
