@@ -1,98 +1,131 @@
 <script setup lang="ts">
 /**
  * @module app/components/shared/GlassCategorySelect
- * @fileoverview Выпадающий список категорий в стиле Glassmorphism
+ * @fileoverview Селект выбора категории в стиле Glassmorphism (кнопка-триггер)
  * @description
- * Селект для выбора категории (иконка + название). Использует нативный `select`
- * стилизованный под общую дизайн-систему (glass-milky). Применяется в модальных
- * окнах и формах добавления/редактирования транзакций.
+ * Отображает выбранную категорию с эмодзи или плейсхолдер.
+ * По клику открывает вынесенную шторку `CategoryBottomSheet`.
  */
 import { computed, ref } from "vue";
 import type { Component } from "vue";
+import { ChevronDown } from "@lucide/vue";
+import { cn } from "~/utils";
+import type { CategoryOption } from "~/components/categories/CategoryBottomSheet.vue";
 
-interface CategoryOption {
-  id: string;
-  name: string;
-  icon?: string | null;
-}
-
-const props = defineProps<{
-  modelValue?: string;
-  categories: CategoryOption[];
-  icon?: string | object | Component;
-}>();
+const props = withDefaults(
+  defineProps<{
+    modelValue?: string;
+    categories: CategoryOption[];
+    label?: string;
+    placeholder?: string;
+    icon?: string | object | Component;
+    disabled?: boolean;
+  }>(),
+  {
+    modelValue: "",
+    label: undefined,
+    placeholder: "Выберите категорию",
+    icon: undefined,
+    disabled: false,
+  },
+);
 
 const emits = defineEmits<{
   (e: "update:modelValue", payload: string): void;
 }>();
 
-const value = computed({
-  get: () => props.modelValue || "",
-  set: (val) => emits("update:modelValue", val),
-});
+const isSheetOpen = ref(false);
 
-const isFocused = ref(false);
+const selectedCategory = computed(() =>
+  props.categories.find((c) => c.id === props.modelValue),
+);
 
-const handleFocus = (e: FocusEvent) => {
-  isFocused.value = true;
-  setTimeout(() => {
-    (e.target as HTMLElement)?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }, 300);
+const handleSelect = (category: CategoryOption) => {
+  emits("update:modelValue", category.id);
+  isSheetOpen.value = false;
 };
 </script>
 
 <template>
-  <div
-    :class="[
-      'relative w-full group transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu',
-      value || isFocused ? 'opacity-100' : 'opacity-70 hover:opacity-100',
-    ]"
-  >
-    <!-- Активный фон (овал) -->
-    <div class="absolute inset-0 glass-pill rounded-full pointer-events-none" />
+  <div class="relative w-full flex flex-col gap-1">
+    <!-- Лейбл поля (если передан) -->
+    <label v-if="label" class="text-xs font-bold text-text-primary pl-2">
+      {{ label }}
+    </label>
 
-    <div
-      v-if="$slots.icon"
-      class="absolute z-10 left-3 flex items-center justify-center pointer-events-none transition-colors duration-500"
-      :class="[
-        value
-          ? 'text-text-primary'
-          : isFocused
-            ? 'text-text-primary/70'
-            : 'text-text-secondary',
-      ]"
+    <!-- Кнопка-триггер селектора -->
+    <button
+      type="button"
+      :disabled="disabled"
+      :class="
+        cn(
+          'relative w-full text-left flex items-center justify-between rounded-full px-4 py-2.5 glass-pill',
+          'transition-all duration-300 transform-gpu cursor-pointer',
+          'focus:outline-none a11y-focus',
+          disabled
+            ? 'opacity-50 cursor-not-allowed'
+            : 'active:scale-[0.99] hover:bg-white/50',
+          selectedCategory ? 'opacity-100' : 'opacity-80',
+        )
+      "
+      @click="isSheetOpen = true"
     >
-      <slot name="icon">
-        <component :is="icon" v-if="icon" class="size-5" />
-      </slot>
-    </div>
+      <div class="flex items-center min-w-0 flex-1 mr-2">
+        <!-- Иконка или эмодзи выбранной категории -->
+        <span
+          v-if="selectedCategory?.icon"
+          class="text-base shrink-0 mr-2 leading-none select-none"
+        >
+          {{ selectedCategory.icon }}
+        </span>
 
-    <select
-      v-model="value"
-      :class="[
-        'relative z-10 bg-transparent w-full rounded-full px-5 py-2.5 text-text-primary font-medium text-base outline-none transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu',
-        'border-transparent appearance-none text-ellipsis overflow-hidden whitespace-nowrap a11y-focus',
-        'focus:shadow-[0_4px_20px_rgba(225,29,72,0.3)]!',
-        value ? 'text-text-primary' : 'text-text-secondary',
-        $slots.icon || icon ? 'pl-10 pr-10' : 'pr-10',
-      ]"
-      @focus="handleFocus"
-      @blur="isFocused = false"
-    >
-      <option value="" disabled>Категория</option>
-      <option v-for="cat in categories" :key="cat.id" :value="cat.id">
-        <template v-if="cat.icon">{{ cat.icon }}&nbsp;&nbsp;</template
-        >{{ cat.name }}
-      </option>
-    </select>
-    <div
-      class="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-sm transition-colors duration-500 group-focus-within:text-text-accent"
-      :class="isFocused ? 'text-text-accent' : 'text-text-secondary'"
-    >
-      ▼
-    </div>
+        <!-- Пользовательская иконка или слот -->
+        <div
+          v-else-if="$slots.icon || icon"
+          class="shrink-0 mr-2 flex items-center justify-center text-text-secondary [&>svg]:size-3 [&>svg]:w-3 [&>svg]:h-3"
+        >
+          <slot name="icon">
+            <component :is="icon" v-if="icon" class="size-3" />
+          </slot>
+        </div>
+
+        <!-- Иконка-заглушка -->
+        <span
+          v-else
+          class="text-base shrink-0 mr-2 pt-1 opacity-60 leading-none select-none"
+        >
+          🏷️
+        </span>
+
+        <span
+          :class="
+            cn(
+              'font-medium text-sm truncate',
+              selectedCategory ? 'text-text-primary' : 'text-text-secondary',
+            )
+          "
+        >
+          {{ selectedCategory ? selectedCategory.name : placeholder }}
+        </span>
+      </div>
+
+      <ChevronDown
+        :class="
+          cn(
+            'size-5 text-text-primary shrink-0 transition-transform duration-300',
+            isSheetOpen && 'rotate-180 text-text-accent',
+          )
+        "
+      />
+    </button>
+
+    <!-- Вынесенная шторка категорий -->
+    <CategoryBottomSheet
+      :is-open="isSheetOpen"
+      :categories="categories"
+      :model-value="modelValue"
+      @select="handleSelect"
+      @close="isSheetOpen = false"
+    />
   </div>
 </template>

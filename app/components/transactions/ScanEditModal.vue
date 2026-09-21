@@ -110,7 +110,7 @@ const save = () => {
           v-model="localItem.date"
           type="date"
           :icon="Calendar"
-          class="max-w-38 pr-px"
+          class="max-w-45 pr-px"
         />
         <GlassInput
           v-model="localItem.amount"

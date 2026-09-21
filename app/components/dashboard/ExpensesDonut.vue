@@ -57,7 +57,7 @@ const { segments, radius, strokeWidth } = useDonutMath(
     <div class="flex justify-between items-center mb-3">
       <h3 class="text-xl font-extrabold text-text-primary">Расходы</h3>
       <NuxtLink
-        to="/finreports"
+        to="/analytics"
         class="text-text-secondary a11y-focus rounded-md"
       >
         <ChartColumn :stroke-width="1.5" />
