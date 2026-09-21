@@ -57,7 +57,10 @@ export const useReceiptScanner = () => {
 
       const res = await api<{ transactions?: ScannedTransaction[] }>("/api/ai/parse-receipt", {
         method: "POST",
-        body: { image: base64Data },
+        body: {
+          image: base64Data,
+          currentDate: new Date().toISOString(),
+        },
       });
 
       if (res && res.transactions) {

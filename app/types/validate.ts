@@ -64,6 +64,7 @@ export const budgetSchema = z.object({
 // --- AI ---
 export const parseReceiptSchema = z.object({
   image: z.string().min(1, "Изображение не предоставлено"), // base64
+  currentDate: z.string().optional(),
 });
 
 export const bulkTransactionSchema = z.object({
