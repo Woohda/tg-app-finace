@@ -66,13 +66,7 @@ export const useDashboardStats = (
       .sort((a, b) => b.amount - a.amount)
       .slice(0, 5);
 
-    const colors = [
-      "#F43F5E", // Rose 500 (мягче чем Rose 600)
-      "#D946EF", // Fuchsia 500 (мягче чем Fuchsia 600)
-      "#8B5CF6", // Violet 500 (мягче чем Violet 600)
-      "#F97316", // Orange 500 (мягче чем Orange 600)
-      "#F59E0B", // Amber 500 (мягче чем Amber 600)
-    ];
+    const colors = ["#d81a45", "#d84e1a", "#d8ad1a", "#1aa4d8", "#8e6bed"];
 
     return sorted.map((cat, index) => ({
       ...cat,
