@@ -46,11 +46,11 @@ export const useTransactions = (options?: {
     return q;
   });
 
-  const cacheKey = computed(() => {
-    return `transactions-list-${query.value.startDate || "default"}-${query.value.endDate || "default"}`;
-  });
+
 
   const txVersion = useGlobalTransactionsVersion();
+
+  const instanceKey = useId();
 
   const {
     data: rawTransactions,
@@ -58,12 +58,12 @@ export const useTransactions = (options?: {
     error,
     refresh,
   } = useAsyncData<Transaction[]>(
-    cacheKey.value,
+    `transactions-${instanceKey}`,
     () => api("/api/transactions", { query: query.value }),
     {
       watch: [
-        () => options?.startDate?.value,
-        () => options?.endDate?.value,
+        () => query.value.startDate,
+        () => query.value.endDate,
         txVersion,
       ],
     },
@@ -95,14 +95,7 @@ export const useTransactions = (options?: {
     }
   }, { immediate: true });
 
-  const clearOtherCaches = () => {
-    clearNuxtData(
-      (key) =>
-        typeof key === "string" &&
-        key.startsWith("transactions-list-") &&
-        key !== cacheKey.value,
-    );
-  };
+
 
   const addTransaction = async (data: {
     amount: number;
@@ -124,7 +117,6 @@ export const useTransactions = (options?: {
       if (rawTransactions.value) {
         rawTransactions.value.unshift(newTx);
       }
-      clearOtherCaches();
       txVersion.value++;
 
       toast.success("Транзакция добавлена");
@@ -165,7 +157,6 @@ export const useTransactions = (options?: {
           rawTransactions.value[index] = updated;
         }
       }
-      clearOtherCaches();
       txVersion.value++;
 
       const txName = updated.name || updated.categoryName;
@@ -196,7 +187,6 @@ export const useTransactions = (options?: {
           (t) => t.id !== id,
         );
       }
-      clearOtherCaches();
       txVersion.value++;
 
       toast.success("Транзакция удалена");
@@ -239,7 +229,6 @@ export const useTransactions = (options?: {
       const newIds = newTransactions.map(t => t.id);
       knownTxIds.value = [...newIds, ...knownTxIds.value].slice(0, 150);
 
-      clearOtherCaches();
       txVersion.value++;
 
       toast.success(`Успешно добавлено: ${transactionsToSave.length} шт.`);
