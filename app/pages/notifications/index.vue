@@ -33,7 +33,7 @@ const getIcon = (type: string) => {
 // Выбор цвета в зависимости от типа
 const getColor = (type: string) => {
   if (type === "expense") return "text-text-accent";
-  if (type === "income") return "text-green-500";
+  if (type === "income") return "text-text-success";
   if (type === "error") return "text-red-400";
   return "text-blue-400";
 };
@@ -125,9 +125,10 @@ const getColor = (type: string) => {
                   <span class="text-sm font-bold text-text-primary truncate">{{
                     item.title
                   }}</span>
-                  <span class="text-[10px] text-text-secondary shrink-0 pt-0.5">{{
-                    formatDate(item.date)
-                  }}</span>
+                  <span
+                    class="text-[10px] text-text-secondary shrink-0 pt-0.5"
+                    >{{ formatDate(item.date) }}</span
+                  >
                 </div>
                 <span
                   v-if="item.message"
