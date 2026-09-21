@@ -18,7 +18,7 @@ const liquidClassBase = computed(() =>
 <template>
   <!-- Объемная сфера -->
   <div
-    class="relative w-28 h-28 shrink-0 rounded-full overflow-hidden border border-white/15 shadow-[0_10px_20px_rgba(0,0,0,0.15),inset_0_-8px_16px_rgba(0,0,0,0.25),inset_0_6px_12px_rgba(255,255,255,0.1)] bg-transparent backdrop-blur-sm flex flex-col items-center justify-center"
+    class="relative w-28 h-28 shrink-0 rounded-full overflow-hidden border border-white/15 shadow-[0_10px_20px_rgba(0,0,0,0.15),inset_0_-8px_16px_rgba(0,0,0,0.25),inset_0_6px_12px_rgba(255,255,255,0.1)] bg-transparent backdrop-blur-sm flex flex-col items-center justify-center safari-clip-fix"
   >
     <!-- Подсветка жидкости со дна -->
     <div
@@ -70,6 +70,11 @@ const liquidClassBase = computed(() =>
 </template>
 
 <style scoped>
+.safari-clip-fix {
+  /* Safari fix for overflow: hidden with border-radius and CSS transforms */
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  transform: translateZ(0);
+}
 @keyframes wave-spin {
   from {
     transform: rotate(0deg);
