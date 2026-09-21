@@ -129,12 +129,13 @@ const labelFontSize = computed(() => {
           >
             <div class="w-full h-full px-2.5 pt-1.25 pb-6.25">
               <div
-                class="w-full h-full glass-flask relative overflow-hidden"
+                class="w-full h-full glass-flask relative overflow-hidden safari-clip-fix"
                 style="border-radius: 35px 35px 15px 15px"
               >
                 <!-- Основная заливка (жидкость) внутри колбы -->
                 <div
-                  class="absolute bottom-0 w-full liquid-gradient transition-all duration-500 ease-out flex flex-col"
+                  class="absolute bottom-0 w-full transition-all duration-500 ease-out flex flex-col"
+                  :class="bars.length <= 7 ? 'liquid-gradient-wave' : 'liquid-gradient-simple'"
                   :style="{
                     height: bar.height + 'px',
                     animationDelay: '-' + idx * 1 + 's',
@@ -190,6 +191,15 @@ const labelFontSize = computed(() => {
 </template>
 
 <style scoped>
+.safari-clip-fix {
+  -webkit-mask-image: -webkit-linear-gradient(white, white);
+  -webkit-mask-image: linear-gradient(white, white);
+  mask-image: linear-gradient(white, white);
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
 .glass-text {
   filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.2));
 }
@@ -203,7 +213,21 @@ const labelFontSize = computed(() => {
   box-sizing: border-box;
 }
 
-.liquid-gradient {
+.liquid-gradient-simple {
+  background: linear-gradient(
+    to right,
+    var(--color-accent-end) 0%,
+    var(--color-accent-mid) 20%,
+    var(--color-accent-start) 46%,
+    var(--color-accent-start) 52%,
+    var(--color-accent-mid) 80%,
+    var(--color-accent-end) 100%
+  );
+  border-top-left-radius: 8px;
+  border-top-right-radius: 8px;
+}
+
+.liquid-gradient-wave {
   background: linear-gradient(
     to right,
     var(--color-accent-end) 0%,
@@ -224,10 +248,10 @@ const labelFontSize = computed(() => {
 
   -webkit-mask-size:
     300% 6px,
-    100% calc(100% - 6px);
+    100% 100%;
   mask-size:
     300% 6px,
-    100% calc(100% - 6px);
+    100% 100%;
 
   -webkit-mask-position:
     0% 0,
@@ -246,18 +270,18 @@ const labelFontSize = computed(() => {
   0% {
     -webkit-mask-position:
       0% 0,
-      0 5px;
+      0 6px;
     mask-position:
       0% 0,
-      0 5px;
+      0 6px;
   }
   100% {
     -webkit-mask-position:
       75% 0,
-      0 5px;
+      0 6px;
     mask-position:
       75% 0,
-      0 5px;
+      0 6px;
   }
 }
 
