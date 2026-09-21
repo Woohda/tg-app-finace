@@ -10,7 +10,7 @@
  * ### Логика работы:
  * 1. Получение массива точек {label, value}.
  * 2. Поиск максимального значения для расчета высоты баров (в процентах).
- * 3. Отрисовка SVG. Подписи скрываются, если их слишком много (например, для 1М).
+ * 3. Отрисовка SVG. Для больших периодов контейнер расширяется, позволяя скроллить график по горизонтали.
  */
 import { computed } from "vue";
 import type { ChartDataPoint } from "~/composables/useAnalyticsData";
@@ -35,36 +35,47 @@ const shouldShowLabel = (index: number, total: number, label: string) => {
     return [1, 5, 10, 15, 20, 25, 30].includes(day);
   }
 
-  // Для 3 месяцев и больше
   return index % 5 === 0;
 };
 
 const svgWidth = 1000;
 const svgHeight = 400;
-const paddingY = 40; // место под числа сверху и лейблы снизу
-const paddingX = 25; // место по бокам, чтобы крайние лейблы не обрезались
+const paddingY = 40; 
+const paddingX = 25; 
 
 const chartHeight = svgHeight - paddingY * 2;
+
+const containerStyle = computed(() => {
+  return {
+    width: '100%',
+    aspectRatio: `${svgWidth} / ${svgHeight}`
+  };
+});
 
 const bars = computed(() => {
   if (maxVal.value === 0 || props.data.length === 0) return [];
 
   const len = props.data.length;
-
-  // Динамический отступ между барами в зависимости от периода
-  // Для недели (<=7) - отступы большие, для месяца (<=31) - поменьше, чтобы колбы были шире
-  const gap = len <= 7 ? 16 : len <= 31 ? 6 : 3;
-
+  const gap = len <= 7 ? 24 : len <= 31 ? 8 : 4;
   const totalGaps = (len - 1) * gap;
   const availableWidth = svgWidth - paddingX * 2;
-  const barWidth = Math.max((availableWidth - totalGaps) / len, 2);
+  
+  let barWidth = Math.max((availableWidth - totalGaps) / len, 2);
+  
+  // Ограничиваем ширину столбца, чтобы при 3-7 днях они не раздувались
+  if (barWidth > 80) {
+    barWidth = 80;
+  }
+
+  // Вычисляем реальную ширину всех столбцов для центрирования
+  const actualTotalWidth = len * barWidth + totalGaps;
+  const startX = (svgWidth - actualTotalWidth) / 2;
 
   return props.data.map((d, i) => {
     const height = (d.value / maxVal.value) * chartHeight;
-    const x = paddingX + i * (barWidth + gap);
+    const x = startX + i * (barWidth + gap);
     const y = paddingY + chartHeight - height;
 
-    // Делаем минимальную высоту, чтобы даже пустые дни были видны как точки/деревяшки
     const finalHeight = Math.max(height, 8);
     const finalY = height === 0 ? paddingY + chartHeight - 8 : y;
 
@@ -81,15 +92,13 @@ const bars = computed(() => {
 
 const valueFontSize = computed(() => {
   const len = props.data.length;
-  if (len <= 7) return 20;
-  if (len <= 31) return 17;
-  return 24;
+  if (len <= 7) return 26;
+  return 20;
 });
 
 const labelFontSize = computed(() => {
   const len = props.data.length;
-  if (len <= 7) return 26;
-  if (len <= 31) return 22;
+  if (len <= 7) return 28;
   return 22;
 });
 </script>
@@ -103,12 +112,12 @@ const labelFontSize = computed(() => {
       Нет данных за этот период
     </div>
 
-    <div v-else class="w-full overflow-hidden aspect-2.5/1">
-      <svg
-        class="w-full h-full overflow-visible"
-        :viewBox="`0 0 ${svgWidth} ${svgHeight}`"
-        preserveAspectRatio="none"
-      >
+    <div v-else class="w-full">
+      <div class="relative w-full" :style="containerStyle">
+        <svg
+          class="absolute inset-0 w-full h-full overflow-visible"
+          :viewBox="`0 0 ${svgWidth} ${svgHeight}`"
+        >
         <g v-for="(bar, idx) in bars" :key="idx">
           <!-- Вся колба теперь собирается внутри одного CSS-контейнера -->
           <!-- foreignObject расширен на 20px по ширине и 30px по высоте, чтобы тень не обрезалась SVG-рамкой -->
@@ -175,6 +184,7 @@ const labelFontSize = computed(() => {
           </text>
         </g>
       </svg>
+      </div>
     </div>
   </div>
 </template>
