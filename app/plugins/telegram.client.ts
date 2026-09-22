@@ -28,11 +28,33 @@ export default defineNuxtPlugin(async () => {
   const route = useRoute();
   const router = useRouter();
 
-  // Если есть подписанные данные от Telegram и пользователь еще не вошел
-  if (tg.initData && !isAuthenticated.value) {
-    const success = await loginWithTelegram(tg.initData);
-    if (success && route.path === "/login") {
-      router.replace("/");
+  if (tg.initData) {
+    if (!isAuthenticated.value) {
+      // Первичный вход: ждем авторизации перед переходом
+      const success = await loginWithTelegram(tg.initData);
+      if (success && route.path === "/login") {
+        router.replace("/");
+      }
+    } else {
+      // Пользователь уже вошел: делаем фоновую тихую авторизацию и прогрев БД без блокировки UI
+      loginWithTelegram(tg.initData).catch((err) => {
+        console.warn("[Telegram Plugin] Ошибка тихой фоновой авторизации:", err);
+      });
     }
+  }
+
+  // При возврате приложения из фона (пользователь свернул Telegram и вернулся)
+  if (typeof document !== "undefined") {
+    let lastWarmup = Date.now();
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "visible") {
+        const now = Date.now();
+        // Если прошло больше 60 секунд с последнего обращения и есть initData
+        if (now - lastWarmup > 60_000 && tg.initData) {
+          lastWarmup = now;
+          loginWithTelegram(tg.initData).catch(() => {});
+        }
+      }
+    });
   }
 });

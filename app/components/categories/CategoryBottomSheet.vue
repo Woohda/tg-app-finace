@@ -123,7 +123,7 @@ onBeforeUnmount(() => {
     >
       <div
         v-if="isOpen"
-        class="fixed inset-x-0 bottom-0 z-75 flex flex-col max-h-[80dvh] max-w-90 sm:max-w-sm sm:mx-auto sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 rounded-t-3x sm:rounded-3xl glass-milky px-5 pt-3 pb-6 shadow-glass"
+        class="fixed inset-x-0 bottom-0 z-75 flex flex-col max-h-[67dvh] max-w-90 sm:max-w-sm mx-auto sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 rounded-t-3xl sm:rounded-3xl glass-milky px-5 pt-3 pb-10 shadow-glass"
       >
         <!-- Мобильный индикатор свайпа (Drag Handle) -->
         <div

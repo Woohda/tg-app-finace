@@ -56,7 +56,7 @@ export const useAuth = () => {
     }
   };
 
-  const loginWithTelegram = async (initData: string) => {
+  const loginWithTelegram = async (initData: string): Promise<boolean> => {
     try {
       const response = await $fetch<{ token: string; user: User }>(
         "/api/auth/validate",
@@ -71,12 +71,19 @@ export const useAuth = () => {
       userCookie.value = response.user;
 
       return true;
-    } catch (error) {
+    } catch (error: unknown) {
       console.error("Ошибка авторизации:", error);
-      token.value = null;
-      user.value = null;
-      tokenCookie.value = null;
-      userCookie.value = null;
+      const err = error as { response?: { status?: number }; statusCode?: number };
+      const status = err.response?.status || err.statusCode;
+
+      // Сбрасываем сессию ТОЛЬКО если сервер явно отклонил подпись (401)
+      // или если у пользователя вообще не было токена
+      if (status === 401 || !token.value) {
+        token.value = null;
+        user.value = null;
+        tokenCookie.value = null;
+        userCookie.value = null;
+      }
       return false;
     }
   };
