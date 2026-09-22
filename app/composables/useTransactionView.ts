@@ -24,17 +24,21 @@ export interface PeriodOption {
 }
 
 /**
- * Возвращает timestamp начала периода.
+ * Возвращает timestamp начала периода относительно базовой даты.
  * Вынесено в чистую функцию для тестируемости.
  */
-function getPeriodStart(period: PeriodType): Date {
-  const start = new Date();
+function getPeriodStart(period: PeriodType, baseDate: Date = new Date()): Date {
+  const start = new Date(baseDate);
   start.setHours(0, 0, 0, 0);
 
-  if (period === "week") {
-    start.setDate(start.getDate() - 7);
+  if (period === "day") {
+    return start;
+  } else if (period === "week") {
+    start.setDate(start.getDate() - 6);
+    return start;
   } else if (period === "month") {
-    start.setMonth(start.getMonth() - 1);
+    start.setDate(1);
+    return start;
   }
 
   return start;
@@ -73,7 +77,22 @@ export const useTransactionView = (
     if (activePeriod.value === "month") {
       return transactions.value; // Бэкенд уже вернул нужный месяц
     }
-    const periodStart = getPeriodStart(activePeriod.value);
+
+    const base = options?.currentDate?.value
+      ? new Date(options.currentDate.value)
+      : new Date();
+
+    const now = new Date();
+    const isCurrentMonth =
+      base.getMonth() === now.getMonth() &&
+      base.getFullYear() === now.getFullYear();
+
+    // Для текущего месяца считаем от сегодня, для архивных месяцев — от последнего дня того месяца
+    const targetDate = isCurrentMonth
+      ? now
+      : new Date(base.getFullYear(), base.getMonth() + 1, 0);
+
+    const periodStart = getPeriodStart(activePeriod.value, targetDate);
     return transactions.value.filter(
       (t) => new Date(t.date) >= periodStart,
     );

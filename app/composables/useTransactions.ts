@@ -1,18 +1,19 @@
 /**
  * @module app/composables/useTransactions
- * @fileoverview Управление CRUD-операциями для транзакций
+ * @fileoverview Единое реактивное хранилище (Store) и CRUD-операции для транзакций
  *
  * @description
  * Обеспечивает получение, создание, обновление и удаление транзакций через API.
- * Использует `useFetch` для автоматического реактивного обновления списка.
+ * Использует централизованный кэш диапазонов на базе `useState` для мгновенного отклика UI,
+ * устраняя коллизии ключей при переходах между страницами через BottomNav.
  * Поддерживает массовое добавление (`addBulkTransactions`).
  *
  * ### Логика работы:
- * 1. Получение транзакций с поддержкой фильтрации по датам (startDate, endDate).
- * 2. Реактивное обновление кеша при изменении дат.
- * 3. Ручное управление кешем для CRUD операций (чтобы избегать лишних запросов).
+ * 1. Получение транзакций с реактивной фильтрацией по датам (startDate, endDate).
+ * 2. Кэширование по динамическому ключу диапазона дат (мгновенный показ без повторных запросов).
+ * 3. Автоматическая инвалидация кэша и обновление счетчика версий (`txVersion`) при CRUD-мутациях.
  */
-import { computed, watch, type Ref } from "vue";
+import { computed, ref, watch, type Ref } from "vue";
 import { parseApiError } from "~/utils/api";
 import { useLocalStorage } from "@vueuse/core";
 
@@ -35,6 +36,10 @@ export const useTransactions = (options?: {
   const toast = useAppToast();
   const notifications = useNotifications();
 
+  const txCache = useTransactionCache();
+  const txEntities = useTransactionEntities();
+  const txVersion = useGlobalTransactionsVersion();
+
   const query = computed(() => {
     const q: Record<string, string> = {};
     if (options?.startDate?.value) {
@@ -46,27 +51,63 @@ export const useTransactions = (options?: {
     return q;
   });
 
-  const txVersion = useGlobalTransactionsVersion();
+  const cacheKey = computed(() => {
+    const start = query.value.startDate || "all";
+    const end = query.value.endDate || "all";
+    return `${start}_${end}`;
+  });
 
-  const {
-    data: rawTransactions,
-    pending,
-    error,
-    refresh,
-  } = useAsyncData<Transaction[]>(
-    `transactions-${query.value.startDate || "all"}-${query.value.endDate || "all"}`,
-    () => api("/api/transactions", { query: query.value }),
-    {
-      deep: false,
-      watch: [
-        () => query.value.startDate,
-        () => query.value.endDate,
-        txVersion,
-      ],
+  const pending = ref(!txCache.value[cacheKey.value]);
+  const error = ref<unknown>(null);
+
+  const fetchTransactions = async (force = false): Promise<void> => {
+    const key = cacheKey.value;
+    if (!force && txCache.value[key]) {
+      return;
+    }
+
+    pending.value = true;
+    error.value = null;
+
+    try {
+      const data = await api<Transaction[]>("/api/transactions", {
+        query: query.value,
+      });
+
+      txCache.value = {
+        ...txCache.value,
+        [key]: data,
+      };
+
+      const entitiesUpdate = { ...txEntities.value };
+      data.forEach((tx) => {
+        entitiesUpdate[tx.id] = tx;
+      });
+      txEntities.value = entitiesUpdate;
+    } catch (err: unknown) {
+      error.value = err;
+      console.error("Ошибка загрузки транзакций:", err);
+    } finally {
+      pending.value = false;
+    }
+  };
+
+  const transactions = computed<Transaction[]>(() => {
+    return txCache.value[cacheKey.value] || [];
+  });
+
+  // Реактивный слушатель: реагирует на изменение дат (периода) и глобальной версии (CRUD)
+  watch(
+    [cacheKey, txVersion],
+    () => {
+      fetchTransactions();
     },
+    { immediate: true },
   );
 
-  const transactions = computed(() => rawTransactions.value || []);
+  const refresh = async () => {
+    await fetchTransactions(true);
+  };
 
   const knownTxIds = useLocalStorage<string[]>("app-known-tx-ids", []);
 
@@ -96,7 +137,13 @@ export const useTransactions = (options?: {
     { immediate: true },
   );
 
+  const invalidateAll = () => {
+    txCache.value = {};
+    txVersion.value++;
+  };
+
   const addTransaction = async (data: {
+    id?: string;
     amount: number;
     category_id: string;
     type: "income" | "expense";
@@ -106,16 +153,28 @@ export const useTransactions = (options?: {
     if (pending.value)
       return { success: false, error: "Запрос уже выполняется" };
     try {
+      const payload = {
+        ...data,
+        id:
+          data.id ||
+          (typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : undefined),
+      };
+
       const newTx = await api<Transaction>("/api/transactions", {
         method: "POST",
-        body: data,
+        body: payload,
       });
-      // Добавляем локально в известные до того, как сработает watch
+
       knownTxIds.value.unshift(newTx.id);
 
-      if (rawTransactions.value) {
-        rawTransactions.value.unshift(newTx);
-      }
+      txEntities.value = {
+        ...txEntities.value,
+        [newTx.id]: newTx,
+      };
+
+      invalidateAll();
 
       toast.success("Транзакция добавлена");
       notifications.add(newTx.categoryName, {
@@ -149,12 +208,13 @@ export const useTransactions = (options?: {
         method: "PATCH",
         body: data,
       });
-      if (rawTransactions.value) {
-        const index = rawTransactions.value.findIndex((t) => t.id === id);
-        if (index !== -1) {
-          rawTransactions.value[index] = updated;
-        }
-      }
+
+      txEntities.value = {
+        ...txEntities.value,
+        [updated.id]: updated,
+      };
+
+      invalidateAll();
 
       const txName = updated.name || updated.categoryName;
       toast.success("Транзакция обновлена");
@@ -174,16 +234,17 @@ export const useTransactions = (options?: {
     if (pending.value)
       return { success: false, error: "Запрос уже выполняется" };
     try {
+      const deletedTx =
+        txEntities.value[id] || transactions.value.find((t) => t.id === id);
+
       await api(`/api/transactions/${id}`, {
         method: "DELETE",
       });
-      let deletedTx: Transaction | undefined;
-      if (rawTransactions.value) {
-        deletedTx = rawTransactions.value.find((t) => t.id === id);
-        rawTransactions.value = rawTransactions.value.filter(
-          (t) => t.id !== id,
-        );
-      }
+
+      const { [id]: _, ...updatedEntities } = txEntities.value;
+      txEntities.value = updatedEntities;
+
+      invalidateAll();
 
       toast.success("Транзакция удалена");
       if (deletedTx) {
@@ -221,11 +282,16 @@ export const useTransactions = (options?: {
         },
       );
 
-      // Добавляем массово добавленные транзакции в известные
       const newIds = newTransactions.map((t) => t.id);
       knownTxIds.value = [...newIds, ...knownTxIds.value].slice(0, 150);
 
-      txVersion.value++;
+      const updatedEntities = { ...txEntities.value };
+      newTransactions.forEach((t) => {
+        updatedEntities[t.id] = t;
+      });
+      txEntities.value = updatedEntities;
+
+      invalidateAll();
 
       toast.success(`Успешно добавлено: ${transactionsToSave.length} шт.`);
 
