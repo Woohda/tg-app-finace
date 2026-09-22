@@ -58,6 +58,7 @@ export const useCategories = () => {
     name: string,
     type: "income" | "expense",
     icon?: string,
+    id?: string,
   ) => {
     if (!token.value || isLoading.value) {
       if (!token.value) error.value = "Пользователь не авторизован";
@@ -68,9 +69,15 @@ export const useCategories = () => {
     error.value = null;
 
     try {
+      const categoryId =
+        id ||
+        (typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : undefined);
+
       const newCategory = await api<Category>("/api/categories", {
         method: "POST",
-        body: { name, type, icon },
+        body: { id: categoryId, name, type, icon },
       });
 
       categories.value.push(newCategory);

@@ -40,6 +40,8 @@ watch(
   () => props.isOpen,
   (newVal) => {
     if (newVal) {
+      // Прогрев TCP/TLS сокета в фоне
+      $fetch("/api/ping").catch(() => {});
       formName.value = props.initialName || "";
       formIcon.value = props.initialIcon || "";
       formType.value = props.initialType || "expense";

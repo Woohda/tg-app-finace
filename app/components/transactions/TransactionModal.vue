@@ -53,6 +53,8 @@ const amountInputRef = ref<{ focus: () => void } | null>(null);
 // Сброс формы и фокус при открытии/закрытии модалки
 watch(isOpen, (newVal) => {
   if (newVal) {
+    // Прогрев TCP/TLS сокета в фоне, чтобы предотвратить "Load failed" из-за простоя
+    $fetch("/api/ping").catch(() => {});
     fetchCategories();
     setTimeout(() => {
       amountInputRef.value?.focus();

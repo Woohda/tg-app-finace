@@ -10,6 +10,7 @@ import { z } from "zod";
 
 // --- Categories ---
 export const categorySchema = z.object({
+  id: z.string().uuid().optional(),
   name: z
     .string()
     .min(1, "Введите название категории")
@@ -29,6 +30,7 @@ export const categoryUpdateSchema = z.object({
 // --- Transactions ---
 // Для фронтенда (где используется camelCase для полей формы)
 export const transactionFrontendSchema = z.object({
+  id: z.string().uuid().optional(),
   amount: z.number().positive("Введите корректную сумму"),
   categoryId: z.string().min(1, "Выберите категорию"),
   date: z.string().min(1, "Выберите дату"),
@@ -37,6 +39,7 @@ export const transactionFrontendSchema = z.object({
 });
 
 export const transactionBackendSchema = z.object({
+  id: z.string().uuid().optional(),
   amount: z.number().positive("Некорректная сумма"),
   category_id: z.string().min(1, "Не указана категория"),
   type: z.enum(["income", "expense"]),

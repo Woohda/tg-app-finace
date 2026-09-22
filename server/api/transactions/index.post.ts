@@ -44,18 +44,34 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { amount, category_id, type, date, name } = body.data;
+  const { id, amount, category_id, type, date, name } = body.data;
 
-  const { data, error } = await supabase
-    .from("transactions")
-    .insert({
-      amount,
-      category_id,
-      type,
-      date,
-      name: name || null,
-      user_id: userId,
-    })
+  const payload: {
+    id?: string;
+    amount: number;
+    category_id: string;
+    type: string;
+    date: string;
+    name: string | null;
+    user_id: string;
+  } = {
+    amount,
+    category_id,
+    type,
+    date,
+    name: name || null,
+    user_id: userId,
+  };
+
+  if (id) {
+    payload.id = id;
+  }
+
+  const dbQuery = id
+    ? supabase.from("transactions").upsert(payload, { onConflict: "id" })
+    : supabase.from("transactions").insert(payload);
+
+  const { data, error } = await dbQuery
     .select(
       `
       id,

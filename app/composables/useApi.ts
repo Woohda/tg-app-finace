@@ -24,11 +24,13 @@ export const useApi = () => {
     }
 
     // Детерминированно клонируем options, чтобы внутренности ofetch не мутировали оригинальный объект
-    const fetchOptions: Parameters<typeof $fetch>[1] = {
+    const fetchOptions: NonNullable<Parameters<typeof $fetch>[1]> = {
       ...options,
       headers,
-      retry: options?.retry ?? 1, // Нативный ретрай при сбросах соединения (load failed)
-      retryDelay: options?.retryDelay ?? 300,
+      timeout: options?.timeout ?? 8000, // Быстрый сброс мертвого сокета
+      retry: options?.retry ?? 2, // Кастомное значение retry активирует повтор для всех методов (включая POST)
+      retryDelay: options?.retryDelay ?? 150, // Быстрый повтор через 150мс
+      retryStatusCodes: [408, 409, 425, 429, 500, 502, 503, 504],
     };
 
     try {
