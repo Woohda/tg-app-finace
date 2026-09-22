@@ -44,18 +44,32 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { name, type, icon } = body.data;
+  const { id, name, type, icon } = body.data;
 
   const supabase = getUserSupabase(token);
 
-  const { data, error } = await supabase
-    .from("categories")
-    .insert({
-      name: name.trim(),
-      type,
-      icon: icon ?? null,
-      user_id: userId,
-    })
+  const payload: {
+    id?: string;
+    name: string;
+    type: string;
+    icon: string | null;
+    user_id: string;
+  } = {
+    name: name.trim(),
+    type,
+    icon: icon ?? null,
+    user_id: userId,
+  };
+
+  if (id) {
+    payload.id = id;
+  }
+
+  const dbQuery = id
+    ? supabase.from("categories").upsert(payload, { onConflict: "id" })
+    : supabase.from("categories").insert(payload);
+
+  const { data, error } = await dbQuery
     .select("id, name, type, icon, user_id, created_at")
     .single();
 

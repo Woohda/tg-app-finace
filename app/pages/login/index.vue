@@ -124,7 +124,7 @@ onMounted(async () => {
             </p>
             <p v-if="!isDev" class="text-xs text-text-secondary/70">
               Пожалуйста, откройте бота в Telegram и запустите Mini App через
-              кнопку «Открыть трекер 📊».
+              кнопку «FINO» 🐶.
             </p>
             <GlassButton
               size="lg"

@@ -5,6 +5,7 @@
  * @description
  * Кнопка, которая при загрузке сжимается в круг, а при успехе вспыхивает
  * белым светом (без использования зеленого цвета) с тактильным откликом.
+ * Оптимизирована для плавных 60/120fps анимаций в Safari / iOS WebKit.
  */
 import { watch } from "vue";
 import { Check } from "@lucide/vue";
@@ -43,12 +44,13 @@ watch(
     :disabled="disabled || state !== 'idle'"
     :class="
       cn(
-        'relative flex items-center justify-center py-4 rounded-full overflow-hidden transition-all duration-700 ease-[cubic-bezier(0.22,1,0.36,1)]',
-        'outline-none a11y-focus',
+        'morph-btn relative flex items-center justify-center rounded-full overflow-hidden',
+        'outline-none a11y-focus select-none',
+        'transition-[width,max-width,transform,background-color,box-shadow,opacity] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]',
         // Размеры и форма
         state === 'idle'
-          ? 'h-12 w-full px-5 rounded-pill'
-          : 'h-12 w-12 rounded-full mx-auto',
+          ? 'h-12 w-full max-w-full px-5 rounded-pill'
+          : 'h-12 w-12 max-w-12 rounded-full mx-auto p-0',
 
         // Цвета (primary)
         variant === 'primary' &&
@@ -64,8 +66,10 @@ watch(
             'active:scale-[0.97]',
           ],
 
-        // Состояние Успеха (всегда белое яркое свечение)
-        state === 'success' && ['glass-milky text-text-accent'],
+        // Состояние Успеха (всегда белое яркое свечение с микро-пружиной)
+        state === 'success' && [
+          'glass-milky text-text-accent scale-[1.04] shadow-glass',
+        ],
 
         props.class,
       )
@@ -73,16 +77,16 @@ watch(
   >
     <!-- Контент: Idle -->
     <Transition
-      enter-active-class="transition duration-300 ease-out delay-200"
-      enter-from-class="opacity-0 translate-y-4 scale-95"
-      enter-to-class="opacity-100 translate-y-0 scale-100"
-      leave-active-class="transition duration-300 ease-in absolute"
-      leave-from-class="opacity-100 translate-y-0 scale-100"
-      leave-to-class="opacity-0 -translate-y-4 scale-95"
+      enter-active-class="transition duration-250 ease-out delay-150"
+      enter-from-class="opacity-0 scale-95"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-150 ease-in absolute"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-95"
     >
       <div
         v-if="state === 'idle'"
-        class="flex items-center gap-2 whitespace-nowrap text-sm tracking-wide"
+        class="flex items-center justify-center gap-2 whitespace-nowrap text-sm tracking-wide font-medium"
       >
         <slot />
       </div>
@@ -90,16 +94,16 @@ watch(
 
     <!-- Контент: Loading -->
     <Transition
-      enter-active-class="transition duration-300 ease-out delay-200"
-      enter-from-class="opacity-0 scale-50 rotate-[-90deg]"
-      enter-to-class="opacity-100 scale-100 rotate-0"
-      leave-active-class="transition duration-300 ease-in absolute"
-      leave-from-class="opacity-100 scale-100 rotate-0"
-      leave-to-class="opacity-0 scale-50 rotate-[90deg]"
+      enter-active-class="transition duration-250 ease-out delay-150"
+      enter-from-class="opacity-0 scale-75"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-150 ease-in absolute"
+      leave-from-class="opacity-100 scale-100"
+      leave-to-class="opacity-0 scale-75"
     >
       <div
         v-if="state === 'loading'"
-        class="absolute inset-0 flex items-center justify-center"
+        class="absolute inset-0 flex items-center justify-center pointer-events-none"
       >
         <Loader />
       </div>
@@ -107,21 +111,34 @@ watch(
 
     <!-- Контент: Success -->
     <Transition
-      enter-active-class="transition duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] delay-300"
+      enter-active-class="transition duration-400 ease-[cubic-bezier(0.34,1.56,0.64,1)] delay-100"
       enter-from-class="opacity-0 scale-50"
-      enter-to-class="opacity-100 scale-125"
-      leave-active-class="transition duration-300 ease-in absolute"
+      enter-to-class="opacity-100 scale-100"
+      leave-active-class="transition duration-200 ease-in absolute"
       leave-from-class="opacity-100 scale-100"
       leave-to-class="opacity-0 scale-50"
     >
       <div
         v-if="state === 'success'"
-        class="absolute inset-0 flex items-center justify-center"
+        class="absolute inset-0 flex items-center justify-center pointer-events-none"
       >
         <slot name="success">
-          <Check class="w-8 h-8" :stroke-width="2" />
+          <Check class="w-6 h-6 text-text-accent" :stroke-width="2.5" />
         </slot>
       </div>
     </Transition>
   </Button>
 </template>
+
+<style scoped>
+.morph-btn {
+  -webkit-backface-visibility: hidden;
+  backface-visibility: hidden;
+  -webkit-transform: translate3d(0, 0, 0);
+  transform: translate3d(0, 0, 0);
+  -webkit-mask-image: -webkit-radial-gradient(white, black);
+  isolation: isolate;
+  will-change: width, max-width, transform;
+}
+</style>
+
