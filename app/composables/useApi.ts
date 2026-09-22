@@ -27,7 +27,7 @@ export const useApi = () => {
     const fetchOptions: NonNullable<Parameters<typeof $fetch>[1]> = {
       ...options,
       headers,
-      timeout: options?.timeout ?? 8000, // Быстрый сброс мертвого сокета
+      timeout: options?.timeout ?? 25000, // 25 секунд для холодного старта Supabase и мобильных сетей (LTE)
       retry: options?.retry ?? 2, // Кастомное значение retry активирует повтор для всех методов (включая POST)
       retryDelay: options?.retryDelay ?? 150, // Быстрый повтор через 150мс
       retryStatusCodes: [408, 409, 425, 429, 500, 502, 503, 504],

@@ -61,6 +61,7 @@ export const useReceiptScanner = () => {
           image: base64Data,
           currentDate: new Date().toISOString(),
         },
+        timeout: 60000, // 60 секунд для Gemini AI парсинга чеков
       });
 
       if (res && res.transactions) {
