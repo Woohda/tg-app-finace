@@ -3,16 +3,46 @@
  * @fileoverview Управление выбором периодов для аналитики
  * @description
  * Предоставляет текущий период, даты начала и конца для текущего и предыдущего периодов (для сравнения).
+ * Расчет дат унифицирован с помощью библиотеки `date-fns`.
  * ---
  * ### Логика работы:
  * 1. Выбор периода: 1 Неделя, 1 Месяц, 3 Месяца, 6 Месяцев, 1 Год.
- * 2. Расчет `startDate` и `endDate` от текущей даты.
- * 3. Расчет `prevStartDate` и `prevEndDate` для сравнения (предыдущий аналогичный период).
+ * 2. Расчет `startDate` и `endDate` от базовой даты (`anchorDate`).
+ * 3. Расчет `prevStartDate` и `prevEndDate` для сравнения с предыдущим аналогичным периодом.
  */
 import { ref, computed } from "vue";
 import type { Ref } from "vue";
+import {
+  startOfDay,
+  endOfDay,
+  subDays,
+  startOfMonth,
+  endOfMonth,
+  subMonths,
+  startOfYear,
+  endOfYear,
+} from "date-fns";
 
 export type AnalyticsPeriodType = "1W" | "1M" | "3M" | "6M" | "1Y";
+
+/**
+ * Вычисляет дату начала периода относительно опорной даты.
+ */
+function calculatePeriodStart(anchor: Date, period: AnalyticsPeriodType): Date {
+  const start = startOfDay(anchor);
+  switch (period) {
+    case "1W":
+      return subDays(start, 6); // Последние 7 дней включая сегодня
+    case "1M":
+      return startOfMonth(start); // 1-е число текущего месяца
+    case "3M":
+      return startOfMonth(subMonths(start, 2)); // Текущий месяц + 2 предыдущих
+    case "6M":
+      return startOfMonth(subMonths(start, 5)); // Текущий месяц + 5 предыдущих
+    case "1Y":
+      return startOfYear(start); // 1 января текущего года
+  }
+}
 
 export const useAnalyticsPeriod = (
   initialPeriod?: Ref<AnalyticsPeriodType>,
@@ -21,81 +51,25 @@ export const useAnalyticsPeriod = (
   const anchorDate = ref(new Date());
 
   const endDate = computed(() => {
-    const d = new Date(anchorDate.value);
-    d.setHours(23, 59, 59, 999);
-
-    if (
-      period.value === "1M" ||
-      period.value === "3M" ||
-      period.value === "6M"
-    ) {
-      d.setMonth(d.getMonth() + 1);
-      d.setDate(0); // Последний день месяца
-    } else if (period.value === "1Y") {
-      d.setMonth(11);
-      d.setDate(31); // Последний день года
+    const anchor = anchorDate.value;
+    if (period.value === "1W") {
+      return endOfDay(anchor);
     }
-    return d;
-  });
-
-  const startDate = computed(() => {
-    const d = new Date(anchorDate.value);
-    d.setHours(0, 0, 0, 0);
-    switch (period.value) {
-      case "1W":
-        d.setDate(d.getDate() - 6); // Последние 7 дней включая сегодня
-        break;
-      case "1M":
-        d.setDate(1); // 1-е число текущего месяца
-        break;
-      case "3M":
-        d.setDate(1);
-        d.setMonth(d.getMonth() - 2); // Текущий месяц + 2 предыдущих
-        break;
-      case "6M":
-        d.setDate(1);
-        d.setMonth(d.getMonth() - 5);
-        break;
-      case "1Y":
-        d.setDate(1);
-        d.setMonth(0); // 1 января текущего года
-        break;
+    if (period.value === "1Y") {
+      return endOfYear(anchor);
     }
-    return d;
+    return endOfMonth(anchor);
   });
 
-  const prevEndDate = computed(() => {
-    const d = new Date(startDate.value);
-    d.setDate(d.getDate() - 1);
-    d.setHours(23, 59, 59, 999);
-    return d;
-  });
+  const startDate = computed(() =>
+    calculatePeriodStart(anchorDate.value, period.value),
+  );
 
-  const prevStartDate = computed(() => {
-    const d = new Date(prevEndDate.value);
-    d.setHours(0, 0, 0, 0);
-    switch (period.value) {
-      case "1W":
-        d.setDate(d.getDate() - 6);
-        break;
-      case "1M":
-        d.setDate(1);
-        break;
-      case "3M":
-        d.setDate(1);
-        d.setMonth(d.getMonth() - 2);
-        break;
-      case "6M":
-        d.setDate(1);
-        d.setMonth(d.getMonth() - 5);
-        break;
-      case "1Y":
-        d.setDate(1);
-        d.setMonth(0);
-        break;
-    }
-    return d;
-  });
+  const prevEndDate = computed(() => endOfDay(subDays(startDate.value, 1)));
+
+  const prevStartDate = computed(() =>
+    calculatePeriodStart(prevEndDate.value, period.value),
+  );
 
   const prevPeriodLabel = computed(() => {
     if (period.value === "1M") {

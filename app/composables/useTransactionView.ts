@@ -14,6 +14,13 @@
  */
 import { ref, computed, watch } from "vue";
 import type { Ref, ComputedRef } from "vue";
+import {
+  startOfDay,
+  subDays,
+  startOfMonth,
+  endOfMonth,
+  isSameMonth,
+} from "date-fns";
 import type { Transaction } from "./useTransactions";
 
 export type PeriodType = "day" | "week" | "month";
@@ -28,17 +35,14 @@ export interface PeriodOption {
  * Вынесено в чистую функцию для тестируемости.
  */
 function getPeriodStart(period: PeriodType, baseDate: Date = new Date()): Date {
-  const start = new Date(baseDate);
-  start.setHours(0, 0, 0, 0);
+  const start = startOfDay(baseDate);
 
   if (period === "day") {
     return start;
   } else if (period === "week") {
-    start.setDate(start.getDate() - 6);
-    return start;
+    return subDays(start, 6);
   } else if (period === "month") {
-    start.setDate(1);
-    return start;
+    return startOfMonth(start);
   }
 
   return start;
@@ -46,7 +50,7 @@ function getPeriodStart(period: PeriodType, baseDate: Date = new Date()): Date {
 
 export const useTransactionView = (
   transactions: ComputedRef<Transaction[]> | Ref<Transaction[]>,
-  options?: { currentDate?: Ref<Date> }
+  options?: { currentDate?: Ref<Date> },
 ) => {
   const activePeriod = ref<PeriodType>("week");
 
@@ -54,14 +58,10 @@ export const useTransactionView = (
     watch(
       options.currentDate,
       (newDate) => {
-        const now = new Date();
-        const isCurrentMonth =
-          newDate.getMonth() === now.getMonth() &&
-          newDate.getFullYear() === now.getFullYear();
-
+        const isCurrentMonth = isSameMonth(newDate, new Date());
         activePeriod.value = isCurrentMonth ? "week" : "month";
       },
-      { immediate: true }
+      { immediate: true },
     );
   }
 
@@ -83,14 +83,10 @@ export const useTransactionView = (
       : new Date();
 
     const now = new Date();
-    const isCurrentMonth =
-      base.getMonth() === now.getMonth() &&
-      base.getFullYear() === now.getFullYear();
+    const isCurrentMonth = isSameMonth(base, now);
 
     // Для текущего месяца считаем от сегодня, для архивных месяцев — от последнего дня того месяца
-    const targetDate = isCurrentMonth
-      ? now
-      : new Date(base.getFullYear(), base.getMonth() + 1, 0);
+    const targetDate = isCurrentMonth ? now : endOfMonth(base);
 
     const periodStart = getPeriodStart(activePeriod.value, targetDate);
     return transactions.value.filter(
