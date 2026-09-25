@@ -5,14 +5,45 @@
  * Проверяет активные регулярные платежи и отправляет сообщения пользователям:
  * - За 3 дня до списания: информационное напоминание.
  * - За 1 день до списания: предупреждающее напоминание.
- * - В день списания: вопрос «Вы внесли платёж?» с кнопкой быстрой записи в расходы.
+ * ---
+ * ### Безопасность:
+ * - Эндпоинт защищен от несанкционированного вызова и DoS-спама.
+ * - Требует заголовок `Authorization: Bearer <CRON_SECRET>` или query-параметр `?secret=<CRON_SECRET>`.
  */
+import { addDays, getDate, getDaysInMonth, isLastDayOfMonth } from "date-fns";
 import { InlineKeyboard } from "grammy";
 import { getBot } from "~~/server/utils/bot";
 import { getBotSupabase } from "~~/server/utils/db";
 
+/**
+ * Проверяет, приходится ли списание регулярного платежа на целевую дату.
+ * Корректно компенсирует короткие месяцы (28, 29, 30 дней) для подписок на 29, 30 и 31 числа.
+ */
+function isSubscriptionDueOnDate(subDay: number, targetDate: Date): boolean {
+  const day = getDate(targetDate);
+  const daysInMonth = getDaysInMonth(targetDate);
+  const isEndOfMonth = isLastDayOfMonth(targetDate);
+
+  return subDay === day || (isEndOfMonth && subDay > daysInMonth);
+}
+
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
+  const cronSecret = config.cronSecret || process.env.CRON_SECRET;
+
+  const authHeader = getHeader(event, "authorization");
+  const query = getQuery(event);
+  const querySecret = typeof query.secret === "string" ? query.secret.trim() : undefined;
+  const providedSecret =
+    authHeader?.replace(/^Bearer\s+/i, "").trim() || querySecret;
+
+  if (!cronSecret || providedSecret !== cronSecret) {
+    throw createError({
+      statusCode: 401,
+      statusMessage: "Unauthorized: Неверный или отсутствующий CRON_SECRET",
+    });
+  }
+
   const botToken = config.telegramBotToken;
 
   if (!botToken) {
@@ -25,23 +56,10 @@ export default defineEventHandler(async (event) => {
   const supabase = getBotSupabase();
   const bot = getBot(botToken);
 
-  // Вычисляем текущие контрольные даты
+  // Вычисляем контрольные даты проверки (сегодня, завтра, через 3 дня)
   const now = new Date();
-  const todayDay = now.getDate();
-
-  const tomorrow = new Date(now.getTime() + 86400000);
-  const tomorrowDay = tomorrow.getDate();
-
-  const in3Days = new Date(now.getTime() + 3 * 86400000);
-  const in3DaysDay = in3Days.getDate();
-
-  // Количество дней в текущем месяце (для компенсации 28/29/30/31 чисел)
-  const daysInCurrentMonth = new Date(
-    now.getFullYear(),
-    now.getMonth() + 1,
-    0,
-  ).getDate();
-  const isEndOfMonth = todayDay === daysInCurrentMonth;
+  const tomorrow = addDays(now, 1);
+  const in3Days = addDays(now, 3);
 
   // Выбираем все активные подписки с привязанными telegram_id пользователей
   const { data: subscriptions, error } = await supabase
@@ -81,10 +99,7 @@ export default defineEventHandler(async (event) => {
     const subDay = sub.day_of_month;
 
     // 1. Проверка на сегодня (день списания)
-    const isDueToday =
-      subDay === todayDay || (isEndOfMonth && subDay > daysInCurrentMonth);
-
-    if (isDueToday) {
+    if (isSubscriptionDueOnDate(subDay, now)) {
       try {
         const keyboard = new InlineKeyboard().text(
           "💸 Внести в расходы",
@@ -107,7 +122,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 2. Проверка за 1 день (завтра)
-    if (subDay === tomorrowDay) {
+    if (isSubscriptionDueOnDate(subDay, tomorrow)) {
       try {
         await bot.api.sendMessage(
           telegramId,
@@ -122,7 +137,7 @@ export default defineEventHandler(async (event) => {
     }
 
     // 3. Проверка за 3 дня
-    if (subDay === in3DaysDay) {
+    if (isSubscriptionDueOnDate(subDay, in3Days)) {
       try {
         await bot.api.sendMessage(
           telegramId,
