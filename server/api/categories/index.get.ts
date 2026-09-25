@@ -90,21 +90,6 @@ export default defineEventHandler(async (event) => {
       } else {
         userCategories = inserted;
 
-        // Миграция существующих транзакций пользователя: перепривязка к новым категориям
-        // Сопоставляем старые ID с новыми по совпадению (name + type)
-        for (const tpl of templateCategories) {
-          const newCat = inserted.find(
-            (c: Category) => c.name === tpl.name && c.type === tpl.type,
-          );
-          if (newCat) {
-            await supabase
-              .from("transactions")
-              .update({ category_id: newCat.id })
-              .eq("user_id", userId)
-              .eq("category_id", tpl.id);
-          }
-        }
-
         // Сортируем итоговый массив
         userCategories.sort((a, b) => {
           if (a.type !== b.type) return a.type === "expense" ? -1 : 1;
