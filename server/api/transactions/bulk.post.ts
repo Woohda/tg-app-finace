@@ -43,6 +43,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const transactionsToInsert = body.data.transactions.map((t) => ({
+    ...(t.id ? { id: t.id } : {}),
     amount: t.amount,
     category_id: t.category_id,
     type: t.type,
@@ -51,9 +52,12 @@ export default defineEventHandler(async (event) => {
     user_id: userId,
   }));
 
-  const { data, error } = await supabase
-    .from("transactions")
-    .insert(transactionsToInsert).select(`
+  const hasIds = transactionsToInsert.some((t) => "id" in t);
+  const dbQuery = hasIds
+    ? supabase.from("transactions").upsert(transactionsToInsert, { onConflict: "id" })
+    : supabase.from("transactions").insert(transactionsToInsert);
+
+  const { data, error } = await dbQuery.select(`
       id,
       amount,
       type,

@@ -105,6 +105,8 @@ watch(
 );
 
 const submit = async () => {
+  if (buttonState.value === "loading") return;
+
   const result = transactionSchema.safeParse({
     amount: parseAmount(amount.value),
     category_id: categoryId.value,
