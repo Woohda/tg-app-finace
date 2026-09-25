@@ -32,12 +32,12 @@ export default defineEventHandler(async (event) => {
   defaultStartDate.setMonth(defaultStartDate.getMonth() - 1);
   defaultStartDate.setHours(0, 0, 0, 0);
 
-  const startDate = query.startDate
-    ? new Date(query.startDate as string)
-    : defaultStartDate;
-  const endDate = query.endDate
-    ? new Date(query.endDate as string)
-    : new Date();
+  const startDateStr = query.startDate
+    ? String(query.startDate).split("T")[0]
+    : defaultStartDate.toISOString().split("T")[0];
+  const endDateStr = query.endDate
+    ? String(query.endDate).split("T")[0]
+    : new Date().toISOString().split("T")[0];
 
   const { data, error } = await supabase
     .from("transactions")
@@ -57,8 +57,8 @@ export default defineEventHandler(async (event) => {
     `,
     )
     .eq("user_id", userId)
-    .gte("date", startDate.toISOString())
-    .lte("date", endDate.toISOString())
+    .gte("date", startDateStr)
+    .lte("date", endDateStr)
     .order("date", { ascending: false })
     .order("created_at", { ascending: false });
 
