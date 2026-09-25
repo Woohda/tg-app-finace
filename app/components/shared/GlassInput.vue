@@ -64,7 +64,7 @@ const handleFocus = (e: FocusEvent) => {
       // Центрируем поле в верхней трети видимого контейнера над клавиатурой
       const relativeTop = inputRect.top - containerRect.top;
       const targetScroll =
-        scrollContainer.scrollTop + relativeTop - containerRect.height * 0.35;
+        scrollContainer.scrollTop + relativeTop - containerRect.height * 0.5;
 
       scrollContainer.scrollTo({
         top: Math.max(0, targetScroll),
