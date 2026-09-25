@@ -6,7 +6,7 @@
  * ---
  * ### Логика работы:
  * 1. `Authentication`: Проверка JWT токена.
- * 2. `Validation`: Проверка тела запроса через Zod (`transactionBackendSchema`).
+ * 2. `Validation`: Проверка тела запроса через Zod (`transactionSchema`).
  * 3. `Database Insert`: Добавление записи в `transactions` с `user_id`.
  *
  * ### Параметры запроса:
@@ -25,7 +25,7 @@
  * - Возвращает созданную транзакцию, отформатированную через `formatTransaction`.
  */
 
-import { transactionBackendSchema } from "~/types/validate";
+import { transactionSchema } from "~/types/validate";
 import { getUserSupabase } from "~~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
@@ -33,7 +33,7 @@ export default defineEventHandler(async (event) => {
   const supabase = getUserSupabase(token);
 
   const body = await readValidatedBody(event, (body) =>
-    transactionBackendSchema.safeParse(body),
+    transactionSchema.safeParse(body),
   );
 
   if (!body.success) {

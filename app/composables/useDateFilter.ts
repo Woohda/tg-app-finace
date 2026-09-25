@@ -4,43 +4,28 @@
  * 
  * @description
  * Предоставляет реактивное состояние для текущего выбранного месяца 
- * и вычисляет начало (`startDate`) и конец (`endDate`) этого месяца.
+ * и вычисляет начало (`startDate`) и конец (`endDate`) этого месяца с помощью `date-fns`.
  * Включает методы для переключения на следующий и предыдущий месяц.
  * 
  * ### Логика:
- * - `startDate`: 1-е число текущего месяца, 00:00:00.
- * - `endDate`: Последнее число текущего месяца, 23:59:59.
+ * - `startDate`: 1-е число текущего месяца, 00:00:00 (startOfMonth).
+ * - `endDate`: Последнее число текущего месяца, 23:59:59.999 (endOfMonth).
  */
-import { ref, computed } from 'vue';
+import { ref, computed } from "vue";
+import { startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
 
 export const useDateFilter = () => {
   const currentDate = ref(new Date());
 
-  const startDate = computed(() => {
-    const date = new Date(currentDate.value);
-    date.setDate(1);
-    date.setHours(0, 0, 0, 0);
-    return date;
-  });
-
-  const endDate = computed(() => {
-    const date = new Date(currentDate.value);
-    date.setMonth(date.getMonth() + 1);
-    date.setDate(0);
-    date.setHours(23, 59, 59, 999);
-    return date;
-  });
+  const startDate = computed(() => startOfMonth(currentDate.value));
+  const endDate = computed(() => endOfMonth(currentDate.value));
 
   const nextMonth = () => {
-    const next = new Date(currentDate.value);
-    next.setMonth(next.getMonth() + 1);
-    currentDate.value = next;
+    currentDate.value = addMonths(currentDate.value, 1);
   };
 
   const prevMonth = () => {
-    const prev = new Date(currentDate.value);
-    prev.setMonth(prev.getMonth() - 1);
-    currentDate.value = prev;
+    currentDate.value = subMonths(currentDate.value, 1);
   };
 
   return {

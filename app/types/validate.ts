@@ -28,26 +28,20 @@ export const categoryUpdateSchema = z.object({
 });
 
 // --- Transactions ---
-// Для фронтенда (где используется camelCase для полей формы)
-export const transactionFrontendSchema = z.object({
+export const transactionSchema = z.object({
   id: z.string().uuid().optional(),
   amount: z
     .number("Введите корректную сумму")
     .positive("Сумма должна быть больше 0"),
-  categoryId: z.string().min(1, "Выберите категорию"),
+  category_id: z.string().min(1, "Выберите категорию"),
   date: z.string().min(1, "Выберите дату"),
   type: z.enum(["expense", "income"]),
-  name: z.string().optional(),
-});
-
-export const transactionBackendSchema = z.object({
-  id: z.string().uuid().optional(),
-  amount: z.number("Некорректная сумма").positive("Некорректная сумма"),
-  category_id: z.string().min(1, "Не указана категория"),
-  type: z.enum(["income", "expense"]),
-  date: z.string().min(1, "Не указана дата"),
   name: z.string().optional().nullable(),
 });
+
+// Псевдонимы для совместимости
+export const transactionFrontendSchema = transactionSchema;
+export const transactionBackendSchema = transactionSchema;
 
 export const transactionPatchSchema = z
   .object({
@@ -78,7 +72,7 @@ export const parseReceiptSchema = z.object({
 });
 
 export const bulkTransactionSchema = z.object({
-  transactions: z.array(transactionBackendSchema),
+  transactions: z.array(transactionSchema),
 });
 
 // --- Subscriptions ---

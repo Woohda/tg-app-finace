@@ -148,7 +148,7 @@ export const useTransactions = (options?: {
     category_id: string;
     type: "income" | "expense";
     date: string;
-    name?: string;
+    name?: string | null;
   }) => {
     if (pending.value)
       return { success: false, error: "Запрос уже выполняется" };
@@ -198,7 +198,7 @@ export const useTransactions = (options?: {
       category_id?: string;
       type?: "income" | "expense";
       date?: string;
-      name?: string;
+      name?: string | null;
     },
   ) => {
     if (pending.value)

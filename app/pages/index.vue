@@ -4,7 +4,7 @@
  * @fileoverview Главная страница приложения (Дашборд)
  * @description
  * Отображает сводную финансовую информацию пользователя:
- * - Общий баланс и мини-график истории (BalanceCard)
+ * - Остаток бюджета на месяц (BudgetRemainderCard)
  * - Распределение топ-5 расходов по категориям (ExpensesDonut)
  * - Список последних транзакций
  */
@@ -16,7 +16,7 @@ const { hasUnread } = useNotifications();
 const { startDate, endDate } = useDateFilter();
 const { transactions, pending } = useTransactions({ startDate, endDate });
 const { monthlyExpense, monthlyIncome } = useTransactionView(transactions);
-const { balanceHistory, expensesByCategory } = useDashboardStats(transactions);
+const { expensesByCategory } = useExpensesByCategory(transactions);
 
 const {
   budget,
@@ -54,9 +54,6 @@ const userName = computed(() => {
 });
 
 const avatarUrl = computed(() => tgUser.value?.photo_url || null);
-
-// // 1. Данные баланса (используем реальный текущий баланс)
-// const percentChange = computed(() => dashboardStats.value?.percentChange || 0);
 </script>
 
 <template>
@@ -94,13 +91,12 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
         </p>
       </div>
 
-      <!-- 1. Секция баланса (Остаток бюджета) -->
-      <BalanceCard
+      <!-- 1. Сводка остатка бюджета -->
+      <BudgetRemainderCard
         v-if="budget"
-        :amount="budgetRemainder"
+        :remainder="budgetRemainder"
         :daily-guideline="dailyGuideline"
         :last-day-of-month="lastDayOfMonth"
-        :history="balanceHistory"
         :is-loading="pending || budgetLoading"
       />
     </div>

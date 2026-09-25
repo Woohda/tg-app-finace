@@ -16,7 +16,7 @@ import { ref, computed, watch, onUnmounted } from "vue";
 import { useRouter } from "vue-router";
 
 import { Calendar, RussianRuble, Camera } from "@lucide/vue";
-import { transactionFrontendSchema } from "~/types/validate";
+import { transactionSchema } from "~/types/validate";
 import { parseAmount } from "~/utils";
 import { formatZodError } from "~/utils/zod";
 
@@ -105,12 +105,12 @@ watch(
 );
 
 const submit = async () => {
-  const result = transactionFrontendSchema.safeParse({
+  const result = transactionSchema.safeParse({
     amount: parseAmount(amount.value),
-    categoryId: categoryId.value,
+    category_id: categoryId.value,
     date: date.value,
     type: type.value,
-    name: name.value,
+    name: name.value || undefined,
   });
 
   if (!result.success) {
@@ -123,18 +123,10 @@ const submit = async () => {
 
   let res: { success: boolean; error?: string };
 
-  const txData = {
-    amount: result.data.amount,
-    category_id: result.data.categoryId,
-    type: result.data.type,
-    date: result.data.date,
-    name: result.data.name || undefined,
-  };
-
   if (isEditMode.value && editId.value) {
-    res = await updateTransaction(editId.value, txData);
+    res = await updateTransaction(editId.value, result.data);
   } else {
-    res = await addTransaction(txData);
+    res = await addTransaction(result.data);
   }
 
   if (res.success) {

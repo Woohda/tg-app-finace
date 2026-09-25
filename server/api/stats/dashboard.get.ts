@@ -53,8 +53,8 @@ export default defineEventHandler(async (event) => {
     .select("amount, date")
     .eq("user_id", userId)
     .eq("type", "expense")
-    .gte("date", pastMonthStart.toISOString())
-    .lte("date", now.toISOString());
+    .gte("date", pastMonthStart.toISOString().split("T")[0])
+    .lte("date", now.toISOString().split("T")[0]);
 
   if (error) {
     console.error("Ошибка при получении статистики:", error);

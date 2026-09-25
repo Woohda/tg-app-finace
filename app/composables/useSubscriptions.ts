@@ -149,12 +149,20 @@ export const useSubscriptions = () => {
 
   // Список платежей этого месяца с расчетом дней до списания
   const upcomingSubscriptions = computed<UpcomingSubscription[]>(() => {
-    const today = new Date().getDate();
+    const now = new Date();
+    const today = now.getDate();
+    const lastDayOfMonth = new Date(
+      now.getFullYear(),
+      now.getMonth() + 1,
+      0,
+    ).getDate();
 
     return subscriptions.value
       .filter((s) => s.is_active)
       .map((sub) => {
-        const daysUntil = sub.day_of_month - today;
+        // Ограничиваем плановый день количеством дней в месяце (например, 30 число в феврале -> 28/29)
+        const effectiveDay = Math.min(sub.day_of_month, lastDayOfMonth);
+        const daysUntil = effectiveDay - today;
 
         let statusLabel: string;
         let statusType: UpcomingSubscription["statusType"];

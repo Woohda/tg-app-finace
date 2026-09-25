@@ -13,7 +13,7 @@
  * 3. Отрисовка SVG. Подписи скрываются, если их слишком много (например, для 1М).
  */
 import { computed } from "vue";
-import type { ChartDataPoint } from "~/composables/useAnalyticsData";
+import type { ChartDataPoint } from "~/utils/analytics";
 import { formatAmount } from "~/utils";
 
 const props = defineProps<{
