@@ -23,6 +23,44 @@ export function formatAmount(
   return `${formatted} ₽`;
 }
 
+/**
+ * Преобразует строковое или числовое значение суммы в валидное число.
+ * Корректно парсит запятые (100,34 -> 100.34), пробелы (1 000,50 -> 1000.50),
+ * валютные символы и нестандартные разделители. Округляет до сотых (копейки).
+ * При некорректном значении возвращает NaN.
+ */
+export function parseAmount(value: string | number | null | undefined): number {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? Math.round(value * 100) / 100 : NaN;
+  }
+  if (value === null || value === undefined) {
+    return NaN;
+  }
+
+  const trimmed = String(value).trim();
+  if (!trimmed) {
+    return NaN;
+  }
+
+  // Удаляем пробелы (включая неразрывные \u00A0)
+  let cleaned = trimmed.replace(/[\s\u00A0]+/g, "");
+  // Удаляем валютные знаки и текст по краям
+  cleaned = cleaned.replace(/^[^\d.,-]+|[^\d.,-]+$/g, "");
+  // Заменяем все запятые на точки
+  cleaned = cleaned.replace(/,/g, ".");
+
+  if (!cleaned || cleaned === "-" || cleaned === ".") {
+    return NaN;
+  }
+
+  const num = Number(cleaned);
+  if (!Number.isFinite(num)) {
+    return NaN;
+  }
+
+  return Math.round(num * 100) / 100;
+}
+
 export function formatPercent(
   percent: number,
   suffix: string = "к прошлому месяцу",

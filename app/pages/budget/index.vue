@@ -9,12 +9,25 @@
 import { ref, watch, onMounted } from "vue";
 import { ChevronLeft, Target } from "@lucide/vue";
 import { budgetSchema } from "~/types/validate";
+import { parseAmount } from "~/utils";
 import { formatZodError } from "~/utils/zod";
 
 const { budget, updateBudget, isLoading, error, fetchBudget } = useBudgets();
 
-const amount = ref<number | "">(budget.value || "");
+const amount = ref<string | number>(budget.value || "");
 const buttonState = ref<"idle" | "loading" | "success">("idle");
+
+const isSubmitDisabled = computed(() => {
+  if (isLoading.value) return true;
+  const parsed = parseAmount(amount.value);
+  return isNaN(parsed) || parsed <= 0;
+});
+
+watch(amount, () => {
+  if (error.value) {
+    error.value = "";
+  }
+});
 
 watch(budget, (newVal) => {
   if (amount.value === "" && newVal > 0) {
@@ -27,7 +40,7 @@ onMounted(() => {
 });
 
 const saveBudget = async () => {
-  const result = budgetSchema.safeParse({ amount: Number(amount.value) });
+  const result = budgetSchema.safeParse({ amount: parseAmount(amount.value) });
 
   if (!result.success) {
     error.value = formatZodError(result.error);
@@ -100,7 +113,7 @@ const saveBudget = async () => {
           type="submit"
           variant="primary"
           :state="buttonState"
-          :disabled="isLoading || amount === '' || amount <= 0"
+          :disabled="isSubmitDisabled"
         >
           <span>🎯 Зафиксировать лимит</span>
         </GlassMorphButton>

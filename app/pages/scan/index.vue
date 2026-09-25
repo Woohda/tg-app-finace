@@ -11,6 +11,7 @@
 import { computed, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Sparkles, RussianRuble, Trash2 } from "@lucide/vue";
+import { parseAmount } from "~/utils";
 
 definePageMeta({
   layout: "clean",
@@ -158,7 +159,7 @@ const saveAll = async () => {
 
     editableItems.value.forEach((item) => {
       transactionsToSave.push({
-        amount: Number(item.amount),
+        amount: parseAmount(item.amount),
         name: item.name,
         category_id: item.categoryId || "",
         type: item.type,
@@ -168,6 +169,12 @@ const saveAll = async () => {
 
     if (transactionsToSave.some((t) => !t.category_id)) {
       saveError.value = "Пожалуйста, выберите категории для всех транзакций";
+      isSaving.value = false;
+      return;
+    }
+
+    if (transactionsToSave.some((t) => isNaN(t.amount) || t.amount <= 0)) {
+      saveError.value = "Пожалуйста, проверьте суммы всех транзакций";
       isSaving.value = false;
       return;
     }

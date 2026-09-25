@@ -15,6 +15,7 @@ import { computed, ref, watch } from "vue";
 import { Calendar } from "@lucide/vue";
 import type { Database } from "~/types/database.types";
 import { transactionFrontendSchema } from "~/types/validate";
+import { parseAmount } from "~/utils";
 import { formatZodError } from "~/utils/zod";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
@@ -63,8 +64,9 @@ const filteredCategories = computed(() => {
 
 const save = () => {
   if (localItem.value) {
+    const parsedAmount = parseAmount(localItem.value.amount);
     const result = transactionFrontendSchema.safeParse({
-      amount: Number(localItem.value.amount),
+      amount: parsedAmount,
       categoryId: localItem.value.categoryId || "",
       date: localItem.value.date || "",
       type: localItem.value.type,
@@ -79,7 +81,7 @@ const save = () => {
     formError.value = null;
     emit("save", {
       ...localItem.value,
-      amount: Number(localItem.value.amount),
+      amount: parsedAmount,
     });
   }
 };

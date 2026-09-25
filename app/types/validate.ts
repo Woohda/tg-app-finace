@@ -31,7 +31,9 @@ export const categoryUpdateSchema = z.object({
 // Для фронтенда (где используется camelCase для полей формы)
 export const transactionFrontendSchema = z.object({
   id: z.string().uuid().optional(),
-  amount: z.number().positive("Введите корректную сумму"),
+  amount: z
+    .number("Введите корректную сумму")
+    .positive("Сумма должна быть больше 0"),
   categoryId: z.string().min(1, "Выберите категорию"),
   date: z.string().min(1, "Выберите дату"),
   type: z.enum(["expense", "income"]),
@@ -40,7 +42,7 @@ export const transactionFrontendSchema = z.object({
 
 export const transactionBackendSchema = z.object({
   id: z.string().uuid().optional(),
-  amount: z.number().positive("Некорректная сумма"),
+  amount: z.number("Некорректная сумма").positive("Некорректная сумма"),
   category_id: z.string().min(1, "Не указана категория"),
   type: z.enum(["income", "expense"]),
   date: z.string().min(1, "Не указана дата"),
@@ -49,7 +51,10 @@ export const transactionBackendSchema = z.object({
 
 export const transactionPatchSchema = z
   .object({
-    amount: z.number().positive("Некорректная сумма").optional(),
+    amount: z
+      .number("Некорректная сумма")
+      .positive("Некорректная сумма")
+      .optional(),
     category_id: z.string().min(1, "Не указана категория").optional(),
     type: z.enum(["income", "expense"]).optional(),
     date: z.string().min(1, "Не указана дата").optional(),
@@ -61,7 +66,9 @@ export const transactionPatchSchema = z
 
 // --- Budgets ---
 export const budgetSchema = z.object({
-  amount: z.number().positive("Бюджет должен быть больше 0"),
+  amount: z
+    .number("Введите корректную сумму")
+    .positive("Бюджет должен быть больше 0"),
 });
 
 // --- AI ---
@@ -81,9 +88,11 @@ export const subscriptionSchema = z.object({
     .string()
     .min(1, "Введите название платежа")
     .max(100, "Название слишком длинное"),
-  amount: z.number().positive("Введите корректную сумму"),
+  amount: z
+    .number("Введите корректную сумму")
+    .positive("Введите корректную сумму"),
   day_of_month: z
-    .number()
+    .number("День должен быть числом")
     .int("День должен быть целым числом")
     .min(1, "День должен быть от 1 до 31")
     .max(31, "День должен быть от 1 до 31"),
