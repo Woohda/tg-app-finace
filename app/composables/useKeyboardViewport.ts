@@ -2,34 +2,68 @@
  * @module app/composables/useKeyboardViewport
  * @fileoverview Глобальное реактивное отслеживание виртуальной клавиатуры и видимой области экрана.
  * @description
- * Отслеживает изменения `window.visualViewport` при появлении/скрытии клавиатуры в Telegram Mini App.
- * Предоставляет реактивные значения `keyboardHeight` и `isKeyboardOpen`, позволяя модальным окнам
- * и формам ввода плавно подниматься над клавиатурой без рывков интерфейса.
+ * Отслеживает изменения высоты экрана и появление клавиатуры через нативные события
+ * Telegram WebApp (`viewportChanged`) и `window.visualViewport`.
+ * Предоставляет стабильные реактивные значения `keyboardHeight` и `isKeyboardOpen`.
  */
 import { ref, computed } from "vue";
 
 const keyboardHeight = ref(0);
 const isKeyboardOpen = ref(false);
 let isInitialized = false;
+let baseHeight = 0;
 
 /**
- * Обработчик изменения размеров видимой области окна.
+ * Пересчитывает габариты видимой области и высоту клавиатуры.
  */
-function handleViewportChange() {
+function updateDimensions() {
   if (typeof window === "undefined") return;
 
-  if (window.visualViewport) {
-    const visualHeight = window.visualViewport.height;
-    const windowHeight = window.innerHeight;
-    const diff = Math.max(0, windowHeight - visualHeight);
+  const tg = window.Telegram?.WebApp;
 
-    // Порог 80px для надежного отсечения перестроений системных баров
-    if (diff > 80) {
+  // 1. Приоритетный источник в Telegram Mini App: нативные параметры контейнера Telegram
+  if (
+    tg &&
+    typeof tg.viewportStableHeight === "number" &&
+    typeof tg.viewportHeight === "number"
+  ) {
+    const tgDiff = Math.max(0, tg.viewportStableHeight - tg.viewportHeight);
+    if (tgDiff > 60) {
+      keyboardHeight.value = tgDiff;
+      isKeyboardOpen.value = true;
+      return;
+    } else {
+      keyboardHeight.value = 0;
+      isKeyboardOpen.value = false;
+      return;
+    }
+  }
+
+  // 2. Универсальный fallback для мобильного браузера: visualViewport
+  if (window.visualViewport) {
+    const currentVisualHeight = window.visualViewport.height;
+
+    const isInputFocused =
+      typeof document !== "undefined" &&
+      (document.activeElement instanceof HTMLInputElement ||
+        document.activeElement instanceof HTMLTextAreaElement);
+
+    if (!isInputFocused && (!baseHeight || window.innerHeight > baseHeight)) {
+      baseHeight = Math.max(window.innerHeight, currentVisualHeight);
+    }
+
+    const referenceHeight = baseHeight || window.innerHeight;
+    const diff = Math.max(0, referenceHeight - currentVisualHeight);
+
+    if (diff > 60) {
       keyboardHeight.value = diff;
       isKeyboardOpen.value = true;
     } else {
       keyboardHeight.value = 0;
       isKeyboardOpen.value = false;
+      if (!isInputFocused) {
+        baseHeight = Math.max(window.innerHeight, currentVisualHeight);
+      }
     }
   }
 }
@@ -40,11 +74,18 @@ function handleViewportChange() {
 export function useKeyboardViewport() {
   if (import.meta.client && !isInitialized) {
     isInitialized = true;
-    if (window.visualViewport) {
-      window.visualViewport.addEventListener("resize", handleViewportChange);
-      window.visualViewport.addEventListener("scroll", handleViewportChange);
+    baseHeight = window.innerHeight;
+
+    const tg = window.Telegram?.WebApp;
+    if (tg?.onEvent) {
+      tg.onEvent("viewportChanged", updateDimensions);
     }
-    window.addEventListener("resize", handleViewportChange);
+
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", updateDimensions);
+      window.visualViewport.addEventListener("scroll", updateDimensions);
+    }
+    window.addEventListener("resize", updateDimensions);
   }
 
   return {

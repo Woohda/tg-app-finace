@@ -48,17 +48,30 @@ const focus = () => {
 
 const handleFocus = (e: FocusEvent) => {
   isFocused.value = true;
-  // Плавная прокрутка к полю только если оно скрыто, без рывков внешнего окна
-  setTimeout(() => {
-    const el = e.target as HTMLElement | null;
-    if (el && typeof el.scrollIntoView === "function") {
-      el.scrollIntoView({
+  const inputEl = e.target as HTMLElement | null;
+  if (!inputEl) return;
+
+  // Ищем ближайший скроллируемый контейнер модалки (GlassCard), избегая скролла window
+  const scrollContainer = inputEl.closest<HTMLElement>(
+    "[data-modal-card], .overflow-y-auto",
+  );
+
+  if (scrollContainer) {
+    setTimeout(() => {
+      const containerRect = scrollContainer.getBoundingClientRect();
+      const inputRect = inputEl.getBoundingClientRect();
+
+      // Центрируем поле в верхней трети видимого контейнера над клавиатурой
+      const relativeTop = inputRect.top - containerRect.top;
+      const targetScroll =
+        scrollContainer.scrollTop + relativeTop - containerRect.height * 0.35;
+
+      scrollContainer.scrollTo({
+        top: Math.max(0, targetScroll),
         behavior: "smooth",
-        block: "nearest",
-        inline: "nearest",
       });
-    }
-  }, 200);
+    }, 180);
+  }
 };
 
 defineExpose({ focus });

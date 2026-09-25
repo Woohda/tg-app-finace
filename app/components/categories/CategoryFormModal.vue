@@ -47,7 +47,7 @@ watch(
       formButtonState.value = "idle";
       setTimeout(() => {
         nameInputRef.value?.focus();
-      }, 100);
+      }, 380);
     }
   },
 );

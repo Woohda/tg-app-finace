@@ -34,6 +34,7 @@ const emits = defineEmits<{
   (e: "update:modelValue", payload: string): void;
 }>();
 
+const { isKeyboardOpen } = useKeyboardViewport();
 const isSheetOpen = ref(false);
 
 const selectedCategory = computed(() =>
@@ -43,6 +44,25 @@ const selectedCategory = computed(() =>
 const handleSelect = (category: CategoryOption) => {
   emits("update:modelValue", category.id);
   isSheetOpen.value = false;
+};
+
+const openSheet = () => {
+  if (props.disabled) return;
+  // Снимаем фокус с любого активного инпута, чтобы клавиатура закрылась до показа шторки
+  if (
+    typeof document !== "undefined" &&
+    document.activeElement instanceof HTMLElement
+  ) {
+    document.activeElement.blur();
+  }
+  // Если клавиатура открыта, даем ей время скрыться перед началом плавной анимации шторки
+  if (isKeyboardOpen.value) {
+    setTimeout(() => {
+      isSheetOpen.value = true;
+    }, 220);
+  } else {
+    isSheetOpen.value = true;
+  }
 };
 </script>
 
@@ -68,7 +88,7 @@ const handleSelect = (category: CategoryOption) => {
           selectedCategory ? 'opacity-100' : 'opacity-80',
         )
       "
-      @click="isSheetOpen = true"
+      @click="openSheet"
     >
       <div class="flex items-center min-w-0 flex-1 mr-2">
         <!-- Иконка или эмодзи выбранной категории -->
