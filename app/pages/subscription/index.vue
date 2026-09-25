@@ -8,7 +8,7 @@
  */
 import { ref, onMounted } from "vue";
 import { ChevronLeft, Plus, CalendarClock } from "@lucide/vue";
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 import {
   useSubscriptions,
   type Subscription,

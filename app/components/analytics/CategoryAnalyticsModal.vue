@@ -14,7 +14,7 @@
 import { toRef, computed } from "vue";
 import { TrendingUp, TrendingDown } from "@lucide/vue";
 import type { AnalyticsPeriodType } from "~/composables/useAnalyticsPeriod";
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 
 const props = defineProps<{
   isOpen: boolean;
@@ -26,8 +26,6 @@ const emit = defineEmits(["close"]);
 
 const { startDate, endDate, prevStartDate, prevEndDate } = useAnalyticsPeriod();
 
-// Синхронизируем период из пропсов с локальным хуком,
-// чтобы вычислялись правильные даты
 const localPeriod = toRef(props, "period");
 
 const { pending, totalSpent, percentChange, chartData, categoryStats } =

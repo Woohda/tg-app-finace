@@ -9,7 +9,7 @@
  */
 import type { HTMLAttributes } from "vue";
 import { ref, watch, useId } from "vue";
-import { cn } from "~/utils";
+import { cn } from "~/utils/cn";
 import { Trash2 } from "@lucide/vue";
 import { onClickOutside } from "@vueuse/core";
 

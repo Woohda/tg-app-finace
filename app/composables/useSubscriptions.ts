@@ -4,10 +4,15 @@
  * @description
  * Обеспечивает получение, создание, редактирование и удаление регулярных платежей.
  * Вычисляет общую сумму подписок в месяц и формирует список ближайших списаний.
+ * ---
+ * ### Логика работы:
+ * 1. CRUD операции над регулярными платежами через API с оптимистичными обновлениями.
+ * 2. Расчет ближайших платежей (`upcomingSubscriptions`) с коррекцией на длину месяца (`getEffectiveDayOfMonth`).
+ * 3. Вычисление статуса платежа («Сегодня», «Завтра», «Через N дн.») относительно текущего дня (`getDayOfMonth`).
  */
 import { ref, computed } from "vue";
 import { parseApiError } from "~/utils/api";
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 
 export interface Subscription {
   id: string;
@@ -149,19 +154,13 @@ export const useSubscriptions = () => {
 
   // Список платежей этого месяца с расчетом дней до списания
   const upcomingSubscriptions = computed<UpcomingSubscription[]>(() => {
-    const now = new Date();
-    const today = now.getDate();
-    const lastDayOfMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-    ).getDate();
+    const today = getDayOfMonth();
 
     return subscriptions.value
       .filter((s) => s.is_active)
       .map((sub) => {
         // Ограничиваем плановый день количеством дней в месяце (например, 30 число в феврале -> 28/29)
-        const effectiveDay = Math.min(sub.day_of_month, lastDayOfMonth);
+        const effectiveDay = getEffectiveDayOfMonth(sub.day_of_month);
         const daysUntil = effectiveDay - today;
 
         let statusLabel: string;

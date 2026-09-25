@@ -10,7 +10,7 @@
 import { ref, watch, useId } from "vue";
 import { Trash2 } from "@lucide/vue";
 import { onClickOutside } from "@vueuse/core";
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 import type { Subscription } from "~/composables/useSubscriptions";
 
 interface Props {

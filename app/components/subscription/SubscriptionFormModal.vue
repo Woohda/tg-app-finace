@@ -3,13 +3,18 @@
  * @module app/components/subscription/SubscriptionFormModal
  * @fileoverview Модальное окно для создания/редактирования регулярных платежей
  * @description
- * Предоставляет форму создания или обновления подписки:
+ * Предоставляет форму создания или обновления регулярного платежа:
  * название, сумма, день месяца (1–31) и категория расходов.
+ * ---
+ * ### Логика работы:
+ * 1. Инициализирует поля формы (в режиме создания устанавливает день через `getDayOfMonth()`).
+ * 2. Выполняет клиентскую валидацию через Zod-схему `subscriptionSchema`.
+ * 3. Отправляет запрос на создание (`createSubscription`) или обновление (`updateSubscription`).
  */
 import { ref, computed, watch } from "vue";
 import { Calendar, RussianRuble, Plus, Sparkles } from "@lucide/vue";
 import { subscriptionSchema } from "~/types/validate";
-import { parseAmount } from "~/utils";
+import { parseAmount } from "~/utils/format";
 import { formatZodError } from "~/utils/zod";
 import type { Subscription } from "~/composables/useSubscriptions";
 
@@ -63,7 +68,7 @@ watch(
       } else {
         name.value = "";
         amount.value = "";
-        dayOfMonth.value = new Date().getDate();
+        dayOfMonth.value = getDayOfMonth();
         categoryId.value = "";
       }
 

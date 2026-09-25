@@ -10,7 +10,7 @@
  */
 import { ref, onMounted } from "vue";
 import { CalendarClock, ChevronRight, Plus } from "@lucide/vue";
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 import type { Subscription } from "~/composables/useSubscriptions";
 
 const {

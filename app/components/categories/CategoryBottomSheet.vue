@@ -8,7 +8,7 @@
  */
 import { ref, computed, watch, onBeforeUnmount } from "vue";
 import { Search, X, Check } from "@lucide/vue";
-import { cn } from "~/utils";
+import { cn } from "~/utils/cn";
 import { getHapticFeedback } from "~/utils/haptics";
 
 export interface CategoryOption {

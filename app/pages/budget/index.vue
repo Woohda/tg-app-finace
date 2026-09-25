@@ -9,7 +9,7 @@
 import { ref, watch, onMounted } from "vue";
 import { ChevronLeft, Target } from "@lucide/vue";
 import { budgetSchema } from "~/types/validate";
-import { parseAmount } from "~/utils";
+import { parseAmount } from "~/utils/format";
 import { formatZodError } from "~/utils/zod";
 
 const { budget, updateBudget, isLoading, error, fetchBudget } = useBudgets();

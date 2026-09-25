@@ -18,7 +18,7 @@
  * 3. Отрисовка SVG кольца, бликов и теней на основе вычисленных данных.
  */
 import { computed } from "vue";
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 
 import { ChartColumn } from "@lucide/vue";
 

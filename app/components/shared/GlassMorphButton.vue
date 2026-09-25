@@ -9,7 +9,7 @@
  */
 import { watch } from "vue";
 import { Check } from "@lucide/vue";
-import { cn } from "~/utils";
+import { cn } from "~/utils/cn";
 import { getHapticFeedback } from "~/utils/haptics";
 
 interface Props {

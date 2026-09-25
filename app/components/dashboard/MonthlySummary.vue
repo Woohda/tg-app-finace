@@ -7,7 +7,7 @@
  */
 import { computed } from "vue";
 import { BanknoteArrowUp, BanknoteArrowDown } from "@lucide/vue";
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 
 const props = defineProps<{
   income: number;

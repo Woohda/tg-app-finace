@@ -7,7 +7,7 @@
  * фирменные стили неоморфизма (.glass-milky), мягкие углы (rounded-3xl) и отступы.
  */
 import type { HTMLAttributes } from "vue";
-import { cn } from "~/utils";
+import { cn } from "~/utils/cn";
 
 const props = defineProps<{
   class?: HTMLAttributes["class"];

@@ -12,7 +12,7 @@
  */
 import { ref } from "vue";
 import { TrendingUp, TrendingDown } from "@lucide/vue";
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 
 const {
   period,
@@ -39,10 +39,7 @@ const {
 } = useAnalyticsData(period, startDate, endDate, prevStartDate, prevEndDate);
 
 // --- Индикатор темпа (Pacing Indicator) ---
-const daysInMonth = computed(() => {
-  const now = new Date();
-  return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-});
+const daysInMonth = computed(() => getDaysInMonthCount());
 
 // В качестве ориентира (бюджета) теперь берем прогноз (как в изначальном range)
 const baseline = computed(() => forecast.value || 1);

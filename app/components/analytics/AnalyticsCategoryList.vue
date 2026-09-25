@@ -14,7 +14,7 @@
  */
 import { computed } from "vue";
 import type { CategoryStat } from "~/utils/analytics";
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 import { ChevronRight } from "@lucide/vue";
 
 const props = defineProps<{

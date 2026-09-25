@@ -9,7 +9,7 @@
 import { computed, ref } from "vue";
 import type { Component } from "vue";
 import { ChevronDown } from "@lucide/vue";
-import { cn } from "~/utils";
+import { cn } from "~/utils/cn";
 import type { CategoryOption } from "~/components/categories/CategoryBottomSheet.vue";
 
 const props = withDefaults(

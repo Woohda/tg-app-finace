@@ -11,7 +11,7 @@
  * 2. Блокирует прокрутку страницы (`document.body.style.overflow = "hidden"`) при открытии.
  */
 import { computed, watch, onUnmounted } from "vue";
-import { cn } from "~/utils";
+import { cn } from "~/utils/cn";
 import { X } from "@lucide/vue";
 
 interface Props {

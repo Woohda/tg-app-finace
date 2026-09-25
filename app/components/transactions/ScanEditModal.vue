@@ -15,7 +15,7 @@ import { computed, ref, watch } from "vue";
 import { Calendar } from "@lucide/vue";
 import type { Database } from "~/types/database.types";
 import { transactionSchema } from "~/types/validate";
-import { parseAmount } from "~/utils";
+import { parseAmount } from "~/utils/format";
 import { formatZodError } from "~/utils/zod";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];

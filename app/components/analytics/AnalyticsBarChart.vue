@@ -14,7 +14,7 @@
  */
 import { computed } from "vue";
 import type { ChartDataPoint } from "~/utils/analytics";
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 
 const props = defineProps<{
   data: ChartDataPoint[];

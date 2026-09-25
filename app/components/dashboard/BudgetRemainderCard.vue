@@ -10,7 +10,7 @@
  * - Стилистика: Glassmorphism (использует GlassCard)
  * - При отрицательном остатке подсвечивает сумму акцентным цветом и меняет формулировку на перерасход
  */
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 
 defineProps<{
   remainder: number;
