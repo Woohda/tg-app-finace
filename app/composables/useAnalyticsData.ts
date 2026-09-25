@@ -3,7 +3,8 @@
  * @fileoverview Агрегация и расчет данных для аналитики
  * @description
  * Берет транзакции за текущий и предыдущий периоды и рассчитывает:
- * общую сумму, рост/падение в процентах (MoM), прогноз до конца месяца,
+ * общую сумму, рост/падение в процентах (MoM), прогноз до конца месяца
+ * с учетом плановых регулярных платежей, которые еще не наступили,
  * а также группирует траты по категориям и по дням/месяцам для графиков.
  * ---
  * ### Логика работы:
@@ -11,9 +12,9 @@
  * 2. Фильтрация только `expense` (расходы).
  * 3. Агрегация по категориям для списка топ-категорий.
  * 4. Формирование данных для столбчатого графика (группировка по дням/неделям/месяцам).
- * 5. Расчет `forecast` на основе среднего дневного расхода.
+ * 5. Расчет `forecast` на основе среднего дневного расхода и плановых платежей (`useSubscriptions`).
  */
-import { computed, type Ref } from "vue";
+import { computed, onMounted, type Ref } from "vue";
 import type { AnalyticsPeriodType } from "./useAnalyticsPeriod";
 
 export interface CategoryStat {
@@ -47,6 +48,14 @@ export const useAnalyticsData = (
   const { transactions: prevTxs, pending: pendingPrev } = useTransactions({
     startDate: prevStartDate,
     endDate: prevEndDate,
+  });
+
+  const { subscriptions, fetchSubscriptions } = useSubscriptions();
+
+  onMounted(() => {
+    if (subscriptions.value.length === 0) {
+      fetchSubscriptions();
+    }
   });
 
   const pending = computed(() => pendingCurrent.value || pendingPrev.value);
@@ -117,26 +126,121 @@ export const useAnalyticsData = (
 
   const currentDay = computed(() => new Date().getDate());
 
-  const avgDaily = computed(() => {
-    if (totalSpent.value === 0) return 0;
-    if (period.value !== "1M") return 0;
+  // Проверяем, является ли выбранный период текущим месяцем
+  const isCurrentMonthPeriod = computed(() => {
+    if (period.value !== "1M") return false;
     const now = new Date();
-    if (endDate.value.getTime() < now.getTime()) return 0;
-    const daysPassed = now.getDate();
-    if (daysPassed === 0) return 0;
-    return Math.round(totalSpent.value / daysPassed);
+    return (
+      endDate.value.getFullYear() === now.getFullYear() &&
+      endDate.value.getMonth() === now.getMonth()
+    );
   });
 
-  // Прогноз трат (работает лучше всего для "1M")
-  const forecast = computed(() => {
-    if (avgDaily.value === 0) return null;
+  const daysPassed = computed(() => {
+    if (!isCurrentMonthPeriod.value) return 0;
+    return new Date().getDate();
+  });
+
+  const daysInMonth = computed(() => {
     const now = new Date();
-    const daysInMonth = new Date(
-      now.getFullYear(),
-      now.getMonth() + 1,
-      0,
-    ).getDate();
-    return Math.round(avgDaily.value * daysInMonth);
+    return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
+  });
+
+  const remainingDays = computed(() => {
+    return Math.max(0, daysInMonth.value - daysPassed.value);
+  });
+
+  // Плановые регулярные платежи текущего месяца, которые ещё не наступили
+  const upcomingSubscriptions = computed(() => {
+    if (!isCurrentMonthPeriod.value) return [];
+
+    const now = new Date();
+    const todayDate = now.getDate();
+    const todayIso = now.toISOString().split("T")[0];
+
+    return subscriptions.value.filter((sub) => {
+      if (!sub.is_active) return false;
+      if (categoryId?.value && sub.category_id !== categoryId.value)
+        return false;
+
+      // 1. Если день платежа позже сегодняшнего числа месяца — ещё не наступил
+      if (sub.day_of_month > todayDate) {
+        return true;
+      }
+
+      // 2. Если день платежа сегодня — проверяем, не внесён ли уже платёж в расходы
+      if (sub.day_of_month === todayDate) {
+        const alreadyRecorded = currentExpenses.value.some((tx) => {
+          if (tx.date !== todayIso) return false;
+          const isSameAmount = Math.abs(tx.amount - sub.amount) < 0.01;
+          const isSameCategory =
+            !sub.category_id || tx.categoryId === sub.category_id;
+          const isSameName =
+            tx.name &&
+            (tx.name.includes(sub.name) || sub.name.includes(tx.name));
+          return isSameAmount && (isSameCategory || isSameName);
+        });
+        return !alreadyRecorded;
+      }
+
+      return false;
+    });
+  });
+
+  const upcomingSubscriptionsTotal = computed(() => {
+    return upcomingSubscriptions.value.reduce((sum, s) => sum + s.amount, 0);
+  });
+
+  // Платежи, которые уже наступили ранее в этом месяце
+  const pastSubscriptionsTotal = computed(() => {
+    if (!isCurrentMonthPeriod.value) return 0;
+    const todayDate = new Date().getDate();
+
+    return subscriptions.value
+      .filter((sub) => {
+        if (!sub.is_active) return false;
+        if (categoryId?.value && sub.category_id !== categoryId.value)
+          return false;
+        return (
+          sub.day_of_month <= todayDate &&
+          !upcomingSubscriptions.value.some((u) => u.id === sub.id)
+        );
+      })
+      .reduce((sum, s) => sum + s.amount, 0);
+  });
+
+  // Средний дневной расход (исторический за прошедшие дни)
+  const avgDaily = computed(() => {
+    if (totalSpent.value === 0 || !isCurrentMonthPeriod.value) return 0;
+    if (daysPassed.value === 0) return 0;
+    return Math.round(totalSpent.value / daysPassed.value);
+  });
+
+  // Переменные траты (за вычетом регулярных платежей, чтобы они не раздували ежедневный прогноз)
+  const variableSpent = computed(() => {
+    return Math.max(0, totalSpent.value - pastSubscriptionsTotal.value);
+  });
+
+  const avgDailyVariable = computed(() => {
+    if (daysPassed.value === 0) return 0;
+    return variableSpent.value / daysPassed.value;
+  });
+
+  // Прогноз трат до конца месяца (работает для текущего месяца "1M")
+  // Формула: уже потрачено + будущие переменные расходы + плановые платежи, которые ещё не наступили
+  const forecast = computed(() => {
+    if (!isCurrentMonthPeriod.value) return null;
+    if (totalSpent.value === 0 && upcomingSubscriptionsTotal.value === 0)
+      return null;
+
+    const expectedVariableFuture = Math.round(
+      avgDailyVariable.value * remainingDays.value,
+    );
+    return (
+      totalSpent.value +
+      expectedVariableFuture +
+      upcomingSubscriptionsTotal.value
+    );
   });
 
   // Группировка по категориям
@@ -221,6 +325,8 @@ export const useAnalyticsData = (
     percentChange,
     forecast,
     avgDaily,
+    upcomingSubscriptionsTotal,
+    upcomingSubscriptions,
     currentDay,
     categoryStats,
     chartData,

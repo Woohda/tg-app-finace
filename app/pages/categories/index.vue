@@ -14,7 +14,7 @@
 import { ref, computed, onMounted } from "vue";
 import { ChevronLeft, Plus } from "@lucide/vue";
 
-const { categories, fetchCategories } = useCategories();
+const { categories, fetchCategories, isLoading } = useCategories();
 
 onMounted(() => {
   fetchCategories();
@@ -108,7 +108,7 @@ const cancelDelete = () => {
         <h1 class="text-text-primary text-xl font-bold tracking-tight">
           Мои категории
         </h1>
-        <p class="text-text-secondary text-xs">Управление списком</p>
+        <p class="text-text-secondary text-xs">Управление списком категорий</p>
       </div>
     </div>
 
@@ -120,7 +120,7 @@ const cancelDelete = () => {
     >
       <h2 class="text-text-primary font-bold">{{ section.title }}</h2>
       <GlassCard class="px-2 py-0.5 flex flex-col">
-        <template v-if="true && categories.length === 0">
+        <template v-if="isLoading && categories.length === 0">
           <div
             v-for="i in 3"
             :key="i"

@@ -61,6 +61,32 @@ const handleLogout = async () => {
 
     <div class="flex flex-col gap-3">
       <NuxtLink
+        to="/budget"
+        class="block a11y-focus rounded-3xl focus-visible:outline-offset-4"
+      >
+        <GlassCard
+          class="p-5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
+        >
+          <div class="flex items-center gap-3">
+            <div
+              class="size-10 rounded-full glass-milky flex items-center justify-center text-text-primary"
+            >
+              <span class="text-xl">🎯</span>
+            </div>
+            <div class="flex flex-col items-start">
+              <span class="text-text-primary font-bold text-base"
+                >Бюджет и цели</span
+              >
+              <span class="text-text-secondary text-xs"
+                >Лимиты и накопления</span
+              >
+            </div>
+          </div>
+          <div class="text-text-secondary">›</div>
+        </GlassCard>
+      </NuxtLink>
+
+      <NuxtLink
         to="/categories"
         class="block a11y-focus rounded-3xl focus-visible:outline-offset-4"
       >
@@ -87,7 +113,7 @@ const handleLogout = async () => {
       </NuxtLink>
 
       <NuxtLink
-        to="/budget"
+        to="/subscription"
         class="block a11y-focus rounded-3xl focus-visible:outline-offset-4"
       >
         <GlassCard
@@ -97,14 +123,14 @@ const handleLogout = async () => {
             <div
               class="size-10 rounded-full glass-milky flex items-center justify-center text-text-primary"
             >
-              <span class="text-xl">🎯</span>
+              <span class="text-xl">📅</span>
             </div>
             <div class="flex flex-col items-start">
               <span class="text-text-primary font-bold text-base"
-                >Бюджет и цели</span
+                >Регулярные платежи</span
               >
               <span class="text-text-secondary text-xs"
-                >Лимиты и накопления</span
+                >Подписки и ежемесячные счета</span
               >
             </div>
           </div>
