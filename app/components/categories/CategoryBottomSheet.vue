@@ -10,6 +10,7 @@ import { ref, computed, watch, onBeforeUnmount } from "vue";
 import { Search, X, Check } from "@lucide/vue";
 import { cn } from "~/utils";
 import { getHapticFeedback } from "~/utils/haptics";
+import { useKeyboardViewport } from "~/composables/useKeyboardViewport";
 
 export interface CategoryOption {
   id: string;
@@ -38,9 +39,18 @@ const emit = defineEmits<{
 }>();
 
 const { selection } = getHapticFeedback();
+const { keyboardHeight, isKeyboardOpen } = useKeyboardViewport();
 
 const searchQuery = ref("");
 const searchInputRef = ref<HTMLInputElement | null>(null);
+
+const sheetStyle = computed(() => {
+  if (!isKeyboardOpen.value || keyboardHeight.value <= 0) return undefined;
+  return {
+    bottom: `${keyboardHeight.value}px`,
+    maxHeight: `calc(100dvh - ${keyboardHeight.value + 40}px)`,
+  };
+});
 
 const filteredCategories = computed(() => {
   const query = searchQuery.value.trim().toLowerCase();
@@ -72,14 +82,18 @@ watch(
   (open) => {
     if (open) {
       searchQuery.value = "";
+      window.Telegram?.WebApp?.disableVerticalSwipes?.();
+      if (typeof document !== "undefined") {
+        document.body.style.overflow = "hidden";
+        document.addEventListener("keydown", onKeydown);
+      }
       setTimeout(() => {
         searchInputRef.value?.focus();
       }, 200);
-      if (typeof document !== "undefined") {
-        document.addEventListener("keydown", onKeydown);
-      }
     } else {
+      window.Telegram?.WebApp?.enableVerticalSwipes?.();
       if (typeof document !== "undefined") {
+        document.body.style.overflow = "";
         document.removeEventListener("keydown", onKeydown);
       }
     }
@@ -90,6 +104,8 @@ watch(
 onBeforeUnmount(() => {
   if (typeof document !== "undefined") {
     document.removeEventListener("keydown", onKeydown);
+    document.body.style.overflow = "";
+    window.Telegram?.WebApp?.enableVerticalSwipes?.();
   }
 });
 </script>
@@ -123,7 +139,8 @@ onBeforeUnmount(() => {
     >
       <div
         v-if="isOpen"
-        class="fixed inset-x-0 bottom-0 z-75 flex flex-col max-h-[67dvh] max-w-90 sm:max-w-sm mx-auto sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 rounded-t-3xl sm:rounded-3xl glass-milky px-5 pt-3 pb-10 shadow-glass"
+        class="fixed inset-x-0 bottom-0 z-75 flex flex-col max-h-[67dvh] max-w-90 sm:max-w-sm mx-auto sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 rounded-t-3xl sm:rounded-3xl glass-milky px-5 pt-3 pb-10 shadow-glass transition-[bottom,max-height] duration-200 ease-out"
+        :style="sheetStyle"
       >
         <!-- Мобильный индикатор свайпа (Drag Handle) -->
         <div

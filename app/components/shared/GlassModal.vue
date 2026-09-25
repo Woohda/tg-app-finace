@@ -10,8 +10,10 @@
  * 1. Использует Teleport в `body` для обхода проблем с `z-index` в CSS.
  * 2. Блокирует прокрутку страницы (`document.body.style.overflow = "hidden"`) при открытии.
  */
+import { computed, watch, onUnmounted } from "vue";
 import { cn } from "~/utils";
 import { X } from "@lucide/vue";
+import { useKeyboardViewport } from "~/composables/useKeyboardViewport";
 
 interface Props {
   isOpen?: boolean;
@@ -20,7 +22,7 @@ interface Props {
   showClose?: boolean;
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   isOpen: false,
   title: undefined,
   position: "center",
@@ -34,6 +36,46 @@ const emit = defineEmits<{
 const close = () => {
   emit("close");
 };
+
+const { keyboardHeight, isKeyboardOpen } = useKeyboardViewport();
+
+// Динамические стили контейнера и карточки для безопасного расположения над клавиатурой
+const containerStyle = computed(() => {
+  if (!isKeyboardOpen.value || keyboardHeight.value <= 0) return undefined;
+  return {
+    paddingBottom: `${keyboardHeight.value + 12}px`,
+  };
+});
+
+const cardStyle = computed(() => {
+  if (!isKeyboardOpen.value || keyboardHeight.value <= 0) return undefined;
+  return {
+    maxHeight: `calc(100dvh - ${keyboardHeight.value + 36}px)`,
+  };
+});
+
+// Управление блокировкой прокрутки фона и вертикальных свайпов Telegram
+watch(
+  () => props.isOpen,
+  (open) => {
+    if (typeof document === "undefined") return;
+    if (open) {
+      document.body.style.overflow = "hidden";
+      window.Telegram?.WebApp?.disableVerticalSwipes?.();
+    } else {
+      document.body.style.overflow = "";
+      window.Telegram?.WebApp?.enableVerticalSwipes?.();
+    }
+  },
+  { immediate: true },
+);
+
+onUnmounted(() => {
+  if (typeof document !== "undefined") {
+    document.body.style.overflow = "";
+    window.Telegram?.WebApp?.enableVerticalSwipes?.();
+  }
+});
 </script>
 
 <template>
@@ -50,24 +92,26 @@ const close = () => {
         v-if="isOpen"
         :class="
           cn(
-            'fixed inset-0 z-60 flex p-4 bg-black/10 backdrop-blur-sm',
+            'fixed inset-0 z-60 flex p-4 bg-black/10 backdrop-blur-sm transition-[padding] duration-200 ease-out',
             position === 'bottom'
               ? 'items-end justify-center sm:items-center'
               : 'items-center justify-center',
           )
         "
+        :style="containerStyle"
         @click.self="close"
       >
         <GlassCard
           :class="
             cn(
-              'w-full max-w-90 mb-3 p-5 flex flex-col gap-5 glass-milky',
+              'w-full max-w-90 mb-3 p-5 flex flex-col gap-5 glass-milky transition-[max-height] duration-200 ease-out',
               'max-h-[85dvh] overflow-y-auto scrollbar-hide',
               position === 'bottom'
                 ? 'animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200'
                 : 'animate-in zoom-in-95 duration-200',
             )
           "
+          :style="cardStyle"
         >
           <div
             v-if="title || showClose || $slots.header"
