@@ -142,7 +142,7 @@ const isSaving = ref(false);
 const saveError = ref("");
 
 const saveAll = async () => {
-  if (editableItems.value.length === 0) return;
+  if (editableItems.value.length === 0 || isSaving.value) return;
 
   isSaving.value = true;
   saveError.value = "";

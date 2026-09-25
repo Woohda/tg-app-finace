@@ -69,7 +69,7 @@ watch(
 
       setTimeout(() => {
         nameInputRef.value?.focus();
-      }, 100);
+      }, 380);
     }
   },
   { immediate: true },

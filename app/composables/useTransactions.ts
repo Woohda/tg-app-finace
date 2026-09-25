@@ -58,6 +58,7 @@ export const useTransactions = (options?: {
   });
 
   const pending = ref(!txCache.value[cacheKey.value]);
+  const isMutating = ref(false);
   const error = ref<unknown>(null);
 
   const fetchTransactions = async (force = false): Promise<void> => {
@@ -150,8 +151,9 @@ export const useTransactions = (options?: {
     date: string;
     name?: string | null;
   }) => {
-    if (pending.value)
+    if (isMutating.value)
       return { success: false, error: "Запрос уже выполняется" };
+    isMutating.value = true;
     try {
       const payload = {
         ...data,
@@ -188,6 +190,8 @@ export const useTransactions = (options?: {
     } catch (e: unknown) {
       console.error("Ошибка при добавлении:", e);
       return { success: false, error: parseApiError(e, "Ошибка сервера") };
+    } finally {
+      isMutating.value = false;
     }
   };
 
@@ -201,8 +205,9 @@ export const useTransactions = (options?: {
       name?: string | null;
     },
   ) => {
-    if (pending.value)
+    if (isMutating.value)
       return { success: false, error: "Запрос уже выполняется" };
+    isMutating.value = true;
     try {
       const updated = await api<Transaction>(`/api/transactions/${id}`, {
         method: "PATCH",
@@ -227,12 +232,15 @@ export const useTransactions = (options?: {
     } catch (e: unknown) {
       console.error("Ошибка при обновлении:", e);
       return { success: false, error: parseApiError(e, "Ошибка сервера") };
+    } finally {
+      isMutating.value = false;
     }
   };
 
   const deleteTransaction = async (id: string) => {
-    if (pending.value)
+    if (isMutating.value)
       return { success: false, error: "Запрос уже выполняется" };
+    isMutating.value = true;
     try {
       const deletedTx =
         txEntities.value[id] || transactions.value.find((t) => t.id === id);
@@ -259,11 +267,14 @@ export const useTransactions = (options?: {
     } catch (e: unknown) {
       console.error("Ошибка при удалении:", e);
       return { success: false, error: parseApiError(e, "Ошибка сервера") };
+    } finally {
+      isMutating.value = false;
     }
   };
 
   const addBulkTransactions = async (
     transactionsToSave: {
+      id?: string;
       amount: number;
       category_id: string;
       type: "income" | "expense" | string;
@@ -271,14 +282,24 @@ export const useTransactions = (options?: {
       name?: string;
     }[],
   ) => {
-    if (pending.value)
+    if (isMutating.value)
       return { success: false, error: "Запрос уже выполняется" };
+    isMutating.value = true;
     try {
+      const preparedTransactions = transactionsToSave.map((t) => ({
+        ...t,
+        id:
+          t.id ||
+          (typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : undefined),
+      }));
+
       const newTransactions = await api<Transaction[]>(
         "/api/transactions/bulk",
         {
           method: "POST",
-          body: { transactions: transactionsToSave },
+          body: { transactions: preparedTransactions },
         },
       );
 
@@ -306,12 +327,15 @@ export const useTransactions = (options?: {
     } catch (e: unknown) {
       console.error("Ошибка при массовом добавлении:", e);
       return { success: false, error: parseApiError(e, "Ошибка сервера") };
+    } finally {
+      isMutating.value = false;
     }
   };
 
   return {
     transactions,
     pending,
+    isMutating,
     error,
     refresh,
     addTransaction,

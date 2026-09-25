@@ -57,7 +57,7 @@ watch(isOpen, (newVal) => {
     fetchCategories();
     setTimeout(() => {
       amountInputRef.value?.focus();
-    }, 100);
+    }, 380);
   } else {
     // сбрасываем данные при закрытии
     setTimeout(() => {
@@ -105,6 +105,8 @@ watch(
 );
 
 const submit = async () => {
+  if (buttonState.value === "loading") return;
+
   const result = transactionSchema.safeParse({
     amount: parseAmount(amount.value),
     category_id: categoryId.value,

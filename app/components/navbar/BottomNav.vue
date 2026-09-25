@@ -8,7 +8,6 @@
  */
 import type { Component } from "vue";
 import { Home, ChartColumn, Plus, ReceiptText, Settings } from "@lucide/vue";
-import { useTransactionModal } from "~/composables/useTransactionModal";
 
 const route = useRoute();
 

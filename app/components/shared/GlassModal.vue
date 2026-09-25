@@ -13,7 +13,6 @@
 import { computed, watch, onUnmounted } from "vue";
 import { cn } from "~/utils";
 import { X } from "@lucide/vue";
-import { useKeyboardViewport } from "~/composables/useKeyboardViewport";
 
 interface Props {
   isOpen?: boolean;
@@ -43,14 +42,14 @@ const { keyboardHeight, isKeyboardOpen } = useKeyboardViewport();
 const containerStyle = computed(() => {
   if (!isKeyboardOpen.value || keyboardHeight.value <= 0) return undefined;
   return {
-    paddingBottom: `${keyboardHeight.value + 12}px`,
+    paddingBottom: `${keyboardHeight.value + 20}px`,
   };
 });
 
 const cardStyle = computed(() => {
   if (!isKeyboardOpen.value || keyboardHeight.value <= 0) return undefined;
   return {
-    maxHeight: `calc(100dvh - ${keyboardHeight.value + 36}px)`,
+    maxHeight: `calc(100dvh - ${keyboardHeight.value + 44}px)`,
   };
 });
 
@@ -81,7 +80,7 @@ onUnmounted(() => {
 <template>
   <Teleport to="body">
     <Transition
-      enter-active-class="transition duration-200 ease-out"
+      enter-active-class="transition duration-300 ease-out"
       enter-from-class="opacity-0"
       enter-to-class="opacity-100"
       leave-active-class="transition duration-200 ease-in"
@@ -92,7 +91,7 @@ onUnmounted(() => {
         v-if="isOpen"
         :class="
           cn(
-            'fixed inset-0 z-60 flex p-4 bg-black/10 backdrop-blur-sm transition-[padding] duration-200 ease-out',
+            'fixed inset-0 z-60 flex p-4 bg-black/10 backdrop-blur-sm transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
             position === 'bottom'
               ? 'items-end justify-center sm:items-center'
               : 'items-center justify-center',
@@ -102,13 +101,14 @@ onUnmounted(() => {
         @click.self="close"
       >
         <GlassCard
+          data-modal-card="true"
           :class="
             cn(
-              'w-full max-w-90 mb-3 p-5 flex flex-col gap-5 glass-milky transition-[max-height] duration-200 ease-out',
+              'w-full max-w-90 mb-2 p-5 flex flex-col gap-4 glass-milky transition-[max-height,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
               'max-h-[85dvh] overflow-y-auto scrollbar-hide',
               position === 'bottom'
-                ? 'animate-in slide-in-from-bottom-10 sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-200'
-                : 'animate-in zoom-in-95 duration-200',
+                ? 'animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-350 ease-[cubic-bezier(0.16,1,0.3,1)]'
+                : 'animate-in zoom-in-95 duration-250',
             )
           "
           :style="cardStyle"

@@ -10,7 +10,6 @@ import { ref, computed, watch, onBeforeUnmount } from "vue";
 import { Search, X, Check } from "@lucide/vue";
 import { cn } from "~/utils";
 import { getHapticFeedback } from "~/utils/haptics";
-import { useKeyboardViewport } from "~/composables/useKeyboardViewport";
 
 export interface CategoryOption {
   id: string;
@@ -43,13 +42,19 @@ const { keyboardHeight, isKeyboardOpen } = useKeyboardViewport();
 
 const searchQuery = ref("");
 const searchInputRef = ref<HTMLInputElement | null>(null);
+const isSearchFocused = ref(false);
 
-const sheetStyle = computed(() => {
-  if (!isKeyboardOpen.value || keyboardHeight.value <= 0) return undefined;
-  return {
-    bottom: `${keyboardHeight.value}px`,
-    maxHeight: `calc(100dvh - ${keyboardHeight.value + 40}px)`,
-  };
+const sheetContentStyle = computed(() => {
+  if (
+    isSearchFocused.value &&
+    isKeyboardOpen.value &&
+    keyboardHeight.value > 0
+  ) {
+    return {
+      paddingBottom: `${keyboardHeight.value + 16}px`,
+    };
+  }
+  return undefined;
 });
 
 const filteredCategories = computed(() => {
@@ -82,15 +87,14 @@ watch(
   (open) => {
     if (open) {
       searchQuery.value = "";
+      isSearchFocused.value = false;
       window.Telegram?.WebApp?.disableVerticalSwipes?.();
       if (typeof document !== "undefined") {
         document.body.style.overflow = "hidden";
         document.addEventListener("keydown", onKeydown);
       }
-      setTimeout(() => {
-        searchInputRef.value?.focus();
-      }, 200);
     } else {
+      isSearchFocused.value = false;
       window.Telegram?.WebApp?.enableVerticalSwipes?.();
       if (typeof document !== "undefined") {
         document.body.style.overflow = "";
@@ -114,10 +118,10 @@ onBeforeUnmount(() => {
   <Teleport to="body">
     <!-- Затемнение фона (Backdrop) -->
     <Transition
-      enter-active-class="transition duration-200 ease-out"
+      enter-active-class="transition duration-300 ease-out"
       enter-from-class="opacity-0"
       enter-to-class="opacity-100"
-      leave-active-class="transition duration-150 ease-in"
+      leave-active-class="transition duration-200 ease-in"
       leave-from-class="opacity-100"
       leave-to-class="opacity-0"
     >
@@ -128,19 +132,19 @@ onBeforeUnmount(() => {
       />
     </Transition>
 
-    <!-- Контейнер шторки -->
+    <!-- Контейнер шторки: плавное скольжение снизу-вверх -->
     <Transition
-      enter-active-class="transition duration-250 ease-out"
-      enter-from-class="translate-y-full opacity-0 sm:translate-y-4 sm:scale-95"
-      enter-to-class="translate-y-0 opacity-100 sm:translate-y-0 sm:scale-100"
-      leave-active-class="transition duration-200 ease-in"
-      leave-from-class="translate-y-0 opacity-100 sm:translate-y-0 sm:scale-100"
-      leave-to-class="translate-y-full opacity-0 sm:translate-y-4 sm:scale-95"
+      enter-active-class="transition-transform duration-350 ease-[cubic-bezier(0.16,1,0.3,1)]"
+      enter-from-class="translate-y-full"
+      enter-to-class="translate-y-0"
+      leave-active-class="transition-transform duration-250 ease-in"
+      leave-from-class="translate-y-0"
+      leave-to-class="translate-y-full"
     >
       <div
         v-if="isOpen"
-        class="fixed inset-x-0 bottom-0 z-75 flex flex-col max-h-[67dvh] max-w-90 sm:max-w-sm mx-auto sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 rounded-t-3xl sm:rounded-3xl glass-milky px-5 pt-3 pb-10 shadow-glass transition-[bottom,max-height] duration-200 ease-out"
-        :style="sheetStyle"
+        class="fixed inset-x-0 bottom-0 z-75 flex flex-col max-h-[72dvh] max-w-90 sm:max-w-sm mx-auto sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 rounded-t-3xl sm:rounded-3xl glass-milky px-5 pt-3 pb-8 shadow-glass transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        :style="sheetContentStyle"
       >
         <!-- Мобильный индикатор свайпа (Drag Handle) -->
         <div
@@ -174,6 +178,8 @@ onBeforeUnmount(() => {
             type="text"
             placeholder="Поиск категории..."
             class="w-full rounded-full pl-10 pr-9 py-2 glass-pill text-text-primary text-sm outline-none a11y-focus"
+            @focus="isSearchFocused = true"
+            @blur="isSearchFocused = false"
           />
           <button
             v-if="searchQuery"
