@@ -14,7 +14,7 @@
 import { computed, ref, watch } from "vue";
 import { Calendar } from "@lucide/vue";
 import type { Database } from "~/types/database.types";
-import { transactionFrontendSchema } from "~/types/validate";
+import { transactionSchema } from "~/types/validate";
 import { parseAmount } from "~/utils";
 import { formatZodError } from "~/utils/zod";
 
@@ -65,9 +65,9 @@ const filteredCategories = computed(() => {
 const save = () => {
   if (localItem.value) {
     const parsedAmount = parseAmount(localItem.value.amount);
-    const result = transactionFrontendSchema.safeParse({
+    const result = transactionSchema.safeParse({
       amount: parsedAmount,
-      categoryId: localItem.value.categoryId || "",
+      category_id: localItem.value.categoryId || "",
       date: localItem.value.date || "",
       type: localItem.value.type,
       name: localItem.value.name,
