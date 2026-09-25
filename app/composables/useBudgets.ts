@@ -1,11 +1,15 @@
 /**
  * @module app/composables/useBudgets
  * @fileoverview Управление месячным бюджетом пользователя
- *
  * @description
  * Загружает и обновляет лимит бюджета через API.
  * Все изменения мутируют глобальное состояние (`useGlobalBudget`),
  * чтобы данные мгновенно отображались по всему приложению.
+ * ---
+ * ### Логика работы:
+ * 1. Загрузка актуального бюджета через API (`fetchBudget`) с дедупликацией in-flight запросов.
+ * 2. Установка нового лимита бюджета через `setBudget`.
+ * 3. Расчет остатка (`remainder`), дневного ориентира (`dailyGuideline`) и дней до конца месяца через `getDaysLeftInMonth()`.
  */
 import { ref, computed, type Ref } from "vue";
 import { parseApiError } from "~/utils/api";
@@ -78,15 +82,11 @@ export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
   };
 
   const lastDayOfMonth = computed(() => {
-    const today = new Date();
-    const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    return last.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+    return formatLastDayOfMonth();
   });
 
   const daysLeft = computed(() => {
-    const today = new Date();
-    const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    return Math.max(1, last.getDate() - today.getDate() + 1);
+    return getDaysLeftInMonth();
   });
 
   const remainder = computed(() => {

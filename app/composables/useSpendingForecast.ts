@@ -9,9 +9,9 @@
  * ---
  * ### Логика работы:
  * 1. Загрузка списка подписок пользователя через `useSubscriptions`.
- * 2. Определение прошедших и оставшихся дней текущего календарного месяца.
+ * 2. Определение прошедших и оставшихся дней месяца через чистые функции `getDaysPassedInMonth()` и `getDaysInMonthCount()`.
  * 3. Фильтрация предстоящих подписок:
- *    - день списания больше сегодняшнего числа;
+ *    - день списания больше сегодняшнего числа (`getEffectiveDayOfMonth`);
  *    - день списания сегодня, но транзакция еще не внесена в базу.
  * 4. Вычисление средних ежедневных переменных трат (`avgDailyVariable = (totalSpent - pastSubscriptionsTotal) / daysPassed`).
  * 5. Расчет итогового прогноза: `totalSpent + avgDailyVariable * remainingDays + upcomingSubscriptionsTotal`.
@@ -41,13 +41,10 @@ export const useSpendingForecast = (options: SpendingForecastOptions) => {
 
   const daysPassed = computed(() => {
     if (!isCurrentMonthPeriod.value) return 0;
-    return new Date().getDate();
+    return getDaysPassedInMonth();
   });
 
-  const daysInMonth = computed(() => {
-    const now = new Date();
-    return new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
-  });
+  const daysInMonth = computed(() => getDaysInMonthCount());
 
   const remainingDays = computed(() => {
     return Math.max(0, daysInMonth.value - daysPassed.value);
@@ -57,9 +54,8 @@ export const useSpendingForecast = (options: SpendingForecastOptions) => {
   const upcomingSubscriptions = computed(() => {
     if (!isCurrentMonthPeriod.value) return [];
 
-    const now = new Date();
-    const todayDate = now.getDate();
-    const todayIso = now.toISOString().split("T")[0];
+    const todayDate = getDaysPassedInMonth();
+    const todayIso = formatDateISO();
 
     return subscriptions.value.filter((sub) => {
       if (!sub.is_active) return false;
@@ -67,7 +63,7 @@ export const useSpendingForecast = (options: SpendingForecastOptions) => {
         return false;
 
       // Ограничиваем плановый день количеством дней в месяце (например, 30 число в феврале -> 28/29)
-      const dueDay = Math.min(sub.day_of_month, daysInMonth.value);
+      const dueDay = getEffectiveDayOfMonth(sub.day_of_month);
 
       // 1. Если день платежа позже сегодняшнего числа месяца — ещё не наступил
       if (dueDay > todayDate) {
@@ -100,14 +96,14 @@ export const useSpendingForecast = (options: SpendingForecastOptions) => {
   // Платежи, которые уже наступили ранее в этом месяце
   const pastSubscriptionsTotal = computed(() => {
     if (!isCurrentMonthPeriod.value) return 0;
-    const todayDate = new Date().getDate();
+    const todayDate = getDaysPassedInMonth();
 
     return subscriptions.value
       .filter((sub) => {
         if (!sub.is_active) return false;
         if (categoryId?.value && sub.category_id !== categoryId.value)
           return false;
-        const dueDay = Math.min(sub.day_of_month, daysInMonth.value);
+        const dueDay = getEffectiveDayOfMonth(sub.day_of_month);
         return (
           dueDay <= todayDate &&
           !upcomingSubscriptions.value.some((u) => u.id === sub.id)

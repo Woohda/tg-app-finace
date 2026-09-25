@@ -87,31 +87,31 @@ export function buildAnalyticsChartData(
   if (expenses.length === 0) return [];
 
   const data: Record<string, number> = {};
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const start = toSafeDate(startDate);
+  const end = toSafeDate(endDate);
 
   const isDaily = ["1W", "1M"].includes(period);
 
   if (isDaily) {
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const key = `${d.getDate()} ${d.toLocaleString("ru", { month: "short" })}`;
+    for (let d = start; d <= end; d = addDaysSafe(d, 1)) {
+      const key = formatShortDayMonth(d);
       data[key] = 0;
     }
     expenses.forEach((t) => {
-      const d = new Date(t.date);
-      const key = `${d.getDate()} ${d.toLocaleString("ru", { month: "short" })}`;
+      const d = toSafeDate(t.date);
+      const key = formatShortDayMonth(d);
       if (data[key] !== undefined) {
         data[key] += t.amount;
       }
     });
   } else {
-    for (let d = new Date(start); d <= end; d.setMonth(d.getMonth() + 1)) {
-      const key = d.toLocaleString("ru", { month: "short" });
+    for (let d = startOfMonthSafe(start); d <= end; d = getNextMonth(d)) {
+      const key = formatShortMonth(d);
       data[key] = 0;
     }
     expenses.forEach((t) => {
-      const d = new Date(t.date);
-      const key = d.toLocaleString("ru", { month: "short" });
+      const d = toSafeDate(t.date);
+      const key = formatShortMonth(d);
       if (data[key] !== undefined) {
         data[key] += t.amount;
       }

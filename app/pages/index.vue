@@ -4,9 +4,14 @@
  * @fileoverview Главная страница приложения (Дашборд)
  * @description
  * Отображает сводную финансовую информацию пользователя:
- * - Остаток бюджета на месяц (BudgetRemainderCard)
- * - Распределение топ-5 расходов по категориям (ExpensesDonut)
- * - Список последних транзакций
+ * остаток бюджета, распределение расходов по категориям и список регулярных платежей за текущий месяц.
+ * ---
+ * ### Логика работы:
+ * 1. Форматирование даты приветствия в заголовке через `formatWeekdayAndDate()`.
+ * 2. Отображение карточки остатка бюджета на текущий месяц (BudgetRemainderCard).
+ * 3. Отображение сводки доходов и расходов за текущий месяц (MonthlySummary).
+ * 4. Визуализация распределения расходов по категориям (ExpensesDonut).
+ * 5. Список регулярных платежей за текущий месяц (SubscriptionDashboardCard).
  */
 import { computed, onMounted } from "vue";
 import { Bell } from "@lucide/vue";
@@ -33,15 +38,7 @@ onMounted(() => {
   }
 });
 
-const currentDate = computed(() => {
-  const d = new Date();
-  const weekday = d.toLocaleDateString("ru-RU", { weekday: "long" });
-  const dayMonth = d.toLocaleDateString("ru-RU", {
-    day: "numeric",
-    month: "long",
-  });
-  return `${weekday}, ${dayMonth}`;
-});
+const currentDate = computed(() => formatWeekdayAndDate());
 
 const userName = computed(() => {
   if (tgUser.value?.first_name) {

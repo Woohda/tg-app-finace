@@ -7,7 +7,7 @@
  * ---
  * ### Логика работы:
  * 1. `Authentication`: Проверка JWT токена и получение `userId`.
- * 2. `Date Math`: Расчет начала и конца текущего и прошлого месяцев.
+ * 2. `Date Math`: Расчет начала и конца текущего и прошлого месяцев через `getNow()`, `startOfMonthSafe()`, `endOfMonthSafe()` и `formatDateISO()`.
  * 3. `Database Query`: Выборка всех транзакций за два месяца с привязкой к категориям.
  * 4. `Aggregation`: Подсчет сумм расходов за этот и прошлый месяцы, вычисление среднего чека и группировка по категориям (Топ-3).
  *
@@ -28,24 +28,17 @@ export default defineEventHandler(async (event) => {
   const { userId, token } = await requireAuth(event);
   const supabase = getUserSupabase(token);
 
-  const now = new Date();
+  const now = getNow();
 
   // Текущий месяц
-  const currentMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
-  const daysInCurrentMonth = now.getDate() || 1; // Защита от деления на 0
+  const currentMonthStart = startOfMonthSafe(now);
+  const daysInCurrentMonth = getDaysPassedInMonth(now) || 1; // Защита от деления на 0
 
   // Прошлый месяц
-  const pastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-  const pastMonthEnd = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    0,
-    23,
-    59,
-    59,
-    999,
-  );
-  const daysInPastMonth = pastMonthEnd.getDate();
+  const pastMonthDate = getPrevMonth(now);
+  const pastMonthStart = startOfMonthSafe(pastMonthDate);
+  const pastMonthEnd = endOfMonthSafe(pastMonthDate);
+  const daysInPastMonth = getDaysInMonthCount(pastMonthDate);
 
   // Получаем все расходы с начала прошлого месяца
   const { data, error } = await supabase
@@ -53,8 +46,8 @@ export default defineEventHandler(async (event) => {
     .select("amount, date")
     .eq("user_id", userId)
     .eq("type", "expense")
-    .gte("date", pastMonthStart.toISOString().split("T")[0])
-    .lte("date", now.toISOString().split("T")[0]);
+    .gte("date", formatDateISO(pastMonthStart))
+    .lte("date", formatDateISO(now));
 
   if (error) {
     console.error("Ошибка при получении статистики:", error);
@@ -68,7 +61,7 @@ export default defineEventHandler(async (event) => {
   let pastMonthExpense = 0;
 
   for (const t of data || []) {
-    const d = new Date(t.date);
+    const d = toSafeDate(t.date);
     if (d >= currentMonthStart) {
       currentMonthExpense += t.amount;
     } else if (d >= pastMonthStart && d <= pastMonthEnd) {

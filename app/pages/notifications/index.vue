@@ -1,4 +1,16 @@
 <script setup lang="ts">
+/**
+ * @module app/pages/notifications
+ * @fileoverview Экран истории системных и финансовых уведомлений
+ * @description
+ * Отображает список уведомлений пользователя, сохраненных в локальном хранилище.
+ * Позволяет отмечать все уведомления как прочитанные и очищать историю.
+ * ---
+ * ### Логика работы:
+ * 1. Получение истории уведомлений из `useNotifications`.
+ * 2. Форматирование временных меток через чистую функцию `formatDateTime()`.
+ * 3. Группировка и стилизация иконок в зависимости от типа события (`expense`, `income`, `error`, `system`).
+ */
 import {
   ChevronLeft,
   Bell,
@@ -12,15 +24,7 @@ import {
 
 const { history, clear, hasUnread, markAllAsRead } = useNotifications();
 
-const formatDate = (isoStr: string) => {
-  const date = new Date(isoStr);
-  return new Intl.DateTimeFormat("ru-RU", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-};
+const formatDate = (isoStr: string) => formatDateTime(isoStr);
 
 // Выбор иконки в зависимости от типа
 const getIcon = (type: string) => {

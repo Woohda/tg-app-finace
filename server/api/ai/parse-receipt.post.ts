@@ -12,15 +12,16 @@
  * 4. `Response`: Возврат массива распознанных транзакций.
  *
  * ### Параметры запроса:
- * - `imageBase64: string` — base64-строка изображения (содержащая `data:image/...`).
+ * - `image: string` — base64-строка изображения чека.
+ * - `currentDate?: string` — локальная дата клиента для контекста распознавания дат операций.
  *
  * ### Ошибки:
- * - `400 Bad Request` — неверный формат изображения.
+ * - `400 Bad Request` — неверный формат входных данных или изображения.
  * - `401 Unauthorized` — нет доступа.
  * - `500 Internal Server Error` — ошибка AI, исчерпание лимитов или сбой парсинга JSON от LLM.
  *
- * ### Зависимости:
- * - `@google/genai` (SDK для Gemini)
+ * ### Особенности:
+ * - Формирует опорные даты (сегодня, вчера, позавчера) в локальном формате через `formatDateISO()` и `getPastDateISO()`.
  */
 import { GoogleGenAI, Type } from "@google/genai";
 
@@ -87,35 +88,17 @@ export default defineEventHandler(async (event) => {
 
   // Подготовка даты отсчета для промта (на основе переданной currentDate с клиента/дашборда или серверного времени)
   const clientDateRaw = body.data.currentDate?.trim();
-  let baseDate = new Date();
+  const baseDate = toSafeDate(clientDateRaw);
 
-  if (clientDateRaw) {
-    const parsed = new Date(clientDateRaw);
-    if (!isNaN(parsed.getTime())) {
-      baseDate = parsed;
-    }
-  }
+  const currentYear = getYear(baseDate);
+  const todayIso = formatDateISO(baseDate);
+  const yesterdayIso = getPastDateISO(1, baseDate);
+  const dayBeforeYesterdayIso = getPastDateISO(2, baseDate);
 
-  const currentYear = baseDate.getFullYear();
-  const todayIso = baseDate.toISOString().split("T")[0];
-  const yesterdayIso = new Date(baseDate.getTime() - 86400000)
-    .toISOString()
-    .split("T")[0];
-  const dayBeforeYesterdayIso = new Date(baseDate.getTime() - 172800000)
-    .toISOString()
-    .split("T")[0];
-
-  const weekdayMonthDay = baseDate.toLocaleDateString("ru-RU", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  const weekdayMonthDay = formatWeekdayAndDate(baseDate);
 
   // Человекочитаемое представление текущей даты (как на дашборде)
-  const currentDateDisplay =
-    clientDateRaw && isNaN(new Date(clientDateRaw).getTime())
-      ? `${clientDateRaw} (${weekdayMonthDay}, ${currentYear} года, ISO: ${todayIso})`
-      : `${weekdayMonthDay}, ${currentYear} года (ISO: ${todayIso})`;
+  const currentDateDisplay = `${weekdayMonthDay}, ${currentYear} года (ISO: ${todayIso})`;
 
   const prompt = `
 Ты — высокоточный финансовый OCR-аудитор. Твоя единственная цель — извлечь все фактические финансовые операции (расходы и доходы) с предоставленного изображения (кассовый/товарный чек, скриншот мобильного банка или банковская выписка) с максимальной достоверностью и строгим соблюдением структуры.

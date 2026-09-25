@@ -1,14 +1,14 @@
 /**
  * @module app/composables/useNotifications
- * @fileoverview Управление уведомлениями (Toast-сообщениями)
- *
+ * @fileoverview Управление историей уведомлений приложения
  * @description
  * Обеспечивает сохранение истории уведомлений в `localStorage` и предоставляет
- * методы для их добавления и очистки. Используется в связке с `ToastContainer.vue`.
- *
+ * методы для их добавления, прочтения и очистки. Используется в связке с `ToastContainer.vue`.
+ * ---
  * ### Логика работы:
- * 1. Хранит историю в `localStorage` (`app-notifications`).
- * 2. Метод `add` создает уведомление с уникальным ID.
+ * 1. Хранит историю уведомлений в `localStorage` (`app-notifications`, до 50 записей).
+ * 2. Метод `add` создает уведомление со штампом времени `getNow().toISOString()`.
+ * 3. Отслеживает наличие непрочитанных записей через `hasUnread`.
  */
 import { useLocalStorage } from "@vueuse/core";
 import { computed } from "vue";
@@ -39,7 +39,7 @@ export const useNotifications = () => {
       title,
       message: options?.message,
       type: options?.type || "system",
-      date: new Date().toISOString(),
+      date: getNow().toISOString(),
       isRead: false,
     };
 

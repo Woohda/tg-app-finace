@@ -1,31 +1,31 @@
 /**
  * @module app/composables/useDateFilter
  * @fileoverview Управление фильтрацией данных по датам (по месяцам)
- * 
  * @description
- * Предоставляет реактивное состояние для текущего выбранного месяца 
- * и вычисляет начало (`startDate`) и конец (`endDate`) этого месяца с помощью `date-fns`.
- * Включает методы для переключения на следующий и предыдущий месяц.
- * 
- * ### Логика:
- * - `startDate`: 1-е число текущего месяца, 00:00:00 (startOfMonth).
- * - `endDate`: Последнее число текущего месяца, 23:59:59.999 (endOfMonth).
+ * Предоставляет реактивное состояние для текущего выбранного месяца
+ * и вычисляет границы начала (`startDate`) и конца (`endDate`) месяца.
+ * Включает методы для переключения между месяцами через `getNextMonth` и `getPrevMonth`.
+ * ---
+ * ### Логика работы:
+ * 1. Инициализация текущей даты от `getNow()`.
+ * 2. Вычисление `startDate` (1-е число месяца) и `endDate` (последнее число месяца).
+ * 3. Навигация `nextMonth()` и `prevMonth()` без перескока через крайние числа.
  */
 import { ref, computed } from "vue";
-import { startOfMonth, endOfMonth, addMonths, subMonths } from "date-fns";
+import { startOfMonth, endOfMonth } from "date-fns";
 
 export const useDateFilter = () => {
-  const currentDate = ref(new Date());
+  const currentDate = ref(getNow());
 
   const startDate = computed(() => startOfMonth(currentDate.value));
   const endDate = computed(() => endOfMonth(currentDate.value));
 
   const nextMonth = () => {
-    currentDate.value = addMonths(currentDate.value, 1);
+    currentDate.value = getNextMonth(currentDate.value);
   };
 
   const prevMonth = () => {
-    currentDate.value = subMonths(currentDate.value, 1);
+    currentDate.value = getPrevMonth(currentDate.value);
   };
 
   return {

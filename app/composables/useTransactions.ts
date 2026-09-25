@@ -43,10 +43,10 @@ export const useTransactions = (options?: {
   const query = computed(() => {
     const q: Record<string, string> = {};
     if (options?.startDate?.value) {
-      q.startDate = options.startDate.value.toISOString();
+      q.startDate = formatDateISO(options.startDate.value);
     }
     if (options?.endDate?.value) {
-      q.endDate = options.endDate.value.toISOString();
+      q.endDate = formatDateISO(options.endDate.value);
     }
     return q;
   });

@@ -1,26 +1,19 @@
 /**
  * @module app/composables/useTransactionView
  * @fileoverview Управление фильтрацией и агрегацией транзакций
- *
  * @description
  * Принимает реактивный список транзакций и предоставляет computed свойства
  * для агрегации данных (доходы, расходы, баланс) за выбранный месяц.
  * Также рассчитывает процент выполнения бюджета.
- *
- * ### Логика:
- * - Выполняет фильтрацию по дням/неделям для списков.
- * - Выполняет подсчет `monthlyExpense` и `monthlyIncome` для аналитики.
- * - Сравнивает `monthlyExpense` с `monthlyBudget` для прогресс-бара.
+ * ---
+ * ### Логика работы:
+ * 1. Фильтрация транзакций по периодам («День», «Неделя», «Месяц») относительно `currentDate` без сдвига часовых поясов (`toSafeDate`).
+ * 2. Подсчет суммарных расходов `monthlyExpense` и доходов `monthlyIncome`.
+ * 3. Сопоставление расходов с бюджетом `monthlyBudget` для расчета процента прогресс-бара.
  */
 import { ref, computed, watch } from "vue";
 import type { Ref, ComputedRef } from "vue";
-import {
-  startOfDay,
-  subDays,
-  startOfMonth,
-  endOfMonth,
-  isSameMonth,
-} from "date-fns";
+import { startOfDay, subDays, startOfMonth } from "date-fns";
 import type { Transaction } from "./useTransactions";
 
 export type PeriodType = "day" | "week" | "month";
@@ -34,7 +27,7 @@ export interface PeriodOption {
  * Возвращает timestamp начала периода относительно базовой даты.
  * Вынесено в чистую функцию для тестируемости.
  */
-function getPeriodStart(period: PeriodType, baseDate: Date = new Date()): Date {
+function getPeriodStart(period: PeriodType, baseDate: Date = getNow()): Date {
   const start = startOfDay(baseDate);
 
   if (period === "day") {
@@ -58,8 +51,8 @@ export const useTransactionView = (
     watch(
       options.currentDate,
       (newDate) => {
-        const isCurrentMonth = isSameMonth(newDate, new Date());
-        activePeriod.value = isCurrentMonth ? "week" : "month";
+        const isCurrent = isCurrentMonth(newDate);
+        activePeriod.value = isCurrent ? "week" : "month";
       },
       { immediate: true },
     );
@@ -78,18 +71,15 @@ export const useTransactionView = (
       return transactions.value; // Бэкенд уже вернул нужный месяц
     }
 
-    const base = options?.currentDate?.value
-      ? new Date(options.currentDate.value)
-      : new Date();
+    const base = toSafeDate(options?.currentDate?.value);
 
-    const now = new Date();
-    const isCurrentMonth = isSameMonth(base, now);
+    const isCurrent = isCurrentMonth(base);
 
     // Для текущего месяца считаем от сегодня, для архивных месяцев — от последнего дня того месяца
-    const targetDate = isCurrentMonth ? now : endOfMonth(base);
+    const targetDate = isCurrent ? getNow() : endOfMonthSafe(base);
 
     const periodStart = getPeriodStart(activePeriod.value, targetDate);
-    return transactions.value.filter((t) => new Date(t.date) >= periodStart);
+    return transactions.value.filter((t) => toSafeDate(t.date) >= periodStart);
   });
 
   const emptyMessage = computed<string>(() => {

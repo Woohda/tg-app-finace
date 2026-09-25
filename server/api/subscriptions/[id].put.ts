@@ -2,7 +2,22 @@
  * @module server/api/subscriptions/[id].put
  * @fileoverview Серверный обработчик PUT-запроса для обновления регулярного платежа
  * @description
- * Обновляет существующий регулярный платеж пользователя по его ID.
+ * Обновляет существующий регулярный платеж пользователя по его ID:
+ * название, сумму, день месяца (1..31), статус активности и категорию.
+ * ---
+ * ### Логика работы:
+ * 1. `Authentication`: Проверка JWT токена и получение `userId`.
+ * 2. `Validation`: Валидация входного тела через `subscriptionUpdateSchema`.
+ * 3. `Database Update`: Обновление записи в таблице `subscriptions` с установкой `updated_at = getNow().toISOString()`.
+ * 4. `Response`: Возврат обновленного объекта подписки с объединенными данными категории.
+ *
+ * ### Параметры запроса:
+ * - `id: string` — UUID регулярного платежа в URL маршрута.
+ *
+ * ### Ошибки:
+ * - `400 Bad Request`: Не передан ID или ошибка валидации данных.
+ * - `401 Unauthorized`: Отсутствует или недействителен JWT токен.
+ * - `500 Internal Server Error`: Ошибка базы данных при обновлении.
  */
 import type { Database } from "~~/app/types/database.types";
 import { subscriptionUpdateSchema } from "~/types/validate";
@@ -38,7 +53,7 @@ export default defineEventHandler(async (event) => {
   const { name, amount, day_of_month, category_id, is_active } = body.data;
 
   const updateData: SubscriptionUpdate = {
-    updated_at: new Date().toISOString(),
+    updated_at: getNow().toISOString(),
   };
 
   if (name !== undefined) updateData.name = name.trim();

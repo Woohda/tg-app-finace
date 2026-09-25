@@ -104,16 +104,11 @@ export const useAnalyticsData = (
     calculatePercentChange(totalIncome.value, prevTotalIncome.value),
   );
 
-  const currentDay = computed(() => new Date().getDate());
+  const currentDay = computed(() => getDayOfMonth());
 
   // Проверяем, является ли выбранный период текущим месяцем
   const isCurrentMonthPeriod = computed(() => {
-    if (period.value !== "1M") return false;
-    const now = new Date();
-    return (
-      endDate.value.getFullYear() === now.getFullYear() &&
-      endDate.value.getMonth() === now.getMonth()
-    );
+    return period.value === "1M" && isCurrentMonth(endDate.value);
   });
 
   // Прогноз расходов и плановые списания
