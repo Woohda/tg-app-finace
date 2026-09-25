@@ -20,8 +20,9 @@ export default defineNuxtPlugin(async () => {
   try {
     tg.ready();
     tg.expand();
+    tg.disableVerticalSwipes?.();
   } catch (err) {
-    console.warn("[Telegram Plugin] Ошибка при вызове ready/expand:", err);
+    console.warn("[Telegram Plugin] Ошибка при вызове ready/expand/disableVerticalSwipes:", err);
   }
 
   const { isAuthenticated, loginWithTelegram } = useAuth();

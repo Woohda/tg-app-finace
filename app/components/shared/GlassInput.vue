@@ -48,13 +48,17 @@ const focus = () => {
 
 const handleFocus = (e: FocusEvent) => {
   isFocused.value = true;
-  // Задержка позволяет клавиатуре выехать и изменить размер окна
+  // Плавная прокрутка к полю только если оно скрыто, без рывков внешнего окна
   setTimeout(() => {
-    (e.target as HTMLElement)?.scrollIntoView({
-      behavior: "smooth",
-      block: "center",
-    });
-  }, 300);
+    const el = e.target as HTMLElement | null;
+    if (el && typeof el.scrollIntoView === "function") {
+      el.scrollIntoView({
+        behavior: "smooth",
+        block: "nearest",
+        inline: "nearest",
+      });
+    }
+  }, 200);
 };
 
 defineExpose({ focus });

@@ -21,7 +21,7 @@ export default defineNuxtConfig({
         {
           name: "viewport",
           content:
-            "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover",
+            "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content",
         },
       ],
       script: [
@@ -53,6 +53,7 @@ export default defineNuxtConfig({
     geminiApiKey: process.env.GEMINI_API_KEY,
     geminiApiKey2: process.env.GEMINI_API_KEY2,
     adminTgId: process.env.ADMIN_TG_ID,
+    cronSecret: process.env.CRON_SECRET,
   },
   supabase: {
     // Отключаем встроенный редирект на /login — авторизация через собственный JWT
