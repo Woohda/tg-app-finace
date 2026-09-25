@@ -7,7 +7,7 @@
  * позволяет создавать, редактировать и удалять платежи со свайпом.
  */
 import { ref, onMounted } from "vue";
-import { ChevronLeft, Plus, CalendarClock } from "@lucide/vue";
+import { ChevronLeft, Plus, CalendarClock, Flame } from "@lucide/vue";
 import { formatAmount } from "~/utils/format";
 import {
   useSubscriptions,
