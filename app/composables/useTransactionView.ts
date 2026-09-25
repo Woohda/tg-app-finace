@@ -1,12 +1,12 @@
 /**
  * @module app/composables/useTransactionView
  * @fileoverview Управление фильтрацией и агрегацией транзакций
- * 
+ *
  * @description
  * Принимает реактивный список транзакций и предоставляет computed свойства
  * для агрегации данных (доходы, расходы, баланс) за выбранный месяц.
  * Также рассчитывает процент выполнения бюджета.
- * 
+ *
  * ### Логика:
  * - Выполняет фильтрацию по дням/неделям для списков.
  * - Выполняет подсчет `monthlyExpense` и `monthlyIncome` для аналитики.
@@ -89,9 +89,7 @@ export const useTransactionView = (
     const targetDate = isCurrentMonth ? now : endOfMonth(base);
 
     const periodStart = getPeriodStart(activePeriod.value, targetDate);
-    return transactions.value.filter(
-      (t) => new Date(t.date) >= periodStart,
-    );
+    return transactions.value.filter((t) => new Date(t.date) >= periodStart);
   });
 
   const emptyMessage = computed<string>(() => {
@@ -126,11 +124,7 @@ export const useTransactionView = (
 
   const balance = computed(() => monthlyIncome.value - monthlyExpense.value);
 
-  // --- Бюджет ---
-  const { budget: monthlyBudget, fetchBudget } = useBudgets();
-  
-  // Инициализируем загрузку бюджета
-  fetchBudget();
+  const { budget: monthlyBudget } = useBudgets();
 
   const monthlyBudgetPercent = computed(() => {
     if (monthlyBudget.value <= 0) return 0;

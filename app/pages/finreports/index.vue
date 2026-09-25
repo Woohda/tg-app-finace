@@ -28,6 +28,14 @@ const {
   monthlyBudgetPercent,
 } = useTransactionView(transactions, { currentDate });
 
+const { fetchBudget } = useBudgets();
+
+onMounted(() => {
+  if (!monthlyBudget.value) {
+    fetchBudget();
+  }
+});
+
 const deletingId = ref<string | null>(null);
 
 async function handleDelete(id: string) {

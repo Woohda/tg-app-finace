@@ -10,6 +10,8 @@
 import { ref, computed, type Ref } from "vue";
 import { parseApiError } from "~/utils/api";
 
+let inFlightFetch: Promise<void> | null = null;
+
 export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
   const { token } = useAuth();
   const api = useApi();
@@ -21,22 +23,28 @@ export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
   const error = ref<string | null>(null);
 
   const fetchBudget = async () => {
-    if (!token.value || isLoading.value) return;
+    if (!token.value) return;
+    if (inFlightFetch) return inFlightFetch;
 
     isLoading.value = true;
     error.value = null;
 
-    try {
-      const data = await api<{ amount: number }>("/api/budgets");
-      if (data && data.amount > 0) {
-        budget.value = data.amount;
+    inFlightFetch = (async () => {
+      try {
+        const data = await api<{ amount: number }>("/api/budgets");
+        if (data && data.amount > 0) {
+          budget.value = data.amount;
+        }
+      } catch (e: unknown) {
+        console.error("Ошибка загрузки бюджета:", e);
+        error.value = parseApiError(e, "Не удалось загрузить бюджет");
+      } finally {
+        isLoading.value = false;
+        inFlightFetch = null;
       }
-    } catch (e: unknown) {
-      console.error("Ошибка загрузки бюджета:", e);
-      error.value = parseApiError(e, "Не удалось загрузить бюджет");
-    } finally {
-      isLoading.value = false;
-    }
+    })();
+
+    return inFlightFetch;
   };
 
   const updateBudget = async (amount: number) => {
