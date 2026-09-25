@@ -13,7 +13,7 @@
  * 3. Отрисовывает список элементов.
  */
 import { computed } from "vue";
-import type { CategoryStat } from "~/composables/useAnalyticsData";
+import type { CategoryStat } from "~/utils/analytics";
 import { formatAmount } from "~/utils";
 import { ChevronRight } from "@lucide/vue";
 
