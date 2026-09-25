@@ -9,6 +9,7 @@
 import { ref, computed, watch } from "vue";
 import { Calendar, RussianRuble, Plus, Sparkles } from "@lucide/vue";
 import { subscriptionSchema } from "~/types/validate";
+import { parseAmount } from "~/utils";
 import { formatZodError } from "~/utils/zod";
 import type { Subscription } from "~/composables/useSubscriptions";
 
@@ -27,7 +28,7 @@ const { categories, fetchCategories } = useCategories();
 const { createSubscription, updateSubscription } = useSubscriptions();
 
 const name = ref("");
-const amount = ref<number | "">("");
+const amount = ref<string | number>("");
 const dayOfMonth = ref<number | "">("");
 const categoryId = ref<string>("");
 const errorMsg = ref("");
@@ -39,6 +40,12 @@ const nameInputRef = ref<{ focus: () => void } | null>(null);
 const expenseCategories = computed(() =>
   categories.value.filter((c) => c.type === "expense"),
 );
+
+watch(amount, () => {
+  if (errorMsg.value) {
+    errorMsg.value = "";
+  }
+});
 
 watch(
   () => props.isOpen,
@@ -71,7 +78,7 @@ watch(
 const submit = async () => {
   const parseResult = subscriptionSchema.safeParse({
     name: name.value,
-    amount: Number(amount.value),
+    amount: parseAmount(amount.value),
     day_of_month: Number(dayOfMonth.value),
     category_id: categoryId.value || null,
   });

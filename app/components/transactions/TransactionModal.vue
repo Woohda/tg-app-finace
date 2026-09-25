@@ -17,6 +17,7 @@ import { useRouter } from "vue-router";
 
 import { Calendar, RussianRuble, Camera } from "@lucide/vue";
 import { transactionFrontendSchema } from "~/types/validate";
+import { parseAmount } from "~/utils";
 import { formatZodError } from "~/utils/zod";
 
 const router = useRouter();
@@ -28,7 +29,7 @@ const { isOpen, editId, closeModal } = useTransactionModal();
 const isEditMode = computed(() => !!editId.value);
 
 const type = ref<"expense" | "income">("expense");
-const amount = ref<number | "">("");
+const amount = ref<string | number>("");
 const categoryId = ref<string>("");
 const name = ref<string>("");
 const date = ref<string>(new Date().toISOString().split("T")[0] as string); // YYYY-MM-DD
@@ -78,6 +79,12 @@ const filteredCategories = computed(() => {
 const buttonState = ref<"idle" | "loading" | "success">("idle");
 const errorMsg = ref("");
 
+watch(amount, () => {
+  if (errorMsg.value) {
+    errorMsg.value = "";
+  }
+});
+
 watch(
   [editId, transactions, isOpen],
   () => {
@@ -99,7 +106,7 @@ watch(
 
 const submit = async () => {
   const result = transactionFrontendSchema.safeParse({
-    amount: Number(amount.value),
+    amount: parseAmount(amount.value),
     categoryId: categoryId.value,
     date: date.value,
     type: type.value,
