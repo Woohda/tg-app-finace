@@ -33,6 +33,7 @@ const {
   percentChange,
   forecast,
   avgDaily,
+  upcomingSubscriptionsTotal,
   categoryStats,
   chartData,
 } = useAnalyticsData(period, startDate, endDate, prevStartDate, prevEndDate);
@@ -132,7 +133,7 @@ const closeCategoryAnalytics = () => {
       </div>
       <!-- Прогноз (только для месяца) -->
       <GlassCard
-        v-if="forecast !== null && avgDaily > 0"
+        v-if="forecast !== null && (avgDaily > 0 || forecast > 0)"
         class="flex-1 p-5 flex items-center gap-5"
       >
         <!-- Объемный сферический стеклянный шар (Liquid Sphere Component) -->
@@ -162,6 +163,12 @@ const closeCategoryAnalytics = () => {
               class="mt-px text-text-secondary text-[11px] leading-tight"
             >
               В {{ monthsLabel }}: {{ formatAmount(prevAvgDaily) }}/день
+            </span>
+            <span
+              v-if="upcomingSubscriptionsTotal > 0"
+              class="mt-1 text-text-secondary text-[11px] leading-tight"
+            >
+              План. платежи: {{ formatAmount(upcomingSubscriptionsTotal) }}
             </span>
           </div>
 
