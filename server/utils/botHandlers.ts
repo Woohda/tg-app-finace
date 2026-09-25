@@ -123,7 +123,82 @@ export async function handleBotTextMessage(ctx: Context) {
 export async function handleBotCallbackQuery(ctx: Context) {
   if (!ctx.callbackQuery || !ctx.callbackQuery.data) return;
   const data = ctx.callbackQuery.data;
-  
+
+  // Обработка кнопки подтверждения регулярного платежа
+  if (data.startsWith("pay_sub:")) {
+    const subscriptionId = data.replace("pay_sub:", "");
+    const supabase = getBotSupabase();
+
+    const { data: sub } = await supabase
+      .from("subscriptions")
+      .select("id, name, amount, category_id, user_id")
+      .eq("id", subscriptionId)
+      .single();
+
+    if (!sub) {
+      await ctx.answerCallbackQuery({
+        text: "Регулярный платёж не найден или был удалён",
+        show_alert: true,
+      });
+      return;
+    }
+
+    let categoryId = sub.category_id;
+    if (!categoryId) {
+      const { data: defaultCat } = await supabase
+        .from("categories")
+        .select("id")
+        .or(`user_id.eq.${sub.user_id},user_id.is.null`)
+        .eq("type", "expense")
+        .limit(1)
+        .maybeSingle();
+
+      if (defaultCat) {
+        categoryId = defaultCat.id;
+      }
+    }
+
+    if (!categoryId) {
+      await ctx.answerCallbackQuery({
+        text: "Категория для платежа не найдена",
+        show_alert: true,
+      });
+      return;
+    }
+
+    const date = new Date().toISOString().split("T")[0]!;
+
+    const { error: insertError } = await supabase.from("transactions").insert({
+      user_id: sub.user_id,
+      amount: Number(sub.amount),
+      name: `Платёж: ${sub.name}`,
+      category_id: categoryId,
+      type: "expense",
+      date,
+    });
+
+    if (insertError) {
+      console.error("Ошибка при сохранении регулярного платежа:", insertError);
+      await ctx.answerCallbackQuery({
+        text: "Ошибка при внесении платежа в базу данных",
+        show_alert: true,
+      });
+      return;
+    }
+
+    await ctx.answerCallbackQuery({ text: "Платёж внесён в расходы! 💸" });
+
+    try {
+      await ctx.editMessageText(
+        `✅ Платёж «<b>${sub.name}</b>» на сумму <b>${sub.amount} ₽</b> успешно внесён в расходы за ${date}!`,
+        { parse_mode: "HTML" },
+      );
+    } catch {
+      // Игнорируем ошибку редактирования, если сообщение уже изменено
+    }
+    return;
+  }
+
   if (!data.startsWith("cat|")) return;
 
   const parts = data.split("|");

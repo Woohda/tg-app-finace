@@ -10,7 +10,6 @@
  * ### Логика:
  * - `balanceHistory`: Аккумулирует изменения баланса по датам для графика.
  * - `expensesByCategory`: Группирует расходы по категориям, возвращает топ-5 с присвоенными цветами.
- * - `recentTransactions`: Возвращает 5 последних транзакций.
  */
 import { computed } from "vue";
 import type { Ref, ComputedRef } from "vue";
@@ -74,8 +73,6 @@ export const useDashboardStats = (
     }));
   });
 
-  const recentTransactions = computed(() => transactions.value.slice(0, 5));
-
   // Запрашиваем агрегированную статистику с бэкенда
   const { token } = useAuth();
   const txVersion = useGlobalTransactionsVersion();
@@ -92,7 +89,6 @@ export const useDashboardStats = (
   return {
     balanceHistory,
     expensesByCategory,
-    recentTransactions,
     dashboardStats,
     statsPending,
   };

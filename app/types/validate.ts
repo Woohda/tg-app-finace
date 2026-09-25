@@ -73,3 +73,25 @@ export const parseReceiptSchema = z.object({
 export const bulkTransactionSchema = z.object({
   transactions: z.array(transactionBackendSchema),
 });
+
+// --- Subscriptions ---
+export const subscriptionSchema = z.object({
+  id: z.string().uuid().optional(),
+  name: z
+    .string()
+    .min(1, "Введите название платежа")
+    .max(100, "Название слишком длинное"),
+  amount: z.number().positive("Введите корректную сумму"),
+  day_of_month: z
+    .number()
+    .int("День должен быть целым числом")
+    .min(1, "День должен быть от 1 до 31")
+    .max(31, "День должен быть от 1 до 31"),
+  category_id: z.string().uuid().nullable().optional(),
+  is_active: z.boolean().optional(),
+});
+
+export const subscriptionUpdateSchema = subscriptionSchema.partial().refine(
+  (data) => Object.keys(data).length > 0,
+  { message: "Нет данных для обновления" },
+);
