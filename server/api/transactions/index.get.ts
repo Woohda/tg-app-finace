@@ -8,7 +8,7 @@
  * ### Логика работы:
  * 1. `Authentication`: Проверка JWT токена и получение `userId`.
  * 2. `Query Parsing`: Чтение параметров `startDate` и `endDate` (или установка дефолтного диапазона от `getPrevMonth()` до `formatDateISO()`).
- * 3. `Database Query`: Выборка транзакций пользователя с джойном категорий (`category:categories(name, type, icon)`).
+ * 3. `Database Query`: Выборка транзакций пользователя через `TRANSACTION_SELECT_FIELDS` (джойн `categories (id, name, icon)`).
  * 4. `Formatting`: Прогон результатов через `formatTransaction` для приведения типов (amount).
  *
  * ### Параметры запроса:
@@ -37,21 +37,7 @@ export default defineEventHandler(async (event) => {
 
   const { data, error } = await supabase
     .from("transactions")
-    .select(
-      `
-      id,
-      amount,
-      type,
-      name,
-      date,
-      created_at,
-      categories (
-        id,
-        name,
-        icon
-      )
-    `,
-    )
+    .select(TRANSACTION_SELECT_FIELDS)
     .eq("user_id", userId)
     .gte("date", startDateStr)
     .lte("date", endDateStr)

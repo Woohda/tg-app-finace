@@ -9,7 +9,7 @@
  * 1. `Authentication`: Проверка JWT токена и получение `userId`.
  * 2. `Validation`: Валидация входного тела через `subscriptionUpdateSchema`.
  * 3. `Database Update`: Обновление записи в таблице `subscriptions` с установкой `updated_at = getNow().toISOString()`.
- * 4. `Response`: Возврат обновленного объекта подписки с объединенными данными категории.
+ * 4. `Response`: Возврат обновленного объекта подписки, выбранного через `SUBSCRIPTION_SELECT_FIELDS`.
  *
  * ### Параметры запроса:
  * - `id: string` — UUID регулярного платежа в URL маршрута.
@@ -67,23 +67,7 @@ export default defineEventHandler(async (event) => {
     .update(updateData)
     .eq("id", id)
     .eq("user_id", userId)
-    .select(
-      `
-      id,
-      name,
-      amount,
-      day_of_month,
-      is_active,
-      created_at,
-      updated_at,
-      category_id,
-      categories (
-        id,
-        name,
-        icon
-      )
-    `,
-    )
+    .select(SUBSCRIPTION_SELECT_FIELDS)
     .single();
 
   if (error || !data) {

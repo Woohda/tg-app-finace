@@ -7,15 +7,16 @@
  * ### Логика работы:
  * 1. `Authentication`: Проверка JWT токена и извлечение `userId`.
  * 2. `Validation`: Чтение `id` из URL и валидация тела через Zod (`transactionPatchSchema`).
- * 3. `Database Update`: Обновление переданных полей в БД с привязкой к `user_id`.
+ * 3. `Database Update`: Обновление переданных полей в БД с привязкой к `user_id` и выборка через `TRANSACTION_SELECT_FIELDS`.
  *
  * ### Параметры запроса:
- * - `id` (в URL) — идентификатор транзакции.
- * - В теле запроса могут быть: `amount`, `category_id`, `date`, `description`, `type`.
+ * - `id: string` (в URL) — UUID транзакции.
+ * - В теле запроса (опционально): `amount`, `category_id`, `date`, `name`, `type`.
  *
  * ### Ошибки:
  * - `400 Bad Request`: Ошибка валидации данных или отсутствие ID.
  * - `401 Unauthorized`: Отсутствует или недействителен JWT токен.
+ * - `404 Not Found`: Транзакция с указанным ID не найдена.
  * - `500 Internal Server Error`: Ошибка выполнения обновления в БД.
  *
  * ### Особенности:
@@ -66,21 +67,7 @@ export default defineEventHandler(async (event) => {
     .update(updateData)
     .eq("id", id)
     .eq("user_id", userId)
-    .select(
-      `
-      id,
-      amount,
-      type,
-      name,
-      date,
-      created_at,
-      categories (
-        id,
-        name,
-        icon
-      )
-    `,
-    )
+    .select(TRANSACTION_SELECT_FIELDS)
     .single();
 
   if (error || !data) {
