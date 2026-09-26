@@ -18,7 +18,7 @@
  * 3. Отрисовка SVG кольца, бликов и теней на основе вычисленных данных.
  */
 import { computed } from "vue";
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 
 import { ChartColumn } from "@lucide/vue";
 
@@ -55,9 +55,10 @@ const { segments, radius, strokeWidth } = useDonutMath(
 <template>
   <GlassCard>
     <div class="flex justify-between items-center mb-3">
-      <h3 class="text-xl font-extrabold text-text-primary">Расходы</h3>
+      <h2 class="text-xl font-extrabold text-text-primary">Расходы</h2>
       <NuxtLink
         to="/analytics"
+        aria-label="Подробная аналитика расходов"
         class="text-text-secondary a11y-focus rounded-md"
       >
         <ChartColumn :stroke-width="1.5" />
@@ -79,6 +80,8 @@ const { segments, radius, strokeWidth } = useDonutMath(
           <svg
             class="w-full h-full -rotate-90 transform overflow-visible"
             viewBox="0 0 160 160"
+            role="img"
+            aria-label="Диаграмма расходов по категориям"
           >
             <defs>
               <filter
@@ -234,14 +237,15 @@ const { segments, radius, strokeWidth } = useDonutMath(
               top: `${seg.iconY}%`,
             }"
           >
-            <component
-              :is="seg.IconComponent"
-              class="text-xs text-white"
+            <span
+              class="inline-flex items-center justify-center leading-none text-xs text-white"
               style="
                 filter: drop-shadow(0px 1px 3px rgba(255, 255, 255, 0.3));
                 opacity: 0.8;
               "
-            />
+            >
+              {{ seg.icon || "❔" }}
+            </span>
           </div>
 
           <Transition appear name="fade-in">

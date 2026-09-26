@@ -25,14 +25,19 @@ const colors = {
 </script>
 
 <template>
-  <!-- Контейнер фиксирован поверх всего, z-index 9999 -->
+  <!-- Контейнер фиксирован поверх всего (Z_INDEX.TOAST) -->
   <div
-    class="fixed top-4 left-0 right-0 z-9999 px-4 pointer-events-none flex flex-col items-center gap-3"
+    class="fixed top-4 left-0 right-0 px-4 pointer-events-none flex flex-col items-center gap-3"
+    :style="{ zIndex: Z_INDEX.TOAST }"
+    role="region"
+    aria-label="Всплывающие уведомления"
+    aria-live="polite"
   >
     <TransitionGroup name="toast">
       <div
         v-for="toast in toasts"
         :key="toast.id"
+        :role="toast.type === 'error' ? 'alert' : 'status'"
         class="w-full max-w-sm glass-milky rounded-2xl p-4 flex items-center gap-2 shadow-lg pointer-events-auto transition-all"
       >
         <!-- Иконка -->
@@ -56,7 +61,9 @@ const colors = {
 
         <!-- Кнопка закрытия -->
         <button
-          class="shrink-0 p-1 text-text-secondary active:scale-95 transition-transform"
+          type="button"
+          aria-label="Закрыть уведомление"
+          class="shrink-0 p-1 text-text-secondary active:scale-95 transition-transform outline-none a11y-focus rounded-full cursor-pointer"
           @click="remove(toast.id)"
         >
           <X class="w-5 h-5" :stroke-width="1.5" />

@@ -4,14 +4,19 @@
  * @fileoverview Главная страница приложения (Дашборд)
  * @description
  * Отображает сводную финансовую информацию пользователя:
- * - Остаток бюджета на месяц (BudgetRemainderCard)
- * - Распределение топ-5 расходов по категориям (ExpensesDonut)
- * - Список последних транзакций
+ * остаток бюджета, распределение расходов по категориям и список регулярных платежей за текущий месяц.
+ * ---
+ * ### Логика работы:
+ * 1. Форматирование даты приветствия в заголовке через `formatWeekdayAndDate()`.
+ * 2. Отображение карточки остатка бюджета на текущий месяц (BudgetRemainderCard).
+ * 3. Отображение сводки доходов и расходов за текущий месяц (MonthlySummary).
+ * 4. Визуализация распределения расходов по категориям (ExpensesDonut).
+ * 5. Список регулярных платежей за текущий месяц (SubscriptionDashboardCard).
  */
 import { computed, onMounted } from "vue";
 import { Bell } from "@lucide/vue";
 
-const { user, tgUser } = useAuth();
+const { userName, avatarUrl } = useAuth();
 const { hasUnread } = useNotifications();
 const { startDate, endDate } = useDateFilter();
 const { transactions, pending } = useTransactions({ startDate, endDate });
@@ -33,32 +38,12 @@ onMounted(() => {
   }
 });
 
-const currentDate = computed(() => {
-  const d = new Date();
-  const weekday = d.toLocaleDateString("ru-RU", { weekday: "long" });
-  const dayMonth = d.toLocaleDateString("ru-RU", {
-    day: "numeric",
-    month: "long",
-  });
-  return `${weekday}, ${dayMonth}`;
-});
-
-const userName = computed(() => {
-  if (tgUser.value?.first_name) {
-    return tgUser.value.first_name;
-  }
-  if (user.value?.username) {
-    return `@${user.value.username}`;
-  }
-  return "Пользователь";
-});
-
-const avatarUrl = computed(() => tgUser.value?.photo_url || null);
+const currentDate = computed(() => formatWeekdayAndDate());
 </script>
 
 <template>
   <div class="relative flex flex-col gap-4">
-    <div class="flex items-center justify-between">
+    <header class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <Avatar :src="avatarUrl" />
         <p class="text-text-primary font-bold">{{ userName }}</p>
@@ -68,17 +53,19 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
       <!-- Notifications -->
       <NuxtLink
         to="/notifications"
+        aria-label="Уведомления"
         class="w-12 h-12 rounded-full glass-milky flex items-center justify-center relative active:scale-95 transition-transform shrink-0 a11y-focus border-[0.5px] border-white/50"
       >
         <Bell class="w-6 h-6 text-text-secondary" />
         <ClientOnly>
           <div
             v-if="hasUnread"
+            aria-hidden="true"
             class="absolute top-2 right-2 w-2.5 h-2.5 bg-text-accent rounded-full border-2 border-[#E5E9F0]"
           />
         </ClientOnly>
       </NuxtLink>
-    </div>
+    </header>
 
     <!-- Текст приветствия -->
     <div class="flex flex-col gap-2">
@@ -86,27 +73,31 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
         <p class="text-lg text-text-secondary tracking-tight -mb-1.5">
           Привет, сегодня
         </p>
-        <p class="text-[24px] text-text-primary tracking-tight">
+        <h1 class="text-[24px] text-text-primary tracking-tight">
           {{ currentDate }}
-        </p>
+        </h1>
       </div>
 
       <!-- 1. Сводка остатка бюджета -->
       <BudgetRemainderCard
-        v-if="budget"
+        v-if="budgetLoading || (budget && budget > 0)"
         :remainder="budgetRemainder"
         :daily-guideline="dailyGuideline"
         :last-day-of-month="lastDayOfMonth"
-        :is-loading="pending || budgetLoading"
+        :is-loading="budgetLoading || pending"
       />
     </div>
 
     <!-- 2. Сводка доходов и расходов -->
-    <MonthlySummary :income="monthlyIncome" :expense="monthlyExpense" />
+    <MonthlySummary
+      :income="monthlyIncome"
+      :expense="monthlyExpense"
+      :is-loading="pending"
+    />
 
     <!-- Главный контент: Топ-5 категорий расходов -->
     <ExpensesDonut
-      v-if="transactions.length > 0"
+      v-if="pending || transactions.length > 0"
       :categories="expensesByCategory"
       :total-expense="monthlyExpense"
       :is-loading="pending"

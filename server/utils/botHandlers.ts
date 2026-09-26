@@ -8,7 +8,7 @@
  * ### Логика работы:
  * 1. `Text Message`: Парсит регулярными выражениями текст (Сумма + Категория или Категория + Сумма).
  * 2. `Category Matching`: Ищет совпадение по названию категории в БД. Если совпадений много — предлагает уточнить кнопками (Callback).
- * 3. `Insertion`: Добавляет транзакцию и присылает сообщение об успехе.
+ * 3. `Insertion`: Добавляет транзакцию с локальной датой `formatDateISO()` и присылает сообщение об успехе.
  * 
  * ### Особенности:
  * - Использует `getBotSupabase()` для доступа к БД вне HTTP контекста.
@@ -84,7 +84,7 @@ export async function handleBotTextMessage(ctx: Context) {
 
   if (matchedCategory) {
     const type = matchedCategory.type;
-    const date = new Date().toISOString().split("T")[0]!;
+    const date = formatDateISO();
 
     const { error } = await supabase.from("transactions").insert({
       user_id: user.id,
@@ -166,7 +166,7 @@ export async function handleBotCallbackQuery(ctx: Context) {
       return;
     }
 
-    const date = new Date().toISOString().split("T")[0]!;
+    const date = formatDateISO();
 
     const { error: insertError } = await supabase.from("transactions").insert({
       user_id: sub.user_id,
@@ -250,7 +250,7 @@ export async function handleBotCallbackQuery(ctx: Context) {
     return;
   }
 
-  const date = new Date().toISOString().split("T")[0]!;
+  const date = formatDateISO();
 
   const { error } = await supabase.from("transactions").insert({
     user_id: user.id,

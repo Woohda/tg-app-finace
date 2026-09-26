@@ -4,11 +4,22 @@
  * @description
  * Валидирует и создает новый регулярный платеж пользователя в базе данных.
  * ---
+ * ### Логика работы:
+ * 1. `Authentication`: Проверка JWT токена и извлечение `userId`.
+ * 2. `Validation`: Валидация входных данных через Zod (`subscriptionSchema`).
+ * 3. `Database Mutation`: Вставка записи в таблицу `subscriptions` с выборкой через `SUBSCRIPTION_SELECT_FIELDS`.
+ *
  * ### Параметры запроса:
  * - `name: string` — название платежа (1..100 символов).
  * - `amount: number` — сумма платежа (> 0).
  * - `day_of_month: number` — день списания (1..31).
  * - `category_id?: string | null` — UUID категории.
+ * - `id?: string` — опциональный UUID для идемпотентного создания.
+ *
+ * ### Ошибки:
+ * - `400 Bad Request`: Ошибка валидации параметров.
+ * - `401 Unauthorized`: Отсутствует или недействителен JWT токен.
+ * - `500 Internal Server Error`: Ошибка сохранения записи в базе данных.
  */
 import { subscriptionSchema } from "~/types/validate";
 import { getUserSupabase } from "~~/server/utils/db";
@@ -53,23 +64,7 @@ export default defineEventHandler(async (event) => {
   const { data, error } = await supabase
     .from("subscriptions")
     .insert(payload)
-    .select(
-      `
-      id,
-      name,
-      amount,
-      day_of_month,
-      is_active,
-      created_at,
-      updated_at,
-      category_id,
-      categories (
-        id,
-        name,
-        icon
-      )
-    `,
-    )
+    .select(SUBSCRIPTION_SELECT_FIELDS)
     .single();
 
   if (error || !data) {

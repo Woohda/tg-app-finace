@@ -8,7 +8,7 @@
  */
 import { ref, computed, watch, onBeforeUnmount } from "vue";
 import { Search, X, Check } from "@lucide/vue";
-import { cn } from "~/utils";
+import { cn } from "~/utils/cn";
 import { getHapticFeedback } from "~/utils/haptics";
 
 export interface CategoryOption {
@@ -45,16 +45,20 @@ const searchInputRef = ref<HTMLInputElement | null>(null);
 const isSearchFocused = ref(false);
 
 const sheetContentStyle = computed(() => {
+  const base: Record<string, string | number> = {
+    zIndex: Z_INDEX.CATEGORY_SHEET,
+  };
   if (
     isSearchFocused.value &&
     isKeyboardOpen.value &&
     keyboardHeight.value > 0
   ) {
     return {
+      ...base,
       paddingBottom: `${keyboardHeight.value + 16}px`,
     };
   }
-  return undefined;
+  return base;
 });
 
 const filteredCategories = computed(() => {
@@ -127,7 +131,8 @@ onBeforeUnmount(() => {
     >
       <div
         v-if="isOpen"
-        class="fixed inset-0 z-70 bg-black/15 backdrop-blur-[2px]"
+        class="fixed inset-0 bg-black/15 backdrop-blur-[2px]"
+        :style="{ zIndex: Z_INDEX.CATEGORY_SHEET_BACKDROP }"
         @click="handleClose"
       />
     </Transition>
@@ -143,7 +148,10 @@ onBeforeUnmount(() => {
     >
       <div
         v-if="isOpen"
-        class="fixed inset-x-0 bottom-0 z-75 flex flex-col max-h-[72dvh] max-w-90 sm:max-w-sm mx-auto sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 rounded-t-3xl sm:rounded-3xl glass-milky px-5 pt-3 pb-8 shadow-glass transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        role="dialog"
+        aria-modal="true"
+        :aria-label="title"
+        class="fixed inset-x-0 bottom-0 flex flex-col max-h-[72dvh] max-w-90 sm:max-w-sm mx-auto sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 rounded-t-3xl sm:rounded-3xl glass-milky px-5 pt-3 pb-8 shadow-glass transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
         :style="sheetContentStyle"
       >
         <!-- Мобильный индикатор свайпа (Drag Handle) -->
@@ -160,6 +168,7 @@ onBeforeUnmount(() => {
           <GlassButton
             variant="soft"
             size="sm"
+            aria-label="Закрыть"
             class="px-2.25 text-text-primary shrink-0"
             @click="handleClose"
           >
@@ -169,39 +178,39 @@ onBeforeUnmount(() => {
 
         <!-- Поле поиска -->
         <div v-if="categories.length > 3" class="relative mb-3">
-          <Search
-            class="absolute left-3.5 top-1/2 -translate-y-1/2 size-4 text-text-secondary pointer-events-none"
-          />
-          <input
+          <GlassInput
             ref="searchInputRef"
             v-model="searchQuery"
             type="text"
             placeholder="Поиск категории..."
-            class="w-full rounded-full pl-10 pr-9 py-2 glass-pill text-text-primary text-sm outline-none a11y-focus"
+            :icon="Search"
             @focus="isSearchFocused = true"
             @blur="isSearchFocused = false"
           />
           <button
             v-if="searchQuery"
             type="button"
+            aria-label="Очистить поиск"
             class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary p-0.5 cursor-pointer"
             @click="searchQuery = ''"
           >
-            <X class="size-4" />
+            <X class="size-5" />
           </button>
         </div>
 
         <!-- Список категорий -->
         <div
+          role="list"
           class="overflow-y-auto overscroll-contain flex-1 pr-1 flex flex-col gap-1.5 scrollbar-hide max-h-[50dvh]"
         >
           <GlassButton
             v-for="cat in filteredCategories"
             :key="cat.id"
             variant="soft"
+            :aria-pressed="isSelected(cat.id)"
             :class="
               cn(
-                'w-full flex items-center justify-between px-3 py-1.5 rounded-2xl transition-all duration-300 cursor-pointer',
+                'w-full flex items-center justify-between px-3 py-2 rounded-2xl transition-all duration-300 cursor-pointer',
                 'active:scale-[0.95]',
                 isSelected(cat.id)
                   ? 'glass-pill text-text-accent font-semibold'
@@ -214,7 +223,7 @@ onBeforeUnmount(() => {
               <div
                 :class="
                   cn(
-                    'size-8 rounded-full flex items-center justify-center text-sm shrink-0 mr-2 transition-colors shadow-inner glass-pill',
+                    'size-8 rounded-full flex items-center justify-center text-sm shrink-0 mr-2 transition-colors glass-pill',
                     isSelected(cat.id)
                       ? ' text-text-accent'
                       : ' text-text-primary',
@@ -223,7 +232,7 @@ onBeforeUnmount(() => {
               >
                 {{ cat.icon || "🏷️" }}
               </div>
-              <span class="text-sm font-medium text-left truncate flex-1">
+              <span class="text-[15px] font-medium text-left truncate flex-1">
                 {{ cat.name }}
               </span>
             </div>

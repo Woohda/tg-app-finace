@@ -1,13 +1,13 @@
 <script setup lang="ts">
 /**
  * @module app/components/GlassCard
- * @fileoverview Базовая карточка-контейнер в стиле неоморфизм
+ * @fileoverview Базовая карточка-контейнер в стиле Glassmorphism
  * @description
- * Служит оберткой для контента (использует UiCard), применяет
- * фирменные стили неоморфизма (.glass-milky), мягкие углы (rounded-3xl) и отступы.
+ * Служит стилизованной подложной для контента, применяет
+ * фирменные стили (.glass-milky), мягкие скругления (rounded-3xl) и внутренние отступы.
  */
 import type { HTMLAttributes } from "vue";
-import { cn } from "~/utils";
+import { cn } from "~/utils/cn";
 
 const props = defineProps<{
   class?: HTMLAttributes["class"];
@@ -15,7 +15,7 @@ const props = defineProps<{
 </script>
 
 <template>
-  <Card :class="cn('glass-milky rounded-3xl border-0 p-5', props.class)">
+  <div :class="cn('glass-milky rounded-3xl p-5', props.class)">
     <slot />
-  </Card>
+  </div>
 </template>

@@ -67,6 +67,10 @@ export default defineEventHandler(async (event) => {
       });
     }
     user = newUser;
+    await seedDefaultCategories(supabase, user.id);
+  } else {
+    // В dev-режиме гарантируем наличие категорий, если таблица была очищена
+    await seedDefaultCategories(supabase, user.id);
   }
 
   const token = await generateJWT(user.id, jwtSecret);

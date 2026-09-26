@@ -55,10 +55,14 @@ const { openModal } = useTransactionModal();
 
 <template>
   <div
-    class="absolute left-1/2 -translate-x-1/2 w-full max-w-97 px-2.75 z-50 pointer-events-none transition-opacity duration-200"
-    style="bottom: calc(1.25rem + env(safe-area-inset-bottom))"
+    class="absolute left-1/2 -translate-x-1/2 w-full max-w-97 px-2.75 pointer-events-none transition-opacity duration-200"
+    :style="{
+      zIndex: Z_INDEX.BOTTOM_NAV,
+      bottom: 'calc(1.25rem + env(safe-area-inset-bottom))',
+    }"
   >
     <nav
+      aria-label="Основная навигация"
       class="relative h-19 glass-milky rounded-[38px] px-4 flex items-center justify-between pointer-events-auto"
     >
       <!-- Левый блок навигации -->
@@ -79,7 +83,7 @@ const { openModal } = useTransactionModal();
         <GlassButton
           type="button"
           variant="soft"
-          class="size-17 rounded-full flex items-center justify-center text-text-accent text-4xl font-light active:scale-90 transition-transform pointer-events-auto outline-none a11y-focus glass-pill backdrop-blur-3xl"
+          class="size-17 rounded-full flex items-center justify-center text-text-accent text-4xl font-light active:scale-90 transition-transform pointer-events-auto outline-none a11y-focus backdrop-blur-3xl"
           style="background-color: rgba(242, 242, 242, 0.9)"
           aria-label="Добавить операцию"
           @click="openModal()"

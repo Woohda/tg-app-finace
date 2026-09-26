@@ -13,7 +13,6 @@
  * - `useGlobalActiveSwipeId`: ID активного свайпа в списке транзакций.
  * - `useGlobalTransactionsVersion`: Глобальный счетчик версий транзакций для инвалидации.
  * - `useTransactionCache`: Кэш транзакций по ключам диапазонов дат.
- * - `useTransactionEntities`: Реестр сущностей транзакций по ID.
  */
 import type { Database } from "~/types/database.types";
 import type { Transaction } from "./useTransactions";
@@ -37,5 +36,3 @@ export const useGlobalTransactionsVersion = () =>
 export const useTransactionCache = () =>
   useState<Record<string, Transaction[]>>("tx:queryCache", () => ({}));
 
-export const useTransactionEntities = () =>
-  useState<Record<string, Transaction>>("tx:entities", () => ({}));

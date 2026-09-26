@@ -1,14 +1,20 @@
 /**
  * @module app/composables/useBudgets
  * @fileoverview Управление месячным бюджетом пользователя
- *
  * @description
  * Загружает и обновляет лимит бюджета через API.
  * Все изменения мутируют глобальное состояние (`useGlobalBudget`),
  * чтобы данные мгновенно отображались по всему приложению.
+ * ---
+ * ### Логика работы:
+ * 1. Загрузка актуального бюджета через API (`fetchBudget`) с дедупликацией in-flight запросов.
+ * 2. Установка нового лимита бюджета через `setBudget`.
+ * 3. Расчет остатка (`remainder`), дневного ориентира (`dailyGuideline`) и дней до конца месяца через `getDaysLeftInMonth()`.
  */
 import { ref, computed, type Ref } from "vue";
 import { parseApiError } from "~/utils/api";
+
+let inFlightFetch: Promise<void> | null = null;
 
 export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
   const { token } = useAuth();
@@ -17,26 +23,36 @@ export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
   const notifications = useNotifications();
 
   const budget = useGlobalBudget();
+  const isLoaded = useState<boolean>("budget:isLoaded", () => false);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
   const fetchBudget = async () => {
-    if (!token.value || isLoading.value) return;
+    if (!token.value) return;
+    if (inFlightFetch) return inFlightFetch;
 
     isLoading.value = true;
     error.value = null;
 
-    try {
-      const data = await api<{ amount: number }>("/api/budgets");
-      if (data && data.amount > 0) {
-        budget.value = data.amount;
+    inFlightFetch = (async () => {
+      try {
+        const data = await api<{ amount: number }>("/api/budgets");
+        if (data && data.amount > 0) {
+          budget.value = data.amount;
+        } else {
+          budget.value = 0;
+        }
+      } catch (e: unknown) {
+        console.error("Ошибка загрузки бюджета:", e);
+        error.value = parseApiError(e, "Не удалось загрузить бюджет");
+      } finally {
+        isLoading.value = false;
+        isLoaded.value = true;
+        inFlightFetch = null;
       }
-    } catch (e: unknown) {
-      console.error("Ошибка загрузки бюджета:", e);
-      error.value = parseApiError(e, "Не удалось загрузить бюджет");
-    } finally {
-      isLoading.value = false;
-    }
+    })();
+
+    return inFlightFetch;
   };
 
   const updateBudget = async (amount: number) => {
@@ -70,15 +86,11 @@ export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
   };
 
   const lastDayOfMonth = computed(() => {
-    const today = new Date();
-    const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    return last.toLocaleDateString("ru-RU", { day: "numeric", month: "long" });
+    return formatLastDayOfMonth();
   });
 
   const daysLeft = computed(() => {
-    const today = new Date();
-    const last = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-    return Math.max(1, last.getDate() - today.getDate() + 1);
+    return getDaysLeftInMonth();
   });
 
   const remainder = computed(() => {
@@ -92,7 +104,8 @@ export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
 
   return {
     budget,
-    isLoading,
+    isLoading: computed(() => !isLoaded.value || isLoading.value),
+    isLoaded,
     error,
     fetchBudget,
     updateBudget,

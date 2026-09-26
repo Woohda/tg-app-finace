@@ -102,6 +102,9 @@ export default defineEventHandler(async (event) => {
       });
     }
     user = newUser;
+
+    // Инициализируем стартовые категории для нового пользователя
+    await seedDefaultCategories(supabase, user.id);
   }
 
   const token = await generateJWT(user.id, jwtSecret);

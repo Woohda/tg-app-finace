@@ -5,7 +5,7 @@
  */
 import { computed } from "vue";
 import { TrendingUp, TrendingDown } from "@lucide/vue";
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 
 const props = defineProps<{
   title: string;

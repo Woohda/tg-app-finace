@@ -1,4 +1,16 @@
 <script setup lang="ts">
+/**
+ * @module app/pages/notifications
+ * @fileoverview Экран истории системных и финансовых уведомлений
+ * @description
+ * Отображает список уведомлений пользователя, сохраненных в локальном хранилище.
+ * Позволяет отмечать все уведомления как прочитанные и очищать историю.
+ * ---
+ * ### Логика работы:
+ * 1. Получение истории уведомлений из `useNotifications`.
+ * 2. Форматирование временных меток через чистую функцию `formatDateTime()`.
+ * 3. Группировка и стилизация иконок в зависимости от типа события (`expense`, `income`, `error`, `system`).
+ */
 import {
   ChevronLeft,
   Bell,
@@ -12,15 +24,7 @@ import {
 
 const { history, clear, hasUnread, markAllAsRead } = useNotifications();
 
-const formatDate = (isoStr: string) => {
-  const date = new Date(isoStr);
-  return new Intl.DateTimeFormat("ru-RU", {
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(date);
-};
+const formatDate = (isoStr: string) => formatDateTime(isoStr);
 
 // Выбор иконки в зависимости от типа
 const getIcon = (type: string) => {
@@ -46,6 +50,7 @@ const getColor = (type: string) => {
       <NuxtLink
         class="w-12 h-12 absolute left-0 top-1/2 -translate-y-1/2 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 active:scale-95 transition-transform"
         to="/"
+        aria-label="Назад на главную"
       >
         <ChevronLeft class="text-text-primary -ml-px" :stroke-width="1.5" />
       </NuxtLink>
@@ -59,6 +64,7 @@ const getColor = (type: string) => {
             variant="soft"
             size="icon"
             class="px-2"
+            aria-label="Отметить все как прочитанные"
             @click="markAllAsRead"
           >
             <CheckCheck class="text-text-primary" :stroke-width="1.5" />
@@ -68,6 +74,7 @@ const getColor = (type: string) => {
             variant="soft"
             size="icon"
             class="px-2"
+            aria-label="Очистить историю уведомлений"
             @click="clear"
           >
             <Trash2 class="text-text-accent" :stroke-width="1.5" />

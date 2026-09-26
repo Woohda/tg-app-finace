@@ -6,9 +6,13 @@
  * с присоединенными данными категорий, отсортированных по дню месяца.
  * ---
  * ### Логика работы:
- * 1. Проверка JWT токена и извлечение `userId`.
- * 2. Выборка из таблицы `subscriptions` с джойном `categories (id, name, icon)`.
- * 3. Сортировка по возрастанию дня месяца (`day_of_month` ASC).
+ * 1. `Authentication`: Проверка JWT токена и извлечение `userId`.
+ * 2. `Database Query`: Выборка из таблицы `subscriptions` через `SUBSCRIPTION_SELECT_FIELDS` (джойн `categories (id, name, icon)`).
+ * 3. `Ordering`: Сортировка по возрастанию дня месяца (`day_of_month` ASC) и названию.
+ *
+ * ### Ошибки:
+ * - `401 Unauthorized`: Отсутствует или недействителен JWT токен.
+ * - `500 Internal Server Error`: Ошибка выполнения запроса к базе данных.
  */
 import { getUserSupabase } from "~~/server/utils/db";
 
@@ -18,23 +22,7 @@ export default defineEventHandler(async (event) => {
 
   const { data, error } = await supabase
     .from("subscriptions")
-    .select(
-      `
-      id,
-      name,
-      amount,
-      day_of_month,
-      is_active,
-      created_at,
-      updated_at,
-      category_id,
-      categories (
-        id,
-        name,
-        icon
-      )
-    `,
-    )
+    .select(SUBSCRIPTION_SELECT_FIELDS)
     .eq("user_id", userId)
     .order("day_of_month", { ascending: true })
     .order("name", { ascending: true });

@@ -76,7 +76,6 @@ export const useDonutMath = (
         shadowDashoffset,
         iconX: Number(((pxX / 160) * 100).toFixed(2)),
         iconY: Number(((pxY / 160) * 100).toFixed(2)),
-        IconComponent: useCategoryIcon(cat.icon || "❔"),
       };
     });
   });

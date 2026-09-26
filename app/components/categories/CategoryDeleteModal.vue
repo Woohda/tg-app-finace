@@ -4,12 +4,12 @@
  * @fileoverview Модальное окно для удаления категории
  * @description
  * Позволяет подтвердить или отменить удаление категории.
- * Выполняет проверку на наличие привязанных транзакций перед удалением.
+ * При наличии связанных транзакций отображает сообщение об ошибке, возвращенное сервером.
  * ---
  * ### Логика работы:
- * 1. Проверка наличия транзакций при открытии окна.
- * 2. Блокировка кнопки удаления, если найдены связанные транзакции.
- * 3. Отправка запроса на удаление.
+ * 1. Сброс состояния ошибки при открытии модального окна.
+ * 2. Отправка запроса на удаление через `useCategories`.
+ * 3. Переход в состояние ошибки с показом текста ответа бэкенда в случае неудачи.
  */
 import { ref, watch } from "vue";
 import { Flame } from "@lucide/vue";
@@ -21,8 +21,7 @@ const props = defineProps<{
 
 const emit = defineEmits(["close"]);
 
-const { deleteCategory } = useCategories();
-const { transactions } = useTransactions();
+const { deleteCategory, error } = useCategories();
 
 const errorMsg = ref<string | null>(null);
 const deleteButtonState = ref<"idle" | "loading" | "success">("idle");
@@ -30,17 +29,9 @@ const deleteButtonState = ref<"idle" | "loading" | "success">("idle");
 watch(
   () => props.isOpen,
   (newVal) => {
-    if (newVal && props.categoryId) {
+    if (newVal) {
       deleteButtonState.value = "idle";
-      const hasTransactions = transactions.value.some(
-        (t) => t.categoryId === props.categoryId,
-      );
-      if (hasTransactions) {
-        errorMsg.value =
-          "Невозможно удалить категорию, так как с ней связаны транзакции. Сначала удалите их или перенесите в другую категорию.";
-      } else {
-        errorMsg.value = null;
-      }
+      errorMsg.value = null;
     }
   },
 );
@@ -62,6 +53,9 @@ const executeDelete = async () => {
     }, 1200);
   } else {
     deleteButtonState.value = "idle";
+    errorMsg.value =
+      error.value ||
+      "Невозможно удалить категорию, так как с ней связаны транзакции.";
   }
 };
 </script>
@@ -71,6 +65,7 @@ const executeDelete = async () => {
     :is-open="isOpen"
     :show-close="false"
     position="center"
+    :z-index="Z_INDEX.CATEGORY_DELETE"
     @close="cancelDelete"
   >
     <div class="flex flex-col gap-2 text-center">

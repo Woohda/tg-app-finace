@@ -125,6 +125,7 @@ const submitForm = async () => {
     :is-open="isOpen"
     :title="isEditMode ? 'Редактировать' : 'Новая категория'"
     position="bottom"
+    :z-index="Z_INDEX.CATEGORY_FORM"
     @close="closeForm"
   >
     <form class="flex flex-col gap-4" @submit.prevent="submitForm">

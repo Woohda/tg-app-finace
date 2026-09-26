@@ -14,7 +14,7 @@
  */
 import { computed } from "vue";
 import type { CategoryStat } from "~/utils/analytics";
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 import { ChevronRight } from "@lucide/vue";
 
 const props = defineProps<{
@@ -41,8 +41,13 @@ const getBarWidth = (amount: number) => {
     <div
       v-for="stat in stats"
       :key="stat.categoryId"
-      class="flex flex-col gap-2 p-3 rounded-2xl glass-milky border-[0.5px] border-white/40 active:scale-[0.98] transition-transform cursor-pointer"
+      role="button"
+      tabindex="0"
+      :aria-label="`${stat.categoryName}: ${formatAmount(stat.amount)}, ${stat.percent}% от трат`"
+      class="flex flex-col gap-2 p-3 rounded-2xl glass-milky border-[0.5px] border-white/40 active:scale-[0.98] transition-transform cursor-pointer outline-none a11y-focus"
       @click="emit('click-category', stat.categoryId)"
+      @keydown.enter.prevent="emit('click-category', stat.categoryId)"
+      @keydown.space.prevent="emit('click-category', stat.categoryId)"
     >
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
@@ -71,7 +76,14 @@ const getBarWidth = (amount: number) => {
       </div>
 
       <!-- Прогресс бар -->
-      <div class="w-full h-1.5 glass-pill rounded-full overflow-hidden">
+      <div
+        class="w-full h-1.5 glass-pill rounded-full overflow-hidden"
+        role="progressbar"
+        :aria-valuenow="getBarWidth(stat.amount)"
+        aria-valuemin="0"
+        aria-valuemax="100"
+        :aria-label="`Доля трат: ${stat.percent}%`"
+      >
         <div
           class="h-full bg-text-accent rounded-full transition-all duration-700 ease-out"
           :style="{ width: `${getBarWidth(stat.amount)}%` }"

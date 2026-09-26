@@ -1,16 +1,15 @@
 /**
  * @module app/composables/useReceiptScanner
- * @fileoverview Логика сканирования чеков
- *
+ * @fileoverview Логика сканирования и AI-распознавания чеков
  * @description
  * Обеспечивает интерфейс для выбора изображения (input file), отправки его
- * на сервер для парсинга через AI, и отображения результатов в модалке.
- *
+ * на сервер для парсинга через AI с локальной датой клиента и перехода к результатам.
+ * ---
  * ### Логика работы:
- * 1. Открывает нативный диалог выбора файлов.
+ * 1. Открывает нативный диалог выбора файлов (`openPicker`).
  * 2. Конвертирует изображение в Base64.
- * 3. Отправляет на эндпоинт `/api/ai/parse-receipt`.
- * 4. Записывает результат в `scanResults` и закрывает основную модалку (для открытия модалки результатов).
+ * 3. Отправляет на эндпоинт `/api/ai/parse-receipt` с текущей локальной датой (`formatDateISO()`).
+ * 4. Записывает результат в `scanResults` и перенаправляет на экран `/scan`.
  */
 import { ref } from "vue";
 import { useRouter } from "vue-router";
@@ -59,7 +58,7 @@ export const useReceiptScanner = () => {
         method: "POST",
         body: {
           image: base64Data,
-          currentDate: new Date().toISOString(),
+          currentDate: formatDateISO(),
         },
         timeout: 60000, // 60 секунд для Gemini AI парсинга чеков
       });

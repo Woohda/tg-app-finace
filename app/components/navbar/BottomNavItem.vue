@@ -25,6 +25,7 @@ defineProps<{
         : 'text-text-secondary hover:text-text-primary'
     "
     :aria-label="label"
+    :aria-current="isActive ? 'page' : undefined"
   >
     <!-- Активный фон (овал) -->
     <div

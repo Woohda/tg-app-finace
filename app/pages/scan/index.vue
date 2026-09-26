@@ -4,14 +4,18 @@
  * @fileoverview Экран ревью транзакций после сканирования чека ИИ
  * @description
  * Отображает распарсенные ИИ транзакции с группировкой по категориям.
- * Позволяет пользователю редактировать (GlassModal), удалять (свайп/кнопка)
- * и финально сохранять операции в базу данных. Включает логику синхронизации
- * с глобальным состоянием `useScanResultsStore`.
+ * Позволяет пользователю редактировать, удалять и сохранять операции в базу данных.
+ * ---
+ * ### Логика работы:
+ * 1. Получение результатов распознавания из `useScanResultsStore`.
+ * 2. Инициализация и сохранение позиций с локальной датой `formatDateISO()`.
+ * 3. Редактирование отдельных транзакций через модальное окно.
+ * 4. Пакетное сохранение подтвержденных транзакций в базу данных через `addBulkTransactions`.
  */
 import { computed, ref, onMounted } from "vue";
 import { useRouter } from "vue-router";
 import { Sparkles, RussianRuble, Trash2 } from "@lucide/vue";
-import { parseAmount } from "~/utils";
+import { parseAmount } from "~/utils/format";
 
 definePageMeta({
   layout: "clean",
@@ -45,7 +49,7 @@ onMounted(async () => {
     return;
   }
 
-  const today = new Date().toISOString().split("T")[0] || "";
+  const today = formatDateISO();
 
   // Для каждой транзакции пытаемся найти категорию по имени
   editableItems.value = scanResults.value.map((tx) => {
@@ -155,7 +159,7 @@ const saveAll = async () => {
       type: string;
       date: string;
     }[] = [];
-    const fallbackDate = new Date().toISOString().split("T")[0] || "";
+    const fallbackDate = formatDateISO();
 
     editableItems.value.forEach((item) => {
       transactionsToSave.push({
@@ -241,14 +245,14 @@ const cancelAll = () => {
               group.categoryName
             }}</span>
           </div>
-          <Button
-            variant="ghost"
-            size="xs"
-            class="text-text-accent transition-colors"
+          <button
+            type="button"
+            :aria-label="'Удалить группу ' + group.categoryName"
+            class="text-text-accent p-1.5 rounded-full hover:bg-black/5 active:scale-95 transition-all a11y-focus cursor-pointer"
             @click="removeGroupById(catId)"
           >
-            <Trash2 :stroke-width="2" />
-          </Button>
+            <Trash2 class="size-4" :stroke-width="2" />
+          </button>
         </div>
 
         <!-- Список элементов -->

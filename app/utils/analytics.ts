@@ -11,7 +11,9 @@
  * - `aggregateCategoryStats`: формирует рейтинг категорий расходов с процентами от общей суммы.
  * - `buildAnalyticsChartData`: заполняет пустые интервалы дат нулями и агрегирует суммы по дням/месяцам.
  * - `calculatePercentChange`: рассчитывает процентное изменение между двумя числами с защитой от деления на 0.
+ * - `filterCurrentMonthCategoryTransactions`: отбирает транзакции заданной категории за месяц и сортирует их по убыванию даты.
  */
+import { isSameMonth } from "date-fns";
 import type { Transaction } from "~/composables/useTransactions";
 import type { AnalyticsPeriodType } from "~/composables/useAnalyticsPeriod";
 
@@ -87,31 +89,31 @@ export function buildAnalyticsChartData(
   if (expenses.length === 0) return [];
 
   const data: Record<string, number> = {};
-  const start = new Date(startDate);
-  const end = new Date(endDate);
+  const start = toSafeDate(startDate);
+  const end = toSafeDate(endDate);
 
   const isDaily = ["1W", "1M"].includes(period);
 
   if (isDaily) {
-    for (let d = new Date(start); d <= end; d.setDate(d.getDate() + 1)) {
-      const key = `${d.getDate()} ${d.toLocaleString("ru", { month: "short" })}`;
+    for (let d = start; d <= end; d = addDaysSafe(d, 1)) {
+      const key = formatShortDayMonth(d);
       data[key] = 0;
     }
     expenses.forEach((t) => {
-      const d = new Date(t.date);
-      const key = `${d.getDate()} ${d.toLocaleString("ru", { month: "short" })}`;
+      const d = toSafeDate(t.date);
+      const key = formatShortDayMonth(d);
       if (data[key] !== undefined) {
         data[key] += t.amount;
       }
     });
   } else {
-    for (let d = new Date(start); d <= end; d.setMonth(d.getMonth() + 1)) {
-      const key = d.toLocaleString("ru", { month: "short" });
+    for (let d = startOfMonthSafe(start); d <= end; d = getNextMonth(d)) {
+      const key = formatShortMonth(d);
       data[key] = 0;
     }
     expenses.forEach((t) => {
-      const d = new Date(t.date);
-      const key = d.toLocaleString("ru", { month: "short" });
+      const d = toSafeDate(t.date);
+      const key = formatShortMonth(d);
       if (data[key] !== undefined) {
         data[key] += t.amount;
       }
@@ -119,4 +121,28 @@ export function buildAnalyticsChartData(
   }
 
   return Object.entries(data).map(([label, value]) => ({ label, value }));
+}
+
+/**
+ * Фильтрует список транзакций по категории за текущий (или заданный) месяц.
+ * Возвращает новый массив транзакций, отсортированный по дате от более новых к старым.
+ */
+export function filterCurrentMonthCategoryTransactions(
+  transactions: Transaction[],
+  categoryId: string | null | undefined,
+  referenceDate: Date = getNow(),
+): Transaction[] {
+  if (!categoryId || !transactions?.length) {
+    return [];
+  }
+
+  const targetDate = toSafeDate(referenceDate);
+
+  return transactions
+    .filter(
+      (t) =>
+        t.categoryId === categoryId &&
+        isSameMonth(toSafeDate(t.date), targetDate),
+    )
+    .sort((a, b) => toSafeDate(b.date).getTime() - toSafeDate(a.date).getTime());
 }

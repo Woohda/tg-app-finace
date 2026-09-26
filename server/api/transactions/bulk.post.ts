@@ -9,10 +9,10 @@
  * 1. `Authentication`: Проверка JWT токена и извлечение `userId`.
  * 2. `Validation`: Валидация массива транзакций через Zod (`bulkTransactionSchema`).
  * 3. `Data Preparation`: Обогащение каждой транзакции полем `user_id`.
- * 4. `Database Insert`: Массовая вставка (bulk insert) в таблицу `transactions`.
+ * 4. `Database Mutation`: Массовая вставка или upsert (при наличии `id`) в таблицу `transactions` с выборкой через `TRANSACTION_SELECT_FIELDS`.
  *
  * ### Параметры запроса:
- * - `transactions: Array` — массив транзакций (с полями `amount`, `date`, `type`, `category_id`, `description`).
+ * - `transactions: Array` — массив транзакций (с полями `amount`, `date`, `type`, `category_id`, `name`, опционально `id`).
  *
  * ### Ошибки:
  * - `400 Bad Request`: Ошибка валидации данных массива транзакций.
@@ -57,19 +57,7 @@ export default defineEventHandler(async (event) => {
     ? supabase.from("transactions").upsert(transactionsToInsert, { onConflict: "id" })
     : supabase.from("transactions").insert(transactionsToInsert);
 
-  const { data, error } = await dbQuery.select(`
-      id,
-      amount,
-      type,
-      name,
-      date,
-      created_at,
-      categories (
-        id,
-        name,
-        icon
-      )
-    `);
+  const { data, error } = await dbQuery.select(TRANSACTION_SELECT_FIELDS);
 
   if (error) {
     console.error("Ошибка массового сохранения транзакций:", error);

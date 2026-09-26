@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
- * @module app/components/modal/TransactionModal
- * @fileoverview Глобальное модальное окно создания/редактирования транзакций.
+ * @module app/components/transactions/TransactionModal
+ * @fileoverview Глобальное модальное окно создания и редактирования транзакций
  * @description
  * Обеспечивает форму добавления новой транзакции или редактирования существующей.
  * Интегрировано с `useTransactionModal` (глобальный стейт) для вызова из любой точки приложения.
@@ -9,15 +9,17 @@
  * ---
  * ### Логика работы:
  * 1. Управляется глобальным стейтом `useTransactionModal`.
- * 2. Если `editId` задан, работает в режиме редактирования (загружает данные транзакции).
- * 3. Отправляет данные через `useTransactions().addTransaction` или `updateTransaction`.
+ * 2. Инициализирует дату формы в локальном формате `formatDateISO()` без сдвига по UTC.
+ * 3. Если `editId` задан, работает в режиме редактирования (загружает данные транзакции).
+ * 4. Отправляет данные через `useTransactions().addTransaction` или `updateTransaction`.
+ * 5. Изолирует состояние загрузки категорий (`pending`) в селекторе и кнопке отправки.
  */
-import { ref, computed, watch, onUnmounted } from "vue";
+import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import { Calendar, RussianRuble, Camera } from "@lucide/vue";
 import { transactionSchema } from "~/types/validate";
-import { parseAmount } from "~/utils";
+import { parseAmount } from "~/utils/format";
 import { formatZodError } from "~/utils/zod";
 
 const router = useRouter();
@@ -32,22 +34,9 @@ const type = ref<"expense" | "income">("expense");
 const amount = ref<string | number>("");
 const categoryId = ref<string>("");
 const name = ref<string>("");
-const date = ref<string>(new Date().toISOString().split("T")[0] as string); // YYYY-MM-DD
+const date = ref<string>(formatDateISO()); // YYYY-MM-DD
 
 const { categories, isLoading: pending, fetchCategories } = useCategories();
-const globalLoading = useGlobalLoading();
-
-watch(
-  pending,
-  (val) => {
-    globalLoading.value = val;
-  },
-  { immediate: true },
-);
-
-onUnmounted(() => {
-  globalLoading.value = false;
-});
 
 const amountInputRef = ref<{ focus: () => void } | null>(null);
 
@@ -65,7 +54,7 @@ watch(isOpen, (newVal) => {
       amount.value = "";
       categoryId.value = "";
       name.value = "";
-      date.value = new Date().toISOString().split("T")[0] as string;
+      date.value = formatDateISO();
       buttonState.value = "idle";
       errorMsg.value = "";
     }, 300);
@@ -163,9 +152,10 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
     :is-open="isOpen"
     position="bottom"
     :title="isEditMode ? 'Редактирование' : 'Новая операция'"
+    :z-index="Z_INDEX.TRANSACTION"
     @close="closeModal"
   >
-    <form class="flex flex-col gap-4" @submit.prevent="submit">
+    <form class="flex flex-col gap-3" @submit.prevent="submit">
       <!-- Amount -->
       <GlassInput
         ref="amountInputRef"
@@ -186,6 +176,10 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
         <GlassCategorySelect
           v-model="categoryId"
           :categories="filteredCategories"
+          :disabled="pending"
+          :placeholder="
+            pending ? 'Загрузка категорий...' : 'Выберите категорию'
+          "
         />
       </div>
 
@@ -238,10 +232,10 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
           type="button"
           label="Сканировать чек"
           variant="soft"
-          class="w-full flex items-center gap-2"
+          class="w-full flex items-center gap-1.5"
           @click.prevent="triggerScan"
         >
-          <Camera :stroke-width="2" class="text-text-accent size-9" />
+          <Camera :stroke-width="1.5" class="text-text-accent size-7 pb-1" />
           <span class="text-sm text-text-accent">Загрузить скриншот</span>
         </GlassButton>
       </div>
@@ -255,7 +249,12 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
   </GlassModal>
 
   <!-- Модалка загрузки для чека -->
-  <GlassModal :is-open="isScanning" position="center" :show-close="false">
+  <GlassModal
+    :is-open="isScanning"
+    position="center"
+    :show-close="false"
+    :z-index="Z_INDEX.LOADER"
+  >
     <p class="text-text-primary font-medium text-center animate-pulse">
       Распознаю скриншот... <br />Магия нейросетей работает ✨
     </p>

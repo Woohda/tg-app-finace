@@ -79,13 +79,13 @@ onMounted(async () => {
     class="max-w-md mx-auto relative min-h-screen p-4 flex flex-col items-center justify-center bg-glass-ambient shadow-2xl"
   >
     <GlassCard class="w-full">
-      <CardHeader class="p-5 pb-0">
-        <CardTitle class="text-2xl font-bold text-center text-text-primary">
+      <div class="p-5 pb-0">
+        <h1 class="text-2xl font-bold text-center text-text-primary">
           TG Finance
-        </CardTitle>
-      </CardHeader>
+        </h1>
+      </div>
 
-      <CardContent class="p-5">
+      <div class="p-5">
         <div class="text-center py-4">
           <div v-if="isInTelegram">
             <p class="mb-6 text-text-secondary text-sm">
@@ -143,7 +143,7 @@ onMounted(async () => {
             </GlassButton>
           </div>
         </div>
-      </CardContent>
+      </div>
     </GlassCard>
   </div>
 </template>

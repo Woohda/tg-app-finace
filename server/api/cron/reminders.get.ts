@@ -1,31 +1,29 @@
 /**
  * @module server/api/cron/reminders.get
- * @fileoverview Крон-эндпоинт для отправки напоминаний о регулярных платежах в Telegram.
+ * @fileoverview Крон-эндпоинт для отправки напоминаний о регулярных платежах в Telegram
  * @description
  * Проверяет активные регулярные платежи и отправляет сообщения пользователям:
- * - За 3 дня до списания: информационное напоминание.
- * - За 1 день до списания: предупреждающее напоминание.
+ * за 3 дня (информационное), за 1 день (предупреждающее) и в день списания (с инлайн-кнопкой оплаты).
  * ---
- * ### Безопасность:
- * - Эндпоинт защищен от несанкционированного вызова и DoS-спама.
- * - Требует заголовок `Authorization: Bearer <CRON_SECRET>` или query-параметр `?secret=<CRON_SECRET>`.
+ * ### Логика работы:
+ * 1. `Authentication`: Проверка секретного ключа `CRON_SECRET` в заголовке `Authorization` или query-параметре `secret`.
+ * 2. `Database Query`: Выборка всех активных подписок с привязанными Telegram ID.
+ * 3. `Due Check`: Проверка совпадения даты списания через `isSubscriptionDueOnDate()` с учетом разной длины месяцев.
+ * 4. `Notification`: Отправка персонализированных сообщений через Telegram Bot API.
+ *
+ * ### Параметры запроса:
+ * - `secret?: string` — секретный ключ авторизации вызова крона.
+ *
+ * ### Ошибки:
+ * - `401 Unauthorized`: Неверный или отсутствующий CRON_SECRET.
+ * - `500 Internal Server Error`: Отсутствует TELEGRAM_BOT_TOKEN или ошибка базы данных.
+ *
+ * ### Особенности:
+ * - Безопасно вычисляет контрольные даты через `getNow()` и `addDaysSafe()`.
  */
-import { addDays, getDate, getDaysInMonth, isLastDayOfMonth } from "date-fns";
 import { InlineKeyboard } from "grammy";
 import { getBot } from "~~/server/utils/bot";
 import { getBotSupabase } from "~~/server/utils/db";
-
-/**
- * Проверяет, приходится ли списание регулярного платежа на целевую дату.
- * Корректно компенсирует короткие месяцы (28, 29, 30 дней) для подписок на 29, 30 и 31 числа.
- */
-function isSubscriptionDueOnDate(subDay: number, targetDate: Date): boolean {
-  const day = getDate(targetDate);
-  const daysInMonth = getDaysInMonth(targetDate);
-  const isEndOfMonth = isLastDayOfMonth(targetDate);
-
-  return subDay === day || (isEndOfMonth && subDay > daysInMonth);
-}
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
@@ -57,9 +55,9 @@ export default defineEventHandler(async (event) => {
   const bot = getBot(botToken);
 
   // Вычисляем контрольные даты проверки (сегодня, завтра, через 3 дня)
-  const now = new Date();
-  const tomorrow = addDays(now, 1);
-  const in3Days = addDays(now, 3);
+  const now = getNow();
+  const tomorrow = addDaysSafe(now, 1);
+  const in3Days = addDaysSafe(now, 3);
 
   // Выбираем все активные подписки с привязанными telegram_id пользователей
   const { data: subscriptions, error } = await supabase

@@ -7,8 +7,9 @@
  * ---
  * ### Логика работы:
  * 1. Выбор периода: 1 Неделя, 1 Месяц, 3 Месяца, 6 Месяцев, 1 Год.
- * 2. Расчет `startDate` и `endDate` от базовой даты (`anchorDate`).
+ * 2. Расчет `startDate` и `endDate` от базовой даты (`anchorDate = getNow()`).
  * 3. Расчет `prevStartDate` и `prevEndDate` для сравнения с предыдущим аналогичным периодом.
+ * 4. Формирование локализованных подписей сравнения с падежами через `formatMonthDative` и `formatMonthPrepositional`.
  */
 import { ref, computed } from "vue";
 import type { Ref } from "vue";
@@ -48,7 +49,7 @@ export const useAnalyticsPeriod = (
   initialPeriod?: Ref<AnalyticsPeriodType>,
 ) => {
   const period = initialPeriod || ref<AnalyticsPeriodType>("1M");
-  const anchorDate = ref(new Date());
+  const anchorDate = ref(getNow());
 
   const endDate = computed(() => {
     const anchor = anchorDate.value;
@@ -73,21 +74,7 @@ export const useAnalyticsPeriod = (
 
   const prevPeriodLabel = computed(() => {
     if (period.value === "1M") {
-      const months = [
-        "к январю",
-        "к февралю",
-        "к марту",
-        "к апрелю",
-        "к маю",
-        "к июню",
-        "к июлю",
-        "к августу",
-        "к сентябрю",
-        "к октябрю",
-        "к ноябрю",
-        "к декабрю",
-      ];
-      return months[prevStartDate.value.getMonth()] ?? "к прошлому";
+      return formatMonthDative(prevStartDate.value);
     }
     switch (period.value) {
       case "1W":
@@ -97,21 +84,14 @@ export const useAnalyticsPeriod = (
       case "6M":
         return "к прошлому периоду";
       case "1Y":
-        return `к ${prevStartDate.value.getFullYear()} году`;
+        return `к ${getYear(prevStartDate.value)} году`;
       default:
         return "к прошлому";
     }
   });
 
   const monthsLabel = computed(() => {
-    const month = prevStartDate.value.toLocaleDateString("ru-RU", {
-      month: "long",
-    });
-    // Формируем предложный падеж (в январе, в марте, в мае)
-    if (month.endsWith("ь") || month.endsWith("й")) {
-      return month.slice(0, -1) + "е";
-    }
-    return month + "е";
+    return formatMonthPrepositional(prevStartDate.value);
   });
 
   return {

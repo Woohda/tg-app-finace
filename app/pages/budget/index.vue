@@ -9,7 +9,7 @@
 import { ref, watch, onMounted } from "vue";
 import { ChevronLeft, Target } from "@lucide/vue";
 import { budgetSchema } from "~/types/validate";
-import { parseAmount } from "~/utils";
+import { parseAmount } from "~/utils/format";
 import { formatZodError } from "~/utils/zod";
 
 const { budget, updateBudget, isLoading, error, fetchBudget } = useBudgets();
@@ -70,6 +70,7 @@ const saveBudget = async () => {
       <NuxtLink
         class="w-12 h-12 absolute left-0 top-1/2 -translate-y-1/2 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 active:scale-95 transition-transform a11y-focus"
         to="/settings"
+        aria-label="Назад к настройкам"
       >
         <ChevronLeft class="text-text-primary -ml-px" :stroke-width="1.5" />
       </NuxtLink>

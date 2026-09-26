@@ -42,7 +42,7 @@ export default defineEventHandler(async (event) => {
   const supabase = getUserSupabase(token);
 
   // Используем текущую дату для period_date, так как мы применяем глобальный лимит
-  const periodDate = new Date().toISOString().slice(0, 10);
+  const periodDate = formatDateISO();
 
   const { data, error } = await supabase
     .from("budgets")

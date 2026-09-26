@@ -37,16 +37,15 @@ export const useTransactions = (options?: {
   const notifications = useNotifications();
 
   const txCache = useTransactionCache();
-  const txEntities = useTransactionEntities();
   const txVersion = useGlobalTransactionsVersion();
 
   const query = computed(() => {
     const q: Record<string, string> = {};
     if (options?.startDate?.value) {
-      q.startDate = options.startDate.value.toISOString();
+      q.startDate = formatDateISO(options.startDate.value);
     }
     if (options?.endDate?.value) {
-      q.endDate = options.endDate.value.toISOString();
+      q.endDate = formatDateISO(options.endDate.value);
     }
     return q;
   });
@@ -79,12 +78,6 @@ export const useTransactions = (options?: {
         ...txCache.value,
         [key]: data,
       };
-
-      const entitiesUpdate = { ...txEntities.value };
-      data.forEach((tx) => {
-        entitiesUpdate[tx.id] = tx;
-      });
-      txEntities.value = entitiesUpdate;
     } catch (err: unknown) {
       error.value = err;
       console.error("Ошибка загрузки транзакций:", err);
@@ -171,11 +164,6 @@ export const useTransactions = (options?: {
 
       knownTxIds.value.unshift(newTx.id);
 
-      txEntities.value = {
-        ...txEntities.value,
-        [newTx.id]: newTx,
-      };
-
       invalidateAll();
 
       toast.success("Транзакция добавлена");
@@ -214,11 +202,6 @@ export const useTransactions = (options?: {
         body: data,
       });
 
-      txEntities.value = {
-        ...txEntities.value,
-        [updated.id]: updated,
-      };
-
       invalidateAll();
 
       const txName = updated.name || updated.categoryName;
@@ -242,15 +225,11 @@ export const useTransactions = (options?: {
       return { success: false, error: "Запрос уже выполняется" };
     isMutating.value = true;
     try {
-      const deletedTx =
-        txEntities.value[id] || transactions.value.find((t) => t.id === id);
+      const deletedTx = transactions.value.find((t) => t.id === id);
 
       await api(`/api/transactions/${id}`, {
         method: "DELETE",
       });
-
-      const { [id]: _, ...updatedEntities } = txEntities.value;
-      txEntities.value = updatedEntities;
 
       invalidateAll();
 
@@ -305,12 +284,6 @@ export const useTransactions = (options?: {
 
       const newIds = newTransactions.map((t) => t.id);
       knownTxIds.value = [...newIds, ...knownTxIds.value].slice(0, 150);
-
-      const updatedEntities = { ...txEntities.value };
-      newTransactions.forEach((t) => {
-        updatedEntities[t.id] = t;
-      });
-      txEntities.value = updatedEntities;
 
       invalidateAll();
 

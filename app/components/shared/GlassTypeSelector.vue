@@ -28,7 +28,7 @@ const emit = defineEmits<{
     <!-- Доход -->
     <RadioGroupItem
       value="income"
-      class="group relative flex-1 flex flex-col items-center justify-center gap-px py-1.5 rounded-4xl transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] outline-none cursor-pointer select-none bg-transparent!"
+      class="group relative flex-1 flex flex-col items-center justify-center gap-px py-1.5 rounded-4xl transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] outline-none cursor-pointer select-none a11y-focus bg-transparent!"
       :class="[
         modelValue === 'income'
           ? 'z-20 scale-100 opacity-100 shadow-[0_4px_20px_rgba(225,29,72,0.3)]! text-text-accent blur-0'
@@ -54,7 +54,7 @@ const emit = defineEmits<{
     <!-- Расход -->
     <RadioGroupItem
       value="expense"
-      class="group relative flex-1 flex flex-col items-center justify-center gap-px py-1.5 rounded-4xl transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] outline-none cursor-pointer select-none -ml-4 bg-transparent!"
+      class="group relative flex-1 flex flex-col items-center justify-center gap-px py-1.5 rounded-4xl transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] outline-none cursor-pointer select-none -ml-4 a11y-focus bg-transparent!"
       :class="[
         modelValue === 'expense'
           ? 'z-20 scale-100 opacity-100 shadow-[0_4px_20px_rgba(225,29,72,0.3)]! text-text-accent blur-0'

@@ -39,10 +39,6 @@ export const transactionSchema = z.object({
   name: z.string().optional().nullable(),
 });
 
-// Псевдонимы для совместимости
-export const transactionFrontendSchema = transactionSchema;
-export const transactionBackendSchema = transactionSchema;
-
 export const transactionPatchSchema = z
   .object({
     amount: z

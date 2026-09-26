@@ -15,7 +15,7 @@ import { computed, ref, watch } from "vue";
 import { Calendar } from "@lucide/vue";
 import type { Database } from "~/types/database.types";
 import { transactionSchema } from "~/types/validate";
-import { parseAmount } from "~/utils";
+import { parseAmount } from "~/utils/format";
 import { formatZodError } from "~/utils/zod";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
@@ -93,6 +93,7 @@ const save = () => {
     :is-open="isOpen"
     position="bottom"
     :show-close="true"
+    :z-index="Z_INDEX.SCAN_EDIT"
     @close="emit('close')"
   >
     <div v-if="localItem" class="flex flex-col gap-3 px-2">

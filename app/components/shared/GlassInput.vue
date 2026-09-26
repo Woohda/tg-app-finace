@@ -1,16 +1,22 @@
 <script setup lang="ts">
 /**
  * @module app/components/shared/GlassInput
- * @fileoverview Поле ввода в стиле Glassmorphism.
+ * @fileoverview Поле ввода в стиле Glassmorphism
  * @description
- * Обертка над базовым компонентом `Input`, добавляющая лэйбл, иконки (start/end)
- * и стилизацию (полупрозрачный фон, мягкие тени).
+ * Нативное поле ввода с поддержкой лейбла, слотов для иконок
+ * и стилизации (полупрозрачный фон, мягкие тени, подсветка фокуса).
+ * Автоматически центрирует скролл при открытии виртуальной клавиатуры в модалках.
+ * ---
+ * ### Логика работы:
+ * 1. Синхронизирует значение с `modelValue` через вычисляемое свойство.
+ * 2. Обеспечивает плавную подсветку состояния фокуса и валидации.
+ * 3. Экспортирует метод `focus()` для программной установки фокуса.
  */
-import { computed, ref } from "vue";
+import { computed, ref, useId } from "vue";
 import type { Component } from "vue";
-import { Input } from "~/components/ui/input";
 
 const props = defineProps<{
+  id?: string;
   modelValue?: string | number | null;
   label?: string;
   placeholder?: string;
@@ -28,6 +34,8 @@ const props = defineProps<{
   step?: string | number;
 }>();
 
+const inputId = computed(() => props.id || useId());
+
 const emits = defineEmits<{
   (e: "update:modelValue", payload: string | number): void;
 }>();
@@ -38,12 +46,10 @@ const value = computed({
 });
 
 const isFocused = ref(false);
-const inputCompRef = ref<InstanceType<typeof Input> | null>(null);
+const inputRef = ref<HTMLInputElement | null>(null);
 
 const focus = () => {
-  if (inputCompRef.value?.inputRef) {
-    inputCompRef.value.inputRef.focus();
-  }
+  inputRef.value?.focus();
 };
 
 const handleFocus = (e: FocusEvent) => {
@@ -64,7 +70,7 @@ const handleFocus = (e: FocusEvent) => {
       // Центрируем поле в верхней трети видимого контейнера над клавиатурой
       const relativeTop = inputRect.top - containerRect.top;
       const targetScroll =
-        scrollContainer.scrollTop + relativeTop - containerRect.height * 0.35;
+        scrollContainer.scrollTop + relativeTop - containerRect.height * 0.5;
 
       scrollContainer.scrollTo({
         top: Math.max(0, targetScroll),
@@ -79,9 +85,13 @@ defineExpose({ focus });
 
 <template>
   <div class="flex flex-col gap-1">
-    <label v-if="label" class="text-xs font-bold text-text-primary pl-3">{{
-      label
-    }}</label>
+    <label
+      v-if="label"
+      :for="inputId"
+      class="text-sm font-bold text-text-primary pl-3 cursor-pointer"
+    >
+      {{ label }}
+    </label>
     <div
       :class="[
         'relative flex items-center group transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu glass-pill rounded-full',
@@ -101,15 +111,16 @@ defineExpose({ focus });
           <span v-else class="font-bold text-lg">{{ icon }}</span>
         </slot>
       </div>
-      <Input
-        ref="inputCompRef"
+      <input
+        :id="inputId"
+        ref="inputRef"
         v-model="value"
         :type="type"
         :inputmode="inputmode"
         :step="step"
         :placeholder="placeholder"
         :class="[
-          'relative z-10 bg-transparent rounded-full px-5 text-text-primary font-medium outline-none border-none transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu',
+          'w-full relative z-10 bg-transparent rounded-full px-5 py-2.5 text-text-primary font-medium outline-none border-none transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu a11y-focus',
           $slots.icon || icon ? 'pl-10' : '',
           type === 'date' ? 'py-0 min-h-10 appearance-none leading-normal' : '',
           'focus:shadow-[0_4px_20px_rgba(225,29,72,0.3)]!',

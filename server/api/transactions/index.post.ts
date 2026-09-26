@@ -7,14 +7,15 @@
  * ### Логика работы:
  * 1. `Authentication`: Проверка JWT токена.
  * 2. `Validation`: Проверка тела запроса через Zod (`transactionSchema`).
- * 3. `Database Insert`: Добавление записи в `transactions` с `user_id`.
+ * 3. `Database Mutation`: Добавление или upsert записи в `transactions` с `user_id` и выборка через `TRANSACTION_SELECT_FIELDS`.
  *
  * ### Параметры запроса:
  * - `amount: number` — сумма транзакции.
- * - `type: "income" | "expense"` — тип.
+ * - `type: "income" | "expense"` — тип операции.
  * - `category_id: string` — UUID категории.
- * - `date: string` — ISO дата.
- * - `description?: string` — комментарий (опционально).
+ * - `name: string` — название или комментарий.
+ * - `date: string` — локальная дата в формате ISO (YYYY-MM-DD).
+ * - `id?: string` — опциональный UUID для идемпотентного сохранения/upsert.
  *
  * ### Ошибки:
  * - `400 Bad Request`: Ошибка валидации параметров.
@@ -72,21 +73,7 @@ export default defineEventHandler(async (event) => {
     : supabase.from("transactions").insert(payload);
 
   const { data, error } = await dbQuery
-    .select(
-      `
-      id,
-      amount,
-      type,
-      name,
-      date,
-      created_at,
-      categories (
-        id,
-        name,
-        icon
-      )
-    `,
-    )
+    .select(TRANSACTION_SELECT_FIELDS)
     .single();
 
   if (error) {

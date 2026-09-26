@@ -3,18 +3,19 @@
  * @module app/components/analytics/CategoryAnalyticsModal
  * @fileoverview Детальная аналитика по одной категории
  * @description
- * Модальное окно, показывающее динамику трат (график) и инсайты
- * конкретно для выбранной категории за выбранный период.
+ * Модальное окно, показывающее динамику трат (график), инсайты
+ * и список операций конкретно для выбранной категории за текущий месяц.
  * ---
  * ### Логика работы:
  * 1. Получает `categoryId` и `period` из пропсов.
  * 2. Вызывает `useAnalyticsData` с фильтром по `categoryId`.
- * 3. Отрисовывает `AnalyticsBarChart` и метрики (рост/падение).
+ * 3. Фильтрует операции категории за текущий месяц через `filterCurrentMonthCategoryTransactions`.
+ * 4. Отрисовывает `AnalyticsBarChart`, метрики и список операций месяца под графиком.
  */
-import { toRef, computed } from "vue";
+import { toRef, computed, ref } from "vue";
 import { TrendingUp, TrendingDown } from "@lucide/vue";
 import type { AnalyticsPeriodType } from "~/composables/useAnalyticsPeriod";
-import { formatAmount } from "~/utils";
+import { formatAmount } from "~/utils/format";
 
 const props = defineProps<{
   isOpen: boolean;
@@ -25,9 +26,13 @@ const props = defineProps<{
 const emit = defineEmits(["close"]);
 
 const { startDate, endDate, prevStartDate, prevEndDate } = useAnalyticsPeriod();
+const {
+  transactions,
+  pending: pendingTransactions,
+  deleteTransaction,
+} = useTransactions();
+const { openModal } = useTransactionModal();
 
-// Синхронизируем период из пропсов с локальным хуком,
-// чтобы вычислялись правильные даты
 const localPeriod = toRef(props, "period");
 
 const { pending, totalSpent, percentChange, chartData, categoryStats } =
@@ -39,6 +44,22 @@ const { pending, totalSpent, percentChange, chartData, categoryStats } =
     prevEndDate,
     toRef(props, "categoryId"),
   );
+
+const filteredTransactions = computed(() =>
+  filterCurrentMonthCategoryTransactions(transactions.value, props.categoryId),
+);
+
+const deletingId = ref<string | null>(null);
+
+async function handleDelete(id: string) {
+  deletingId.value = id;
+  await deleteTransaction(id);
+  deletingId.value = null;
+}
+
+function handleEdit(id: string) {
+  openModal(id);
+}
 
 const prevPeriodLabel = computed(() => {
   switch (localPeriod.value) {
@@ -67,7 +88,12 @@ const close = () => emit("close");
 </script>
 
 <template>
-  <GlassModal :is-open="isOpen" position="bottom" @close="close">
+  <GlassModal
+    :is-open="isOpen"
+    position="bottom"
+    :z-index="Z_INDEX.CATEGORY_ANALYTICS"
+    @close="close"
+  >
     <template #header>
       <div class="flex items-center gap-3">
         <div
@@ -147,6 +173,67 @@ const close = () => emit("close");
             Динамика по категории
           </h2>
           <AnalyticsBarChart :data="chartData" />
+        </GlassCard>
+
+        <!-- Операции за текущий месяц -->
+        <GlassCard class="p-4 flex flex-col gap-3 pb-0">
+          <div class="flex justify-between items-center px-1">
+            <h3
+              class="text-text-primary font-bold text-sm uppercase tracking-wide"
+            >
+              Операции за месяц
+            </h3>
+            <span class="text-text-secondary text-xs font-semibold">
+              {{ filteredTransactions.length }}
+            </span>
+          </div>
+
+          <!-- Скелетоны транзакций (загрузка) -->
+          <div v-if="pendingTransactions" class="flex flex-col gap-3">
+            <TransactionSkeletonList :count="3" mode="list" />
+          </div>
+
+          <!-- Список транзакций -->
+          <div
+            v-else-if="filteredTransactions.length > 0"
+            class="flex flex-col gap-3"
+          >
+            <TransactionItem
+              v-for="tx in filteredTransactions"
+              :key="tx.id"
+              v-memo="[
+                tx.id,
+                tx.amount,
+                tx.name,
+                tx.date,
+                tx.categoryIcon,
+                tx.type,
+                deletingId === tx.id,
+              ]"
+              :icon="tx.categoryIcon"
+              :title="tx.name || tx.categoryName"
+              :subtitle="tx.name ? tx.categoryName : ''"
+              :amount="tx.amount"
+              :type="tx.type"
+              :date="tx.date"
+              interactive
+              :class="{
+                'opacity-50 pointer-events-none': deletingId === tx.id,
+              }"
+              @click="handleEdit(tx.id)"
+              @delete="handleDelete(tx.id)"
+            />
+          </div>
+
+          <!-- Пустое состояние при отсутствии трат -->
+          <div
+            v-else
+            class="flex flex-col items-center justify-start text-start pb-5"
+          >
+            <p class="text-text-secondary text-md font-medium">
+              В этом месяце операций по категории ещё не было
+            </p>
+          </div>
         </GlassCard>
       </div>
     </div>

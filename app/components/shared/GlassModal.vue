@@ -1,24 +1,48 @@
 <script setup lang="ts">
 /**
- * @module app/components/modal/GlassModal
+ * @module app/components/shared/GlassModal
  * @fileoverview Базовый переиспользуемый UI-компонент модального окна в стиле Glassmorphism.
  * @description
- * Предоставляет обертку для других модальных окон (например, `TransactionModal`).
- * Поддерживает анимации появления/скрытия (Transition) и разные позиции (`center` / `bottom`).
+ * Предоставляет унифицированную обертку для модальных окон приложения (создание и редактирование
+ * транзакций, аналитика категорий, управление подписками и диалоги подтверждения).
+ * Поддерживает плавные анимации появления (Transition), позиционирование (`center` / `bottom`),
+ * динамическое управление слоями (z-index) и безопасные отступы при открытии экранной клавиатуры.
  * ---
  * ### Логика работы:
- * 1. Использует Teleport в `body` для обхода проблем с `z-index` в CSS.
- * 2. Блокирует прокрутку страницы (`document.body.style.overflow = "hidden"`) при открытии.
+ * 1. **Телепортация**: Рендерит содержимое через `<Teleport to="body">` для изоляции контекста наложения.
+ * 2. **Управление слоями (z-index)**: Принимает числовой параметр `zIndex` (по умолчанию `Z_INDEX.MODAL_BASE`),
+ *    гарантируя корректный порядок отображения вложенных окон без конфликтов CSS.
+ * 3. **Адаптация к клавиатуре**: Использует `useKeyboardViewport` для автоматического смещения
+ *    модального окна и ограничения `maxHeight` при появлении мобильной клавиатуры.
+ * 4. **Блокировка взаимодействия с фоном**:
+ *    - Фиксирует скролл страницы (`document.body.style.overflow = "hidden"`).
+ *    - Отключает вертикальные свайпы Telegram Mini App (`disableVerticalSwipes`) для предотвращения случайного закрытия шторки приложения.
+ * 
+ * ### Входные параметры (Props):
+ * - `isOpen`: Флаг видимости модального окна (по умолчанию `false`).
+ * - `title`: Заголовок в шапке модалки.
+ * - `position`: Расположение окна — `"center"` по центру экрана или `"bottom"` в виде нижней шторки (по умолчанию `"center"`).
+ * - `showClose`: Отображать ли кнопку закрытия с иконкой крестика (по умолчанию `true`).
+ * - `zIndex`: Уровень z-index контейнера оверлея (по умолчанию `Z_INDEX.MODAL_BASE`).
+ * 
+ * ### События (Emits):
+ * - `close`: Вызывается при нажатии на кнопку закрытия, клике по затемненному оверлею или свайпе.
  */
 import { computed, watch, onUnmounted } from "vue";
-import { cn } from "~/utils";
+import { cn } from "~/utils/cn";
+import { Z_INDEX } from "~/utils/zIndex";
 import { X } from "@lucide/vue";
+
+defineOptions({
+  inheritAttrs: false,
+});
 
 interface Props {
   isOpen?: boolean;
   title?: string;
   position?: "center" | "bottom";
   showClose?: boolean;
+  zIndex?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -26,6 +50,7 @@ const props = withDefaults(defineProps<Props>(), {
   title: undefined,
   position: "center",
   showClose: true,
+  zIndex: Z_INDEX.MODAL_BASE,
 });
 
 const emit = defineEmits<{
@@ -38,12 +63,15 @@ const close = () => {
 
 const { keyboardHeight, isKeyboardOpen } = useKeyboardViewport();
 
-// Динамические стили контейнера и карточки для безопасного расположения над клавиатурой
+// Динамические стили контейнера и карточки для безопасного расположения над клавиатурой и слоя отображения
 const containerStyle = computed(() => {
-  if (!isKeyboardOpen.value || keyboardHeight.value <= 0) return undefined;
-  return {
-    paddingBottom: `${keyboardHeight.value + 20}px`,
+  const style: Record<string, string | number> = {
+    zIndex: props.zIndex,
   };
+  if (isKeyboardOpen.value && keyboardHeight.value > 0) {
+    style.paddingBottom = `${keyboardHeight.value + 20}px`;
+  }
+  return style;
 });
 
 const cardStyle = computed(() => {
@@ -91,7 +119,7 @@ onUnmounted(() => {
         v-if="isOpen"
         :class="
           cn(
-            'fixed inset-0 z-60 flex p-4 bg-black/10 backdrop-blur-sm transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+            'fixed inset-0 flex p-4 bg-black/10 backdrop-blur-sm transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
             position === 'bottom'
               ? 'items-end justify-center sm:items-center'
               : 'items-center justify-center',
@@ -102,9 +130,12 @@ onUnmounted(() => {
       >
         <GlassCard
           data-modal-card="true"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="title || 'Диалоговое окно'"
           :class="
             cn(
-              'w-full max-w-90 mb-2 p-5 flex flex-col gap-4 glass-milky transition-[max-height,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+              'w-full max-w-90 mb-2 p-5 flex flex-col gap-3 glass-milky transition-[max-height,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
               'max-h-[85dvh] overflow-y-auto scrollbar-hide',
               position === 'bottom'
                 ? 'animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-350 ease-[cubic-bezier(0.16,1,0.3,1)]'
@@ -128,6 +159,7 @@ onUnmounted(() => {
               v-if="showClose"
               variant="soft"
               size="sm"
+              aria-label="Закрыть"
               class="px-2.25 text-text-primary shrink-0"
               @click="close"
             >
