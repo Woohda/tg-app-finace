@@ -237,14 +237,15 @@ const { segments, radius, strokeWidth } = useDonutMath(
               top: `${seg.iconY}%`,
             }"
           >
-            <component
-              :is="seg.IconComponent"
-              class="text-xs text-white"
+            <span
+              class="inline-flex items-center justify-center leading-none text-xs text-white"
               style="
                 filter: drop-shadow(0px 1px 3px rgba(255, 255, 255, 0.3));
                 opacity: 0.8;
               "
-            />
+            >
+              {{ seg.icon || "❔" }}
+            </span>
           </div>
 
           <Transition appear name="fade-in">
