@@ -55,8 +55,11 @@ const { openModal } = useTransactionModal();
 
 <template>
   <div
-    class="absolute left-1/2 -translate-x-1/2 w-full max-w-97 px-2.75 z-50 pointer-events-none transition-opacity duration-200"
-    style="bottom: calc(1.25rem + env(safe-area-inset-bottom))"
+    class="absolute left-1/2 -translate-x-1/2 w-full max-w-97 px-2.75 pointer-events-none transition-opacity duration-200"
+    :style="{
+      zIndex: Z_INDEX.BOTTOM_NAV,
+      bottom: 'calc(1.25rem + env(safe-area-inset-bottom))',
+    }"
   >
     <nav
       aria-label="Основная навигация"

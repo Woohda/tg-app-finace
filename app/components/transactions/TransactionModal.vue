@@ -152,6 +152,7 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
     :is-open="isOpen"
     position="bottom"
     :title="isEditMode ? 'Редактирование' : 'Новая операция'"
+    :z-index="Z_INDEX.TRANSACTION"
     @close="closeModal"
   >
     <form class="flex flex-col gap-3" @submit.prevent="submit">
@@ -248,7 +249,12 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
   </GlassModal>
 
   <!-- Модалка загрузки для чека -->
-  <GlassModal :is-open="isScanning" position="center" :show-close="false">
+  <GlassModal
+    :is-open="isScanning"
+    position="center"
+    :show-close="false"
+    :z-index="Z_INDEX.LOADER"
+  >
     <p class="text-text-primary font-medium text-center animate-pulse">
       Распознаю скриншот... <br />Магия нейросетей работает ✨
     </p>

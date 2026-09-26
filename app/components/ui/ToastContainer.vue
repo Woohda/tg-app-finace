@@ -25,9 +25,10 @@ const colors = {
 </script>
 
 <template>
-  <!-- Контейнер фиксирован поверх всего, z-index 9999 -->
+  <!-- Контейнер фиксирован поверх всего (Z_INDEX.TOAST) -->
   <div
-    class="fixed top-4 left-0 right-0 z-9999 px-4 pointer-events-none flex flex-col items-center gap-3"
+    class="fixed top-4 left-0 right-0 px-4 pointer-events-none flex flex-col items-center gap-3"
+    :style="{ zIndex: Z_INDEX.TOAST }"
     role="region"
     aria-label="Всплывающие уведомления"
     aria-live="polite"

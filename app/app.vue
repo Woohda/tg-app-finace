@@ -29,7 +29,8 @@ const isLoading = useGlobalLoading();
       role="status"
       aria-live="polite"
       aria-label="Загрузка"
-      class="fixed inset-0 z-100 flex items-center justify-center bg-black/15 backdrop-blur-[2px]"
+      class="fixed inset-0 flex items-center justify-center bg-black/15 backdrop-blur-[2px]"
+      :style="{ zIndex: Z_INDEX.LOADER }"
     >
       <Loader class="text-text-accent" />
     </div>

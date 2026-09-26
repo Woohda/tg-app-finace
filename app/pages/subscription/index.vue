@@ -197,6 +197,7 @@ const handleDelete = async () => {
         :is-open="isDeleteModalOpen"
         position="center"
         title="Удалить платёж?"
+        :z-index="Z_INDEX.SUBSCRIPTION_DELETE"
         @close="cancelDelete"
       >
         <div class="flex flex-col gap-4 text-center">

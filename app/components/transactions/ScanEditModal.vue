@@ -93,6 +93,7 @@ const save = () => {
     :is-open="isOpen"
     position="bottom"
     :show-close="true"
+    :z-index="Z_INDEX.SCAN_EDIT"
     @close="emit('close')"
   >
     <div v-if="localItem" class="flex flex-col gap-3 px-2">

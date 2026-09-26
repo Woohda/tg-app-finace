@@ -137,6 +137,7 @@ const submit = async () => {
     :is-open="isOpen"
     position="bottom"
     :title="isEditMode ? 'Редактировать платёж' : 'Новый регулярный платёж'"
+    :z-index="Z_INDEX.SUBSCRIPTION_FORM"
     @close="emit('close')"
   >
     <form class="flex flex-col gap-4" @submit.prevent="submit">

@@ -65,6 +65,7 @@ const executeDelete = async () => {
     :is-open="isOpen"
     :show-close="false"
     position="center"
+    :z-index="Z_INDEX.CATEGORY_DELETE"
     @close="cancelDelete"
   >
     <div class="flex flex-col gap-2 text-center">

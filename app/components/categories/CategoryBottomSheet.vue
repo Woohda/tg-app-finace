@@ -45,16 +45,20 @@ const searchInputRef = ref<HTMLInputElement | null>(null);
 const isSearchFocused = ref(false);
 
 const sheetContentStyle = computed(() => {
+  const base: Record<string, string | number> = {
+    zIndex: Z_INDEX.CATEGORY_SHEET,
+  };
   if (
     isSearchFocused.value &&
     isKeyboardOpen.value &&
     keyboardHeight.value > 0
   ) {
     return {
+      ...base,
       paddingBottom: `${keyboardHeight.value + 16}px`,
     };
   }
-  return undefined;
+  return base;
 });
 
 const filteredCategories = computed(() => {
@@ -127,7 +131,8 @@ onBeforeUnmount(() => {
     >
       <div
         v-if="isOpen"
-        class="fixed inset-0 z-70 bg-black/15 backdrop-blur-[2px]"
+        class="fixed inset-0 bg-black/15 backdrop-blur-[2px]"
+        :style="{ zIndex: Z_INDEX.CATEGORY_SHEET_BACKDROP }"
         @click="handleClose"
       />
     </Transition>
@@ -146,7 +151,7 @@ onBeforeUnmount(() => {
         role="dialog"
         aria-modal="true"
         :aria-label="title"
-        class="fixed inset-x-0 bottom-0 z-75 flex flex-col max-h-[72dvh] max-w-90 sm:max-w-sm mx-auto sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 rounded-t-3xl sm:rounded-3xl glass-milky px-5 pt-3 pb-8 shadow-glass transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
+        class="fixed inset-x-0 bottom-0 flex flex-col max-h-[72dvh] max-w-90 sm:max-w-sm mx-auto sm:bottom-auto sm:top-1/2 sm:-translate-y-1/2 rounded-t-3xl sm:rounded-3xl glass-milky px-5 pt-3 pb-8 shadow-glass transition-[padding] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]"
         :style="sheetContentStyle"
       >
         <!-- Мобильный индикатор свайпа (Drag Handle) -->
