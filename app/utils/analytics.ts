@@ -11,7 +11,9 @@
  * - `aggregateCategoryStats`: формирует рейтинг категорий расходов с процентами от общей суммы.
  * - `buildAnalyticsChartData`: заполняет пустые интервалы дат нулями и агрегирует суммы по дням/месяцам.
  * - `calculatePercentChange`: рассчитывает процентное изменение между двумя числами с защитой от деления на 0.
+ * - `filterCurrentMonthCategoryTransactions`: отбирает транзакции заданной категории за месяц и сортирует их по убыванию даты.
  */
+import { isSameMonth } from "date-fns";
 import type { Transaction } from "~/composables/useTransactions";
 import type { AnalyticsPeriodType } from "~/composables/useAnalyticsPeriod";
 
@@ -119,4 +121,28 @@ export function buildAnalyticsChartData(
   }
 
   return Object.entries(data).map(([label, value]) => ({ label, value }));
+}
+
+/**
+ * Фильтрует список транзакций по категории за текущий (или заданный) месяц.
+ * Возвращает новый массив транзакций, отсортированный по дате от более новых к старым.
+ */
+export function filterCurrentMonthCategoryTransactions(
+  transactions: Transaction[],
+  categoryId: string | null | undefined,
+  referenceDate: Date = getNow(),
+): Transaction[] {
+  if (!categoryId || !transactions?.length) {
+    return [];
+  }
+
+  const targetDate = toSafeDate(referenceDate);
+
+  return transactions
+    .filter(
+      (t) =>
+        t.categoryId === categoryId &&
+        isSameMonth(toSafeDate(t.date), targetDate),
+    )
+    .sort((a, b) => toSafeDate(b.date).getTime() - toSafeDate(a.date).getTime());
 }
