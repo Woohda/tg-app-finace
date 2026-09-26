@@ -61,9 +61,9 @@ const emit = defineEmits<{
             v-if="subscription.statusLabel"
             class="text-[10px] px-1.5 py-0.2 rounded-full font-semibold"
             :class="{
-              'bg-accent-red/15 text-accent-red':
+              'bg-accent-start/15 text-accent-mid':
                 subscription.statusType === 'today',
-              'bg-accent-orange/15 text-accent-orange':
+              'bg-accent-notification text-accent-primery':
                 subscription.statusType === 'soon',
               'bg-black/5 text-text-secondary':
                 subscription.statusType === 'upcoming' ||
@@ -86,8 +86,4 @@ const emit = defineEmits<{
   </SwipeableRow>
 </template>
 
-<style scoped>
-.subscription-item:last-child .subscription-content {
-  border-bottom-width: 0;
-}
-</style>
+<style scoped></style>

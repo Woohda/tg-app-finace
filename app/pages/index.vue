@@ -54,7 +54,7 @@ const currentDate = computed(() => formatWeekdayAndDate());
       <NuxtLink
         to="/notifications"
         aria-label="Уведомления"
-        class="w-12 h-12 rounded-full glass-milky flex items-center justify-center relative active:scale-95 transition-transform shrink-0 a11y-focus border-[0.5px] border-white/50"
+        class="w-12 h-12 rounded-full glass-pill flex items-center justify-center relative active:scale-95 transition-transform shrink-0 a11y-focus"
       >
         <Bell class="w-6 h-6 text-text-secondary" />
         <ClientOnly>

@@ -29,8 +29,8 @@ const emit = defineEmits<{
     role="button"
     tabindex="0"
     :aria-label="`Категория ${name}`"
-    class="category-item rounded-xl outline-none a11y-focus"
-    content-class="category-content flex items-center justify-between px-3 py-2 bg-transparent border-b border-black/6 cursor-pointer active:opacity-80"
+    class="group category-item rounded-xl outline-none a11y-focus"
+    content-class="category-content flex items-center justify-between p-3 bg-transparent border-b border-black/6 cursor-pointer active:opacity-80 group-last:border-none"
     @click="emit('edit')"
     @keydown.enter="emit('edit')"
     @keydown.space.prevent="emit('edit')"
@@ -38,7 +38,7 @@ const emit = defineEmits<{
   >
     <div class="flex items-center gap-3 min-w-0">
       <div
-        class="size-9 rounded-full glass-milky flex items-center justify-center text-lg shrink-0"
+        class="size-9 rounded-full glass-pill flex items-center justify-center text-lg shrink-0"
       >
         {{ icon || defaultIcon }}
       </div>
@@ -49,8 +49,4 @@ const emit = defineEmits<{
   </SwipeableRow>
 </template>
 
-<style scoped>
-.category-item:last-child .category-content {
-  border-bottom-width: 0;
-}
-</style>
+<style scoped></style>
