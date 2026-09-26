@@ -18,6 +18,7 @@ export interface User {
   id: string;
   telegram_id: number;
   username: string | null;
+  timezone?: string | null;
 }
 
 export interface TgUser {
@@ -72,11 +73,16 @@ export const useAuth = () => {
 
   const loginWithTelegram = async (initData: string): Promise<boolean> => {
     try {
+      const timezone =
+        typeof Intl !== "undefined"
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone
+          : undefined;
+
       const response = await $fetch<{ token: string; user: User }>(
         "/api/auth/validate",
         {
           method: "POST",
-          body: { initData },
+          body: { initData, timezone },
         },
       );
       token.value = response.token;

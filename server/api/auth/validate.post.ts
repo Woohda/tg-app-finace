@@ -67,6 +67,11 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  const timezone =
+    typeof body.timezone === "string" && body.timezone.trim()
+      ? body.timezone.trim()
+      : undefined;
+
   const tgUser = JSON.parse(userString);
   const telegramId = tgUser.id;
   const username = tgUser.username || null;
@@ -75,7 +80,7 @@ export default defineEventHandler(async (event) => {
 
   const response = await supabase
     .from("users")
-    .select("id, telegram_id, username")
+    .select("id, telegram_id, username, timezone")
     .eq("telegram_id", telegramId)
     .single();
 
@@ -83,24 +88,61 @@ export default defineEventHandler(async (event) => {
   const fetchError = response.error;
 
   if (fetchError && fetchError.code !== "PGRST116") {
-    console.error("Ошибка БД при поиске пользователя:", fetchError);
-    throw createError({ statusCode: 500, statusMessage: "Ошибка базы данных" });
-  }
-
-  if (!user) {
-    const { data: newUser, error: insertError } = await supabase
+    // Если ошибка вызвана тем, что колонка timezone еще не добавлена, делаем fallback выборку
+    const fallbackResponse = await supabase
       .from("users")
-      .insert({ telegram_id: telegramId, username })
       .select("id, telegram_id, username")
+      .eq("telegram_id", telegramId)
       .single();
 
-    if (insertError || !newUser) {
-      console.error("Ошибка создания пользователя:", insertError);
-      throw createError({
-        statusCode: 500,
-        statusMessage: "Не удалось создать пользователя",
-      });
+    if (fallbackResponse.error && fallbackResponse.error.code !== "PGRST116") {
+      console.error("Ошибка БД при поиске пользователя:", fetchError);
+      throw createError({ statusCode: 500, statusMessage: "Ошибка базы данных" });
     }
+    user = fallbackResponse.data ? { ...fallbackResponse.data, timezone: null } : null;
+  }
+
+  if (user) {
+    if (timezone && user.timezone !== timezone) {
+      try {
+        await supabase
+          .from("users")
+          .update({ timezone })
+          .eq("id", user.id);
+        user.timezone = timezone;
+      } catch {
+        // Игнорируем ошибку обновления, если колонка timezone еще не создана
+      }
+    }
+  } else {
+    let newUser = null;
+
+    if (timezone) {
+      const res = await supabase
+        .from("users")
+        .insert({ telegram_id: telegramId, username, timezone })
+        .select("id, telegram_id, username, timezone")
+        .single();
+      newUser = res.data;
+    }
+
+    if (!newUser) {
+      const { data: fallbackUser, error: insertError } = await supabase
+        .from("users")
+        .insert({ telegram_id: telegramId, username })
+        .select("id, telegram_id, username")
+        .single();
+
+      if (insertError || !fallbackUser) {
+        console.error("Ошибка создания пользователя:", insertError);
+        throw createError({
+          statusCode: 500,
+          statusMessage: "Не удалось создать пользователя",
+        });
+      }
+      newUser = { ...fallbackUser, timezone: null };
+    }
+
     user = newUser;
 
     // Инициализируем стартовые категории для нового пользователя
