@@ -59,6 +59,7 @@ const { openModal } = useTransactionModal();
     style="bottom: calc(1.25rem + env(safe-area-inset-bottom))"
   >
     <nav
+      aria-label="Основная навигация"
       class="relative h-19 glass-milky rounded-[38px] px-4 flex items-center justify-between pointer-events-auto"
     >
       <!-- Левый блок навигации -->

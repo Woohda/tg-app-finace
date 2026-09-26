@@ -69,7 +69,7 @@ const openSheet = () => {
 <template>
   <div class="relative w-full flex flex-col gap-1">
     <!-- Лейбл поля (если передан) -->
-    <label v-if="label" class="text-xs font-bold text-text-primary pl-2">
+    <label v-if="label" class="text-sm font-bold text-text-primary pl-3">
       {{ label }}
     </label>
 
@@ -77,11 +77,20 @@ const openSheet = () => {
     <button
       type="button"
       :disabled="disabled"
+      aria-haspopup="dialog"
+      :aria-expanded="isSheetOpen"
+      :aria-label="
+        label
+          ? `${label}: ${selectedCategory ? selectedCategory.name : placeholder}`
+          : selectedCategory
+            ? selectedCategory.name
+            : placeholder
+      "
       :class="
         cn(
-          'relative w-full text-left flex items-center justify-between rounded-full px-4 py-2.5 glass-pill',
+          'relative w-full text-left flex items-center justify-between rounded-full px-4 py-2.75 glass-pill',
           'transition-all duration-300 transform-gpu cursor-pointer',
-          'focus:outline-none a11y-focus',
+          'focus:outline-none a11y-focus focus:shadow-[0_4px_20px_rgba(225,29,72,0.3)]!',
           disabled
             ? 'opacity-50 cursor-not-allowed'
             : 'active:scale-[0.99] hover:bg-white/50',
@@ -112,7 +121,7 @@ const openSheet = () => {
         <!-- Иконка-заглушка -->
         <span
           v-else
-          class="text-base shrink-0 mr-2 pt-1 opacity-60 leading-none select-none"
+          class="text-base shrink-0 mr-2 pt-px opacity-60 leading-none select-none"
         >
           🏷️
         </span>
@@ -120,7 +129,7 @@ const openSheet = () => {
         <span
           :class="
             cn(
-              'font-medium text-sm truncate',
+              'font-medium text-base truncate',
               selectedCategory ? 'text-text-primary' : 'text-text-secondary',
             )
           "

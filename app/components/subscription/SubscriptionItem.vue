@@ -27,9 +27,18 @@ const emit = defineEmits<{
 <template>
   <SwipeableRow
     :disabled="!interactive"
-    class="subscription-item glass-milky rounded-3xl border-r-0"
+    :role="interactive ? 'button' : undefined"
+    :tabindex="interactive ? 0 : undefined"
+    :aria-label="
+      interactive
+        ? `${subscription.name}, ${formatAmount(subscription.amount)} в месяц, списание ${subscription.day_of_month}-го числа`
+        : undefined
+    "
+    class="subscription-item glass-milky rounded-3xl border-r-0 outline-none a11y-focus"
     content-class="subscription-content flex items-center justify-between px-4 py-2.5 cursor-pointer active:opacity-80"
     @click="emit('edit')"
+    @keydown.enter="emit('edit')"
+    @keydown.space.prevent="emit('edit')"
     @delete="emit('delete')"
   >
     <div class="flex items-center gap-3 min-w-0">

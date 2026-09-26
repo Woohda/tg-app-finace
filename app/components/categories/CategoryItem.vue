@@ -26,9 +26,14 @@ const emit = defineEmits<{
 
 <template>
   <SwipeableRow
-    class="category-item rounded-xl"
+    role="button"
+    tabindex="0"
+    :aria-label="`Категория ${name}`"
+    class="category-item rounded-xl outline-none a11y-focus"
     content-class="category-content flex items-center justify-between px-3 py-2 bg-transparent border-b border-black/6 cursor-pointer active:opacity-80"
     @click="emit('edit')"
+    @keydown.enter="emit('edit')"
+    @keydown.space.prevent="emit('edit')"
     @delete="emit('delete')"
   >
     <div class="flex items-center gap-3 min-w-0">

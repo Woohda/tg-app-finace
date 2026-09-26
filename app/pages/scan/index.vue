@@ -245,14 +245,14 @@ const cancelAll = () => {
               group.categoryName
             }}</span>
           </div>
-          <Button
-            variant="ghost"
-            size="xs"
-            class="text-text-accent transition-colors"
+          <button
+            type="button"
+            :aria-label="'Удалить группу ' + group.categoryName"
+            class="text-text-accent p-1.5 rounded-full hover:bg-black/5 active:scale-95 transition-all a11y-focus cursor-pointer"
             @click="removeGroupById(catId)"
           >
-            <Trash2 :stroke-width="2" />
-          </Button>
+            <Trash2 class="size-4" :stroke-width="2" />
+          </button>
         </div>
 
         <!-- Список элементов -->

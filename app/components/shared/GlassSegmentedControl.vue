@@ -1,13 +1,19 @@
 <script setup lang="ts" generic="T extends string = string">
 /**
- * @module app/components/GlassSegmentedControl
- * @fileoverview Неоморфный переключатель сегментов (Segmented Control / Pill Switcher)
+ * @module app/components/shared/GlassSegmentedControl
+ * @fileoverview Стеклянный переключатель сегментов (Segmented Control / Pill Switcher)
  * @description
- * Вдавленная неоморфная плашка с кнопками UiButton.
- * Активный элемент подсвечивается градиентом sunset-glow.
- * Поддерживает размеры 'sm' (для компактных зон, например внутри датчика)
- * и 'md' (полноразмерный для списков и фильтров).
+ * Компонент переключения вкладок/сегментов в стиле Glassmorphism.
+ * Поддерживает WAI-ARIA роли tablist и tab, а также навигацию стрелками клавиатуры
+ * (ArrowLeft / ArrowRight / ArrowUp / ArrowDown, Home, End) с циклическим переключением.
+ * Поддерживает размеры 'sm' (для компактных зон) и 'md' (для списков и фильтров).
+ * ---
+ * ### Логика работы:
+ * 1. Синхронизирует активное состояние с `modelValue` через событие `update:modelValue`.
+ * 2. Обеспечивает паттерн Roving Tabindex: активный таб имеет `tabindex="0"`, остальные — `-1`.
+ * 3. При нажатии стрелок переключает активный таб и переносит на него DOM-фокус.
  */
+import { ref, nextTick } from "vue";
 
 export interface SegmentOption<V extends string = string> {
   id: V;
@@ -20,13 +26,15 @@ interface Props {
   size?: "sm" | "md";
 }
 
-withDefaults(defineProps<Props>(), {
+const props = withDefaults(defineProps<Props>(), {
   size: "md",
 });
 
 const emit = defineEmits<{
   (e: "update:modelValue", value: T): void;
 }>();
+
+const containerRef = ref<HTMLElement | null>(null);
 
 function getOptionId(opt: SegmentOption<T> | T): T {
   return typeof opt === "object" ? opt.id : opt;
@@ -36,19 +44,76 @@ function getOptionLabel(opt: SegmentOption<T> | T): string {
   return typeof opt === "object" ? opt.label : opt;
 }
 
-function selectOption(id: T) {
+function getOptionIndex(val: T): number {
+  return props.options.findIndex((opt) => getOptionId(opt) === val);
+}
+
+function focusButton(index: number) {
+  nextTick(() => {
+    const buttons =
+      containerRef.value?.querySelectorAll<HTMLButtonElement>("button");
+    if (buttons && buttons[index]) {
+      buttons[index].focus();
+    }
+  });
+}
+
+function selectOption(id: T, shouldFocus = false) {
   emit("update:modelValue", id);
+  if (shouldFocus) {
+    const index = getOptionIndex(id);
+    if (index !== -1) {
+      focusButton(index);
+    }
+  }
+}
+
+function onKeyDown(e: KeyboardEvent) {
+  if (props.options.length === 0) return;
+
+  const currentIndex = getOptionIndex(props.modelValue);
+  let nextIndex = currentIndex !== -1 ? currentIndex : 0;
+
+  if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+    e.preventDefault();
+    nextIndex = (currentIndex + 1) % props.options.length;
+  } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+    e.preventDefault();
+    nextIndex =
+      (currentIndex - 1 + props.options.length) % props.options.length;
+  } else if (e.key === "Home") {
+    e.preventDefault();
+    nextIndex = 0;
+  } else if (e.key === "End") {
+    e.preventDefault();
+    nextIndex = props.options.length - 1;
+  } else {
+    return;
+  }
+
+  const nextOption = props.options[nextIndex];
+  if (!nextOption) return;
+
+  selectOption(getOptionId(nextOption), true);
 }
 </script>
 
 <template>
   <!-- Контейнер с flex, выравнивающий элементы в центре -->
-  <div class="flex items-center justify-center">
+  <div
+    ref="containerRef"
+    class="flex items-center justify-center"
+    role="tablist"
+    @keydown="onKeyDown"
+  >
     <GlassButton
       v-for="(opt, index) in options"
       :key="getOptionId(opt)"
       variant="soft"
       type="button"
+      role="tab"
+      :aria-selected="modelValue === getOptionId(opt)"
+      :tabindex="modelValue === getOptionId(opt) ? 0 : -1"
       class="relative rounded-full flex items-center justify-center cursor-pointer select-none transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
       :class="[
         // Размеры

@@ -144,6 +144,8 @@ const labelFontSize = computed(() => {
         class="w-full h-full overflow-visible"
         :viewBox="`0 0 ${svgWidth} ${svgHeight}`"
         preserveAspectRatio="none"
+        role="img"
+        aria-label="Столбчатый график расходов"
       >
         <defs>
           <!-- Градиент жидкости (горизонтальный) -->

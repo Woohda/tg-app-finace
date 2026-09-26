@@ -26,6 +26,9 @@ const isLoading = useGlobalLoading();
   <Transition name="fade">
     <div
       v-if="isLoading"
+      role="status"
+      aria-live="polite"
+      aria-label="Загрузка"
       class="fixed inset-0 z-100 flex items-center justify-center bg-black/15 backdrop-blur-[2px]"
     >
       <Loader class="text-text-accent" />

@@ -5,7 +5,8 @@
  * @description
  * Обеспечивает плавный свайп влево с физикой резинового натяжения (rubber-banding),
  * взаимным закрытием других открытых строк через `useGlobalActiveSwipeId`,
- * автоматическим закрытием по клику вне элемента (`onClickOutside`)
+ * автоматическим закрытием по клику вне элемента (`onClickOutside`),
+ * автоматическим возвратом в исходное состояние при переключении фокуса с клавиатуры (Tab),
  * и встроенной кнопкой удаления с тактильным откликом.
  * ---
  * ### Логика работы:
@@ -14,11 +15,12 @@
  * 3. При глубоком свайпе (`fullDeleteThreshold`, по умолчанию 120px) моментально вызывает событие удаления.
  * 4. Если ряд уже раскрыт, нажатие по контенту плавно закрывает его без вызова события `click`.
  * 5. При раскрытии другого ряда в приложении текущий автоматически схлопывается через глобальный стор.
+ * 6. При потере фокуса или переключении табом на следующий элемент закрывает открытую строку.
  */
 import type { HTMLAttributes } from "vue";
 import { ref, watch, useId } from "vue";
 import { Trash2 } from "@lucide/vue";
-import { onClickOutside } from "@vueuse/core";
+import { onClickOutside, useEventListener } from "@vueuse/core";
 import { cn } from "~/utils/cn";
 import { getHapticFeedback } from "~/utils/haptics";
 
@@ -106,6 +108,9 @@ function onTouchEnd() {
 function closeSwipe() {
   offsetX.value = 0;
   isRevealed.value = false;
+  if (itemRef.value) {
+    itemRef.value.scrollLeft = 0;
+  }
 }
 
 function triggerDelete() {
@@ -126,7 +131,46 @@ function onDeleteClick() {
   triggerDelete();
 }
 
+function onActionFocus() {
+  if (!isRevealed.value) {
+    offsetX.value = -props.deleteThreshold;
+    isRevealed.value = true;
+    activeSwipeId.value = itemId;
+  }
+}
+
 const itemRef = ref<HTMLElement | null>(null);
+
+function onFocusOut(e: FocusEvent) {
+  const nextTarget = e.relatedTarget as Node | null;
+  if (!itemRef.value || (nextTarget && itemRef.value.contains(nextTarget))) {
+    return;
+  }
+  if (isRevealed.value) {
+    closeSwipe();
+  }
+}
+
+function onKeyDown(e: KeyboardEvent) {
+  if (e.key === "Escape" && isRevealed.value) {
+    e.stopPropagation();
+    closeSwipe();
+  }
+}
+
+function onScroll() {
+  if (itemRef.value && itemRef.value.scrollLeft !== 0) {
+    itemRef.value.scrollLeft = 0;
+  }
+}
+
+useEventListener(document, "focusin", (e: FocusEvent) => {
+  if (!isRevealed.value) return;
+  const target = e.target as Node | null;
+  if (itemRef.value && target && !itemRef.value.contains(target)) {
+    closeSwipe();
+  }
+});
 
 onClickOutside(itemRef, () => {
   if (isRevealed.value) {
@@ -144,6 +188,9 @@ defineExpose({
   <div
     ref="itemRef"
     :class="cn('relative overflow-hidden select-none', props.class)"
+    @focusout="onFocusOut"
+    @keydown="onKeyDown"
+    @scroll="onScroll"
   >
     <!-- Контейнер со сдвигом -->
     <div
@@ -168,24 +215,31 @@ defineExpose({
       </div>
 
       <!-- Кнопка действия (по умолчанию корзина) -->
-      <slot
+      <div
         v-if="!disabled"
-        name="action"
-        :close="closeSwipe"
-        :on-delete="onDeleteClick"
+        class="shrink-0 flex"
+        @focusin="onActionFocus"
       >
-        <div
-          class="w-17 ml-1 pr-px shrink-0 flex items-center justify-center bg-accent-mid rounded-r-3xl cursor-pointer"
-          style="
-            box-shadow:
-              inset 3px 3px 8px rgba(255, 255, 255, 0.2),
-              inset -4px -4px 10px rgba(140, 15, 5, 0.3);
-          "
-          @click.stop="onDeleteClick"
+        <slot
+          name="action"
+          :close="closeSwipe"
+          :on-delete="onDeleteClick"
         >
-          <Trash2 class="size-6 text-white" :stroke-width="1.5" />
-        </div>
-      </slot>
+          <button
+            type="button"
+            aria-label="Удалить"
+            class="w-17 ml-1 pr-px shrink-0 flex items-center justify-center bg-accent-mid rounded-r-3xl cursor-pointer outline-none a11y-focus border-none"
+            style="
+              box-shadow:
+                inset 3px 3px 8px rgba(255, 255, 255, 0.2),
+                inset -4px -4px 10px rgba(140, 15, 5, 0.3);
+            "
+            @click.stop="onDeleteClick"
+          >
+            <Trash2 class="size-6 text-white" :stroke-width="1.5" />
+          </button>
+        </slot>
+      </div>
     </div>
   </div>
 </template>

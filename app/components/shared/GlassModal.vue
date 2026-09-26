@@ -102,9 +102,12 @@ onUnmounted(() => {
       >
         <GlassCard
           data-modal-card="true"
+          role="dialog"
+          aria-modal="true"
+          :aria-label="title || 'Диалоговое окно'"
           :class="
             cn(
-              'w-full max-w-90 mb-2 p-5 flex flex-col gap-4 glass-milky transition-[max-height,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
+              'w-full max-w-90 mb-2 p-5 flex flex-col gap-3 glass-milky transition-[max-height,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)]',
               'max-h-[85dvh] overflow-y-auto scrollbar-hide',
               position === 'bottom'
                 ? 'animate-in slide-in-from-bottom-full sm:slide-in-from-bottom-0 sm:zoom-in-95 duration-350 ease-[cubic-bezier(0.16,1,0.3,1)]'
@@ -128,6 +131,7 @@ onUnmounted(() => {
               v-if="showClose"
               variant="soft"
               size="sm"
+              aria-label="Закрыть"
               class="px-2.25 text-text-primary shrink-0"
               @click="close"
             >

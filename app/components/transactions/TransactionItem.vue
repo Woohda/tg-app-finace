@@ -50,7 +50,10 @@ function onItemClick() {
 <template>
   <SwipeableRow
     :disabled="!interactive"
-    :class="cn('transaction-item rounded-2xl', props.class)"
+    :role="interactive ? 'button' : undefined"
+    :tabindex="interactive ? 0 : undefined"
+    :aria-label="interactive ? `${title}, ${formattedAmount}, ${formattedDate}` : undefined"
+    :class="cn('transaction-item rounded-2xl outline-none a11y-focus', props.class)"
     :content-class="
       cn(
         'transaction-content flex items-center gap-2 pb-3 bg-transparent border-b border-black/6',
@@ -58,6 +61,8 @@ function onItemClick() {
       )
     "
     @click="onItemClick"
+    @keydown.enter="onItemClick"
+    @keydown.space.prevent="onItemClick"
     @delete="emit('delete')"
   >
     <!-- Иконка категории -->

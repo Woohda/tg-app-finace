@@ -50,6 +50,7 @@ const getColor = (type: string) => {
       <NuxtLink
         class="w-12 h-12 absolute left-0 top-1/2 -translate-y-1/2 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 active:scale-95 transition-transform"
         to="/"
+        aria-label="Назад на главную"
       >
         <ChevronLeft class="text-text-primary -ml-px" :stroke-width="1.5" />
       </NuxtLink>
@@ -63,6 +64,7 @@ const getColor = (type: string) => {
             variant="soft"
             size="icon"
             class="px-2"
+            aria-label="Отметить все как прочитанные"
             @click="markAllAsRead"
           >
             <CheckCheck class="text-text-primary" :stroke-width="1.5" />
@@ -72,6 +74,7 @@ const getColor = (type: string) => {
             variant="soft"
             size="icon"
             class="px-2"
+            aria-label="Очистить историю уведомлений"
             @click="clear"
           >
             <Trash2 class="text-text-accent" :stroke-width="1.5" />

@@ -154,7 +154,7 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
     :title="isEditMode ? 'Редактирование' : 'Новая операция'"
     @close="closeModal"
   >
-    <form class="flex flex-col gap-4" @submit.prevent="submit">
+    <form class="flex flex-col gap-3" @submit.prevent="submit">
       <!-- Amount -->
       <GlassInput
         ref="amountInputRef"
@@ -231,10 +231,10 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
           type="button"
           label="Сканировать чек"
           variant="soft"
-          class="w-full flex items-center gap-2"
+          class="w-full flex items-center gap-1.5"
           @click.prevent="triggerScan"
         >
-          <Camera :stroke-width="2" class="text-text-accent size-9" />
+          <Camera :stroke-width="1.5" class="text-text-accent size-7 pb-1" />
           <span class="text-sm text-text-accent">Загрузить скриншот</span>
         </GlassButton>
       </div>

@@ -59,9 +59,9 @@ function getPluralSub(count: number): string {
         >
           <CalendarClock class="size-4" :stroke-width="2" />
         </div>
-        <h3 class="text-lg font-extrabold text-text-primary">
+        <h2 class="text-lg font-extrabold text-text-primary">
           Регулярные платежи
-        </h3>
+        </h2>
       </div>
 
       <NuxtLink

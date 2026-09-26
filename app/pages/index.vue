@@ -55,7 +55,7 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
 
 <template>
   <div class="relative flex flex-col gap-4">
-    <div class="flex items-center justify-between">
+    <header class="flex items-center justify-between">
       <div class="flex items-center gap-3">
         <Avatar :src="avatarUrl" />
         <p class="text-text-primary font-bold">{{ userName }}</p>
@@ -65,17 +65,19 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
       <!-- Notifications -->
       <NuxtLink
         to="/notifications"
+        aria-label="Уведомления"
         class="w-12 h-12 rounded-full glass-milky flex items-center justify-center relative active:scale-95 transition-transform shrink-0 a11y-focus border-[0.5px] border-white/50"
       >
         <Bell class="w-6 h-6 text-text-secondary" />
         <ClientOnly>
           <div
             v-if="hasUnread"
+            aria-hidden="true"
             class="absolute top-2 right-2 w-2.5 h-2.5 bg-text-accent rounded-full border-2 border-[#E5E9F0]"
           />
         </ClientOnly>
       </NuxtLink>
-    </div>
+    </header>
 
     <!-- Текст приветствия -->
     <div class="flex flex-col gap-2">
@@ -83,9 +85,9 @@ const avatarUrl = computed(() => tgUser.value?.photo_url || null);
         <p class="text-lg text-text-secondary tracking-tight -mb-1.5">
           Привет, сегодня
         </p>
-        <p class="text-[24px] text-text-primary tracking-tight">
+        <h1 class="text-[24px] text-text-primary tracking-tight">
           {{ currentDate }}
-        </p>
+        </h1>
       </div>
 
       <!-- 1. Сводка остатка бюджета -->
