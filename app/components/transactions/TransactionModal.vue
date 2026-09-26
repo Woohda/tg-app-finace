@@ -12,6 +12,7 @@
  * 2. Инициализирует дату формы в локальном формате `formatDateISO()` без сдвига по UTC.
  * 3. Если `editId` задан, работает в режиме редактирования (загружает данные транзакции).
  * 4. Отправляет данные через `useTransactions().addTransaction` или `updateTransaction`.
+ * 5. Изолирует состояние загрузки категорий (`pending`) в селекторе и кнопке отправки.
  */
 import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -174,6 +175,10 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
         <GlassCategorySelect
           v-model="categoryId"
           :categories="filteredCategories"
+          :disabled="pending"
+          :placeholder="
+            pending ? 'Загрузка категорий...' : 'Выберите категорию'
+          "
         />
       </div>
 
