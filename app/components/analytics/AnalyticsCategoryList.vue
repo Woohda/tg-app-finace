@@ -52,7 +52,7 @@ const getBarWidth = (amount: number) => {
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2">
           <div
-            class="w-8 h-8 flex items-center justify-center bg-white/50 rounded-full shadow-sm text-lg"
+            class="w-9 h-9 flex items-center justify-center glass-pill rounded-full text-base"
           >
             {{ stat.categoryIcon || "📂" }}
           </div>

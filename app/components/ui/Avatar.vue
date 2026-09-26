@@ -31,7 +31,7 @@ const props = withDefaults(
   <div
     :class="
       cn(
-        'rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 overflow-hidden',
+        'rounded-full glass-pill flex items-center justify-center shrink-0 overflow-hidden',
         sizeClasses[props.size],
       )
     "
@@ -42,6 +42,11 @@ const props = withDefaults(
       alt="Аватар пользователя"
       class="w-full h-full object-cover"
     />
-    <User v-else class="text-text-primary" :stroke-width="1.75" aria-hidden="true" />
+    <User
+      v-else
+      class="text-text-primary"
+      :stroke-width="1.75"
+      aria-hidden="true"
+    />
   </div>
 </template>

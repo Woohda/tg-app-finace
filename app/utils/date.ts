@@ -153,6 +153,58 @@ export function isSubscriptionDueOnDate(
 }
 
 /**
+ * Возвращает объект Date в локальном часовом поясе пользователя.
+ * Использует нативный Intl.DateTimeFormat без внешних зависимостей.
+ */
+export function getUserLocalDate(
+  timeZone = "Europe/Moscow",
+  baseDate: Date = getNow(),
+): Date {
+  try {
+    const formatter = new Intl.DateTimeFormat("en-US", {
+      timeZone,
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "numeric",
+      minute: "numeric",
+      second: "numeric",
+      hour12: false,
+    });
+    const parts = formatter.formatToParts(baseDate);
+    const getPart = (type: string) =>
+      parts.find((p) => p.type === type)?.value || "0";
+
+    return new Date(
+      Number(getPart("year")),
+      Number(getPart("month")) - 1,
+      Number(getPart("day")),
+      Number(getPart("hour")),
+      Number(getPart("minute")),
+      Number(getPart("second")),
+    );
+  } catch {
+    // Резервный расчет для Europe/Moscow (UTC+3)
+    return new Date(baseDate.getTime() + 3 * 3600 * 1000);
+  }
+}
+
+/**
+ * Возвращает строковую дату в формате YYYY-MM-DD для указанного часового пояса.
+ */
+export function getUserLocalDateISO(
+  timeZone = "Europe/Moscow",
+  dateInput?: Date | string | number | null,
+): string {
+  const baseDate = toSafeDate(dateInput);
+  const local = getUserLocalDate(timeZone, baseDate);
+  const year = local.getFullYear();
+  const month = String(local.getMonth() + 1).padStart(2, "0");
+  const day = String(local.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+}
+
+/**
  * Проверяет, совпадает ли месяц и год переданной даты с текущим моментом.
  */
 export function isCurrentMonth(dateInput?: Date | string | number | null): boolean {

@@ -1,25 +1,33 @@
 /**
  * @module server/api/cron/reminders.get
- * @fileoverview Крон-эндпоинт для отправки напоминаний о регулярных платежах в Telegram
+ * @fileoverview Крон-эндпоинт для отправки утренних напоминаний о регулярных платежах в Telegram
  * @description
- * Проверяет активные регулярные платежи и отправляет сообщения пользователям:
- * за 3 дня (информационное), за 1 день (предупреждающее) и в день списания (с инлайн-кнопкой оплаты).
+ * Ежечасно вызываемый планировщиком эндпоинт. Для каждой активной подписки определяет локальное время
+ * на устройстве пользователя и отправляет уведомление в дневное утреннее окно (11:00 - 14:00):
+ * - За 3 дня: предварительное напоминание.
+ * - За 1 день: предупреждающее напоминание.
+ * - В день списания: сообщение с интерактивной кнопкой внесения в расходы.
+ * Гарантирует идемпотентность через фиксацию `last_reminded_at` и проверку существующих транзакций.
  * ---
  * ### Логика работы:
  * 1. `Authentication`: Проверка секретного ключа `CRON_SECRET` в заголовке `Authorization` или query-параметре `secret`.
- * 2. `Database Query`: Выборка всех активных подписок с привязанными Telegram ID.
- * 3. `Due Check`: Проверка совпадения даты списания через `isSubscriptionDueOnDate()` с учетом разной длины месяцев.
- * 4. `Notification`: Отправка персонализированных сообщений через Telegram Bot API.
+ * 2. `Database Query`: Выборка всех активных подписок с джойном пользователей (`telegram_id`, `timezone`).
+ * 3. `Timezone & Morning Window Check`: Вычисление локального времени пользователя. Если текущий час вне окна отправки (11:00–14:00) и не передан флаг `force=true` — подписка пропускается.
+ * 4. `Idempotency Check`: Проверка `last_reminded_at`. Если сегодня (по местному календарю) напоминание уже отправлялось — подписка пропускается.
+ * 5. `Due Check & Existing Transaction Check`: Проверка срока списания и наличия уже внесённого расхода в таблице `transactions`.
+ * 6. `Notification & Update`: Отправка сообщения в Telegram и сохранение штампа `last_reminded_at`.
  *
  * ### Параметры запроса:
  * - `secret?: string` — секретный ключ авторизации вызова крона.
+ * - `force?: string` — при значении `"true"` игнорирует проверку утреннего часа и отправляет напоминания немедленно (для тестирования).
  *
  * ### Ошибки:
  * - `401 Unauthorized`: Неверный или отсутствующий CRON_SECRET.
  * - `500 Internal Server Error`: Отсутствует TELEGRAM_BOT_TOKEN или ошибка базы данных.
  *
  * ### Особенности:
- * - Безопасно вычисляет контрольные даты через `getNow()` и `addDaysSafe()`.
+ * - Использует нативный `Intl.DateTimeFormat` для безошибочного вычисления времени в часовом поясе пользователя.
+ * - Содержит обратную совместимость на случай, если миграция колонок `last_reminded_at` или `timezone` еще не применена в БД.
  */
 import { InlineKeyboard } from "grammy";
 import { getBot } from "~~/server/utils/bot";
@@ -42,8 +50,9 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const botToken = config.telegramBotToken;
+  const isForce = query.force === "true" || query.test === "true";
 
+  const botToken = config.telegramBotToken;
   if (!botToken) {
     throw createError({
       statusCode: 500,
@@ -54,39 +63,77 @@ export default defineEventHandler(async (event) => {
   const supabase = getBotSupabase();
   const bot = getBot(botToken);
 
-  // Вычисляем контрольные даты проверки (сегодня, завтра, через 3 дня)
-  const now = getNow();
-  const tomorrow = addDaysSafe(now, 1);
-  const in3Days = addDaysSafe(now, 3);
+  // Выбираем активные подписки с пользователями (пробуем включить timezone и last_reminded_at)
+  let subscriptions: Array<{
+    id: string;
+    name: string;
+    amount: number;
+    day_of_month: number;
+    user_id: string;
+    category_id: string | null;
+    last_reminded_at?: string | null;
+    users?:
+      | { telegram_id: number; timezone?: string | null }
+      | Array<{ telegram_id: number; timezone?: string | null }>
+      | null;
+  }> | null;
 
-  // Выбираем все активные подписки с привязанными telegram_id пользователей
-  const { data: subscriptions, error } = await supabase
+  let hasLastRemindedColumn = true;
+
+  const fullQuery = await supabase
     .from("subscriptions")
-    .select(
-      `
+    .select(`
       id,
       name,
       amount,
       day_of_month,
       user_id,
+      category_id,
+      last_reminded_at,
       users (
-        telegram_id
+        telegram_id,
+        timezone
       )
-    `,
-    )
+    `)
     .eq("is_active", true);
 
-  if (error) {
-    console.error("Ошибка выборки подписок для крона:", error);
-    throw createError({
-      statusCode: 500,
-      statusMessage: "Ошибка базы данных",
-    });
+  if (fullQuery.error) {
+    hasLastRemindedColumn = false;
+
+    const fallbackQuery = await supabase
+      .from("subscriptions")
+      .select(`
+        id,
+        name,
+        amount,
+        day_of_month,
+        user_id,
+        category_id,
+        users (
+          telegram_id
+        )
+      `)
+      .eq("is_active", true);
+
+    if (fallbackQuery.error) {
+      console.error("Ошибка выборки подписок для крона:", fallbackQuery.error);
+      throw createError({
+        statusCode: 500,
+        statusMessage: "Ошибка базы данных",
+      });
+    }
+
+    subscriptions = fallbackQuery.data;
+  } else {
+    subscriptions = fullQuery.data;
   }
 
   let sentToday = 0;
   let sentTomorrow = 0;
   let sentIn3Days = 0;
+  let skippedOutsideMorning = 0;
+  let skippedIdempotent = 0;
+  let skippedAlreadyPaid = 0;
 
   for (const sub of subscriptions || []) {
     const rawUser = Array.isArray(sub.users) ? sub.users[0] : sub.users;
@@ -94,10 +141,63 @@ export default defineEventHandler(async (event) => {
 
     if (!telegramId) continue;
 
+    // Часовой пояс пользователя (по умолчанию Europe/Moscow)
+    const userTz = rawUser?.timezone || "Europe/Moscow";
+
+    // Локальное время и дата на устройстве пользователя
+    const userLocalNow = getUserLocalDate(userTz);
+    const userLocalHour = userLocalNow.getHours();
+    const userTodayISO = getUserLocalDateISO(userTz, userLocalNow);
+
+    // 1. Проверка окна отправки (с 11:00 до 14:00) по устройству пользователя
+    if (!isForce && (userLocalHour < 11 || userLocalHour >= 14)) {
+      skippedOutsideMorning++;
+      continue;
+    }
+
+    // 2. Идемпотентность: отправляли ли уже напоминание сегодня?
+    if (!isForce && sub.last_reminded_at) {
+      const lastRemindedDateISO = getUserLocalDateISO(userTz, new Date(sub.last_reminded_at));
+      if (lastRemindedDateISO === userTodayISO) {
+        skippedIdempotent++;
+        continue;
+      }
+    }
+
     const subDay = sub.day_of_month;
+    const tomorrow = addDaysSafe(userLocalNow, 1);
+    const in3Days = addDaysSafe(userLocalNow, 3);
+
+    // Функция обновления отметки последнего напоминания
+    const markReminded = async () => {
+      if (!hasLastRemindedColumn) return;
+      try {
+        await supabase
+          .from("subscriptions")
+          .update({ last_reminded_at: new Date().toISOString() })
+          .eq("id", sub.id);
+      } catch (err) {
+        console.warn(`Не удалось обновить last_reminded_at для подписки ${sub.id}:`, err);
+      }
+    };
 
     // 1. Проверка на сегодня (день списания)
-    if (isSubscriptionDueOnDate(subDay, now)) {
+    if (isSubscriptionDueOnDate(subDay, userLocalNow)) {
+      // Проверяем, не внесен ли уже этот платёж сегодня пользователем
+      const { data: existingTx } = await supabase
+        .from("transactions")
+        .select("id")
+        .eq("user_id", sub.user_id)
+        .eq("date", userTodayISO)
+        .or(`name.ilike.%${sub.name}%,category_id.eq.${sub.category_id || ""}`)
+        .limit(1);
+
+      if (existingTx && existingTx.length > 0) {
+        skippedAlreadyPaid++;
+        await markReminded();
+        continue;
+      }
+
       try {
         const keyboard = new InlineKeyboard().text(
           "💸 Внести в расходы",
@@ -113,6 +213,7 @@ export default defineEventHandler(async (event) => {
           },
         );
         sentToday++;
+        await markReminded();
       } catch (err) {
         console.error(`Ошибка отправки сообщения (сегодня) юзеру ${telegramId}:`, err);
       }
@@ -128,6 +229,7 @@ export default defineEventHandler(async (event) => {
           { parse_mode: "HTML" },
         );
         sentTomorrow++;
+        await markReminded();
       } catch (err) {
         console.error(`Ошибка отправки сообщения (завтра) юзеру ${telegramId}:`, err);
       }
@@ -143,6 +245,7 @@ export default defineEventHandler(async (event) => {
           { parse_mode: "HTML" },
         );
         sentIn3Days++;
+        await markReminded();
       } catch (err) {
         console.error(`Ошибка отправки сообщения (за 3 дня) юзеру ${telegramId}:`, err);
       }
@@ -156,6 +259,11 @@ export default defineEventHandler(async (event) => {
       today: sentToday,
       tomorrow: sentTomorrow,
       in3Days: sentIn3Days,
+    },
+    skipped: {
+      outsideMorning: skippedOutsideMorning,
+      idempotent: skippedIdempotent,
+      alreadyPaid: skippedAlreadyPaid,
     },
   };
 });

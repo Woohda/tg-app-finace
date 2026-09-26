@@ -138,18 +138,21 @@ export type Database = {
           id: string;
           telegram_id: number;
           username: string | null;
+          timezone: string | null;
         };
         Insert: {
           created_at?: string;
           id?: string;
           telegram_id: number;
           username?: string | null;
+          timezone?: string | null;
         };
         Update: {
           created_at?: string;
           id?: string;
           telegram_id?: number;
           username?: string | null;
+          timezone?: string | null;
         };
         Relationships: [];
       };
@@ -161,6 +164,7 @@ export type Database = {
           day_of_month: number;
           id: string;
           is_active: boolean;
+          last_reminded_at: string | null;
           name: string;
           updated_at: string;
           user_id: string;
@@ -172,6 +176,7 @@ export type Database = {
           day_of_month: number;
           id?: string;
           is_active?: boolean;
+          last_reminded_at?: string | null;
           name: string;
           updated_at?: string;
           user_id: string;
@@ -183,6 +188,7 @@ export type Database = {
           day_of_month?: number;
           id?: string;
           is_active?: boolean;
+          last_reminded_at?: string | null;
           name?: string;
           updated_at?: string;
           user_id?: string;

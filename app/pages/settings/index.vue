@@ -6,6 +6,36 @@
  * Отображает профиль Telegram, позволяет выйти из аккаунта и предоставляет
  * навигацию к управлению бюджетом и категориями.
  */
+import { ChevronRight } from "@lucide/vue";
+
+interface SettingsNavigationItem {
+  to: string;
+  icon: string;
+  title: string;
+  description: string;
+}
+
+const SETTINGS_LINKS: readonly SettingsNavigationItem[] = [
+  {
+    to: "/budget",
+    icon: "🎯",
+    title: "Бюджет и цели",
+    description: "Лимиты и накопления",
+  },
+  {
+    to: "/categories",
+    icon: "📁",
+    title: "Мои категории",
+    description: "Добавление и редактирование",
+  },
+  {
+    to: "/subscription",
+    icon: "📅",
+    title: "Регулярные платежи",
+    description: "Подписки и ежемесячные счета",
+  },
+] as const;
+
 const { user, userName, avatarUrl, logout } = useAuth();
 const isLoading = useGlobalLoading();
 
@@ -48,7 +78,9 @@ const handleLogout = async () => {
 
     <div class="flex flex-col gap-3">
       <NuxtLink
-        to="/budget"
+        v-for="item in SETTINGS_LINKS"
+        :key="item.to"
+        :to="item.to"
         class="block a11y-focus rounded-3xl focus-visible:outline-offset-4"
       >
         <GlassCard
@@ -56,72 +88,20 @@ const handleLogout = async () => {
         >
           <div class="flex items-center gap-3">
             <div
-              class="size-10 rounded-full glass-milky flex items-center justify-center text-text-primary"
+              class="size-10 rounded-full glass-pill flex items-center justify-center text-text-primary shrink-0"
             >
-              <span class="text-xl">🎯</span>
+              <span class="text-xl">{{ item.icon }}</span>
             </div>
             <div class="flex flex-col items-start">
-              <span class="text-text-primary font-bold text-base"
-                >Бюджет и цели</span
-              >
-              <span class="text-text-secondary text-xs"
-                >Лимиты и накопления</span
-              >
+              <span class="text-text-primary font-bold text-base">
+                {{ item.title }}
+              </span>
+              <span class="text-text-secondary text-xs">
+                {{ item.description }}
+              </span>
             </div>
           </div>
-          <div class="text-text-secondary">›</div>
-        </GlassCard>
-      </NuxtLink>
-
-      <NuxtLink
-        to="/categories"
-        class="block a11y-focus rounded-3xl focus-visible:outline-offset-4"
-      >
-        <GlassCard
-          class="p-5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
-        >
-          <div class="flex items-center gap-3">
-            <div
-              class="size-10 rounded-full glass-milky flex items-center justify-center text-text-primary"
-            >
-              <span class="text-xl">📁</span>
-            </div>
-            <div class="flex flex-col items-start">
-              <span class="text-text-primary font-bold text-base"
-                >Мои категории</span
-              >
-              <span class="text-text-secondary text-xs"
-                >Добавление и редактирование</span
-              >
-            </div>
-          </div>
-          <div class="text-text-secondary">›</div>
-        </GlassCard>
-      </NuxtLink>
-
-      <NuxtLink
-        to="/subscription"
-        class="block a11y-focus rounded-3xl focus-visible:outline-offset-4"
-      >
-        <GlassCard
-          class="p-5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
-        >
-          <div class="flex items-center gap-3">
-            <div
-              class="size-10 rounded-full glass-milky flex items-center justify-center text-text-primary"
-            >
-              <span class="text-xl">📅</span>
-            </div>
-            <div class="flex flex-col items-start">
-              <span class="text-text-primary font-bold text-base"
-                >Регулярные платежи</span
-              >
-              <span class="text-text-secondary text-xs"
-                >Подписки и ежемесячные счета</span
-              >
-            </div>
-          </div>
-          <div class="text-text-secondary">›</div>
+          <ChevronRight class="size-5 text-text-secondary opacity-60" />
         </GlassCard>
       </NuxtLink>
     </div>

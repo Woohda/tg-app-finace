@@ -21,6 +21,7 @@ interface Props {
   date: string;
   interactive?: boolean;
   showFullDate?: boolean;
+  variant?: "default" | "analytics";
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -29,10 +30,12 @@ const props = withDefaults(defineProps<Props>(), {
   icon: undefined,
   subtitle: undefined,
   showFullDate: false,
+  variant: "default",
 });
 
 const emit = defineEmits<{
   click: [];
+  edit: [];
   delete: [];
 }>();
 
@@ -44,6 +47,7 @@ const formattedDate = computed(() =>
 function onItemClick() {
   if (!props.interactive) return;
   emit("click");
+  emit("edit");
 }
 </script>
 
@@ -63,7 +67,8 @@ function onItemClick() {
     "
     :content-class="
       cn(
-        'transaction-content flex items-center gap-2 pb-3 bg-transparent border-b border-black/6 group-last:border-none',
+        'transaction-content flex items-center bg-transparent border-b border-black/6 group-last:border-none',
+        variant === 'analytics' ? 'justify-between gap-3 p-2' : 'gap-2 pb-3',
         interactive && 'cursor-pointer active:opacity-80',
       )
     "
@@ -72,45 +77,61 @@ function onItemClick() {
     @keydown.space.prevent="onItemClick"
     @delete="emit('delete')"
   >
-    <!-- Иконка категории -->
-    <div
-      v-if="icon"
-      class="shrink-0 size-11 rounded-2xl glass- flex items-center justify-center text-xl border-[0.5px] border-white/50 border-b-transparent border-r-transparent"
-      style="
-        background: rgba(255, 255, 255, 0.7);
-        box-shadow:
-          inset 3px 3px 8px rgba(255, 255, 255, 1),
-          inset -4px -4px 10px rgba(130, 115, 105, 0.15);
-      "
-    >
-      {{ icon }}
-    </div>
-
-    <!-- Название + описание + дата -->
-    <div class="flex-1 min-w-0">
-      <p class="text-sm font-medium text-text-primary truncate">
-        {{ title }}
-      </p>
-      <div class="w-full flex text-xs text-text-secondary mt-0.5">
-        <span class="shrink-0"> {{ formattedDate }}</span>
-        <span v-if="subtitle" class="truncate">,&nbsp;{{ subtitle }}</span>
+    <!-- Режим analytics: минималистичный вид без иконки категории -->
+    <template v-if="variant === 'analytics'">
+      <div class="flex-1 min-w-0 pr-2">
+        <p class="text-base font-semibold text-text-primary truncate">
+          {{ title }}
+        </p>
+        <div class="w-full flex text-xs text-text-secondary">
+          <span class="shrink-0">{{ formattedDate }}</span>
+          <span v-if="subtitle" class="truncate">,&nbsp;{{ subtitle }}</span>
+        </div>
       </div>
-    </div>
 
-    <!-- Сумма -->
-    <div class="text-right">
-      <p
-        class="font-bold text-[15px]"
-        :class="type === 'income' ? 'text-text-accent' : 'text-text-primary'"
+      <!-- Сумма -->
+      <div class="text-right shrink-0">
+        <p
+          class="font-bold text-[15px]"
+          :class="type === 'income' ? 'text-text-accent' : 'text-text-primary'"
+        >
+          {{ formattedAmount }}
+        </p>
+      </div>
+    </template>
+
+    <!-- Режим default: стандартный вид с иконкой категории -->
+    <template v-else>
+      <!-- Иконка категории -->
+      <div
+        v-if="icon"
+        class="shrink-0 size-11 rounded-2xl glass- flex items-center justify-center text-xl glass-pill"
       >
-        {{ formattedAmount }}
-      </p>
-    </div>
+        {{ icon }}
+      </div>
+
+      <!-- Название + описание + дата -->
+      <div class="flex-1 min-w-0">
+        <p class="text-sm font-medium text-text-primary truncate">
+          {{ title }}
+        </p>
+        <div class="w-full flex text-xs text-text-secondary mt-0.5">
+          <span class="shrink-0"> {{ formattedDate }}</span>
+          <span v-if="subtitle" class="truncate">,&nbsp;{{ subtitle }}</span>
+        </div>
+      </div>
+
+      <!-- Сумма -->
+      <div class="text-right">
+        <p
+          class="font-bold text-[15px]"
+          :class="type === 'income' ? 'text-text-accent' : 'text-text-primary'"
+        >
+          {{ formattedAmount }}
+        </p>
+      </div>
+    </template>
   </SwipeableRow>
 </template>
 
-<style scoped>
-.transaction-item:last-child :deep(.transaction-content) {
-  border-bottom-width: 0;
-}
-</style>
+<style scoped></style>

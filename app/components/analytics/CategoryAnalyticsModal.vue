@@ -97,7 +97,7 @@ const close = () => emit("close");
     <template #header>
       <div class="flex items-center gap-3">
         <div
-          class="w-11 h-11 flex items-center justify-center bg-white/50 rounded-full shadow-sm text-base"
+          class="w-11 h-11 flex items-center justify-center rounded-full glass-pill text-base"
         >
           {{ currentCategory?.categoryIcon || "📂" }}
         </div>
@@ -176,10 +176,10 @@ const close = () => emit("close");
         </GlassCard>
 
         <!-- Операции за текущий месяц -->
-        <GlassCard class="p-4 flex flex-col gap-3 pb-0">
+        <GlassCard class="p-4 flex flex-col gap-px pb-0">
           <div class="flex justify-between items-center px-1">
             <h3
-              class="text-text-primary font-bold text-sm uppercase tracking-wide"
+              class="text-text-secondary font-bold text-sm uppercase tracking-wide"
             >
               Операции за месяц
             </h3>
@@ -189,14 +189,18 @@ const close = () => emit("close");
           </div>
 
           <!-- Скелетоны транзакций (загрузка) -->
-          <div v-if="pendingTransactions" class="flex flex-col gap-3">
-            <TransactionSkeletonList :count="3" mode="list" />
+          <div v-if="pendingTransactions" class="flex flex-col">
+            <TransactionSkeletonList
+              :count="3"
+              mode="list"
+              :show-icon="false"
+            />
           </div>
 
           <!-- Список транзакций -->
           <div
             v-else-if="filteredTransactions.length > 0"
-            class="flex flex-col gap-3"
+            class="flex flex-col"
           >
             <TransactionItem
               v-for="tx in filteredTransactions"
@@ -206,13 +210,11 @@ const close = () => emit("close");
                 tx.amount,
                 tx.name,
                 tx.date,
-                tx.categoryIcon,
                 tx.type,
                 deletingId === tx.id,
               ]"
-              :icon="tx.categoryIcon"
+              variant="analytics"
               :title="tx.name || tx.categoryName"
-              :subtitle="tx.name ? tx.categoryName : ''"
               :amount="tx.amount"
               :type="tx.type"
               :date="tx.date"
