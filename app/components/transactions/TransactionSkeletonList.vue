@@ -9,10 +9,12 @@ withDefaults(
   defineProps<{
     count?: number;
     mode?: "card" | "list";
+    showIcon?: boolean;
   }>(),
   {
     count: 4,
     mode: "card",
+    showIcon: true,
   },
 );
 </script>
@@ -23,7 +25,11 @@ withDefaults(
     :key="i"
     class="flex items-center gap-3 pb-3 border-b border-black/6 last:border-none"
   >
-    <Skeleton class="w-10 h-10 shrink-0" rounded="rounded-xl" />
+    <Skeleton
+      v-if="showIcon"
+      class="w-10 h-10 shrink-0"
+      rounded="rounded-xl"
+    />
     <div class="flex-1 flex flex-col gap-2">
       <Skeleton class="w-35 h-4" />
       <Skeleton class="w-15 h-3" />
