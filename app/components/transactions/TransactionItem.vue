@@ -52,11 +52,18 @@ function onItemClick() {
     :disabled="!interactive"
     :role="interactive ? 'button' : undefined"
     :tabindex="interactive ? 0 : undefined"
-    :aria-label="interactive ? `${title}, ${formattedAmount}, ${formattedDate}` : undefined"
-    :class="cn('transaction-item rounded-2xl outline-none a11y-focus', props.class)"
+    :aria-label="
+      interactive ? `${title}, ${formattedAmount}, ${formattedDate}` : undefined
+    "
+    :class="
+      cn(
+        'group transaction-item rounded-2xl outline-none a11y-focus',
+        props.class,
+      )
+    "
     :content-class="
       cn(
-        'transaction-content flex items-center gap-2 pb-3 bg-transparent border-b border-black/6',
+        'transaction-content flex items-center gap-2 pb-3 bg-transparent border-b border-black/6 group-last:border-none',
         interactive && 'cursor-pointer active:opacity-80',
       )
     "
@@ -94,9 +101,7 @@ function onItemClick() {
     <div class="text-right">
       <p
         class="font-bold text-[15px]"
-        :class="
-          type === 'income' ? 'text-text-accent' : 'text-text-primary'
-        "
+        :class="type === 'income' ? 'text-text-accent' : 'text-text-primary'"
       >
         {{ formattedAmount }}
       </p>
@@ -105,7 +110,7 @@ function onItemClick() {
 </template>
 
 <style scoped>
-.transaction-item:last-child .transaction-content {
+.transaction-item:last-child :deep(.transaction-content) {
   border-bottom-width: 0;
 }
 </style>
