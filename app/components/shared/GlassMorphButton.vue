@@ -7,12 +7,14 @@
  * белым светом (без использования зеленого цвета) с тактильным откликом.
  * Оптимизирована для плавных 60/120fps анимаций в Safari / iOS WebKit.
  */
+import type { ButtonHTMLAttributes } from "vue";
 import { watch } from "vue";
 import { Check } from "@lucide/vue";
 import { cn } from "~/utils/cn";
 import { getHapticFeedback } from "~/utils/haptics";
 
 interface Props {
+  type?: ButtonHTMLAttributes["type"];
   state?: "idle" | "loading" | "success";
   disabled?: boolean;
   class?: string;
@@ -20,6 +22,7 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  type: "button",
   state: "idle",
   disabled: false,
   variant: "primary",
@@ -40,7 +43,8 @@ watch(
 </script>
 
 <template>
-  <Button
+  <button
+    :type="type"
     :disabled="disabled || state !== 'idle'"
     :class="
       cn(
@@ -127,7 +131,7 @@ watch(
         </slot>
       </div>
     </Transition>
-  </Button>
+  </button>
 </template>
 
 <style scoped>

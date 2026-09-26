@@ -62,15 +62,11 @@ export const useNotifications = () => {
     });
   };
 
-  // Количество непрочитанных (в простом варианте - все)
-  const count = computed(() => history.value.length);
-
   return {
     history,
     add,
     clear,
-    count,
     hasUnread,
-    markAllAsRead
+    markAllAsRead,
   };
 };
