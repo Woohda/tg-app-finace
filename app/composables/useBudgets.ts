@@ -23,6 +23,7 @@ export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
   const notifications = useNotifications();
 
   const budget = useGlobalBudget();
+  const isLoaded = useState<boolean>("budget:isLoaded", () => false);
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
@@ -38,12 +39,15 @@ export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
         const data = await api<{ amount: number }>("/api/budgets");
         if (data && data.amount > 0) {
           budget.value = data.amount;
+        } else {
+          budget.value = 0;
         }
       } catch (e: unknown) {
         console.error("Ошибка загрузки бюджета:", e);
         error.value = parseApiError(e, "Не удалось загрузить бюджет");
       } finally {
         isLoading.value = false;
+        isLoaded.value = true;
         inFlightFetch = null;
       }
     })();
@@ -100,7 +104,8 @@ export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
 
   return {
     budget,
-    isLoading,
+    isLoading: computed(() => !isLoaded.value || isLoading.value),
+    isLoaded,
     error,
     fetchBudget,
     updateBudget,

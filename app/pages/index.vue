@@ -80,20 +80,24 @@ const currentDate = computed(() => formatWeekdayAndDate());
 
       <!-- 1. Сводка остатка бюджета -->
       <BudgetRemainderCard
-        v-if="budget"
+        v-if="budgetLoading || (budget && budget > 0)"
         :remainder="budgetRemainder"
         :daily-guideline="dailyGuideline"
         :last-day-of-month="lastDayOfMonth"
-        :is-loading="pending || budgetLoading"
+        :is-loading="budgetLoading || pending"
       />
     </div>
 
     <!-- 2. Сводка доходов и расходов -->
-    <MonthlySummary :income="monthlyIncome" :expense="monthlyExpense" />
+    <MonthlySummary
+      :income="monthlyIncome"
+      :expense="monthlyExpense"
+      :is-loading="pending"
+    />
 
     <!-- Главный контент: Топ-5 категорий расходов -->
     <ExpensesDonut
-      v-if="transactions.length > 0"
+      v-if="pending || transactions.length > 0"
       :categories="expensesByCategory"
       :total-expense="monthlyExpense"
       :is-loading="pending"

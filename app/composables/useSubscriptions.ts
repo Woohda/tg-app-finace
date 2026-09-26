@@ -38,15 +38,18 @@ export const useSubscriptions = () => {
   const toast = useAppToast();
   const notifications = useNotifications();
   const subscriptions = useState<Subscription[]>("subscriptions:list", () => []);
-  const pending = ref(false);
+  const isLoaded = useState<boolean>("subscriptions:isLoaded", () => false);
+  const isFetching = ref(false);
   const error = ref<string | null>(null);
 
+  const pending = computed(() => !isLoaded.value || isFetching.value);
+
   const fetchSubscriptions = async (force = false) => {
-    if (!force && subscriptions.value.length > 0) {
+    if (!force && isLoaded.value) {
       return;
     }
 
-    pending.value = true;
+    isFetching.value = true;
     error.value = null;
 
     try {
@@ -56,7 +59,8 @@ export const useSubscriptions = () => {
       console.error("Ошибка загрузки регулярных платежей:", e);
       error.value = parseApiError(e, "Не удалось загрузить регулярные платежи");
     } finally {
-      pending.value = false;
+      isFetching.value = false;
+      isLoaded.value = true;
     }
   };
 
@@ -207,6 +211,7 @@ export const useSubscriptions = () => {
   return {
     subscriptions,
     pending,
+    isLoaded,
     error,
     fetchSubscriptions,
     createSubscription,

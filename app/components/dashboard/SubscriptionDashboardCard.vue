@@ -79,11 +79,11 @@ function getPluralSub(count: number): string {
       class="flex flex-col gap-2 mt-2"
     >
       <div class="flex justify-between items-center py-1">
-        <Skeleton class="w-32 h-3.5 rounded" />
-        <Skeleton class="w-20 h-4 rounded" />
+        <Skeleton class="w-32 h-3.5 rounded-xl" />
+        <Skeleton class="w-20 h-5 rounded-xl" />
       </div>
-      <Skeleton class="w-full h-13 rounded-2xl" />
-      <Skeleton class="w-full h-13 rounded-2xl" />
+      <Skeleton class="w-full h-14" rounded="rounded-full" />
+      <Skeleton class="w-full h-14" rounded="rounded-full" />
     </div>
 
     <!-- Состояние 2: Подписок нет -->
@@ -96,7 +96,7 @@ function getPluralSub(count: number): string {
       </p>
       <NuxtLink
         to="/subscription"
-        class="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-text-primary px-3.5 py-1.5 rounded-full glass-milky border-[0.5px] border-white/60 active:scale-95 transition-transform"
+        class="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-text-primary px-3.5 py-1.5 rounded-full glass-milky border-[0.5px] border-white/60 active:scale-95 transition-transform a11y-focus"
       >
         <Plus class="size-3.5" :stroke-width="2" />
         <span>Настроить платежи</span>
