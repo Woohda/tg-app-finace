@@ -6,21 +6,8 @@
  * Отображает профиль Telegram, позволяет выйти из аккаунта и предоставляет
  * навигацию к управлению бюджетом и категориями.
  */
-import { computed } from "vue";
-const { user, tgUser, logout } = useAuth();
+const { user, userName, avatarUrl, logout } = useAuth();
 const isLoading = useGlobalLoading();
-
-const userName = computed(() => {
-  if (tgUser.value?.first_name) {
-    return tgUser.value.first_name;
-  }
-  if (user.value?.username) {
-    return `@${user.value.username}`;
-  }
-  return "Пользователь";
-});
-
-const avatarUrl = computed(() => tgUser.value?.photo_url || null);
 
 const handleLogout = async () => {
   isLoading.value = true;

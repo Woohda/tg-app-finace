@@ -16,7 +16,7 @@
 import { computed, onMounted } from "vue";
 import { Bell } from "@lucide/vue";
 
-const { user, tgUser } = useAuth();
+const { userName, avatarUrl } = useAuth();
 const { hasUnread } = useNotifications();
 const { startDate, endDate } = useDateFilter();
 const { transactions, pending } = useTransactions({ startDate, endDate });
@@ -39,18 +39,6 @@ onMounted(() => {
 });
 
 const currentDate = computed(() => formatWeekdayAndDate());
-
-const userName = computed(() => {
-  if (tgUser.value?.first_name) {
-    return tgUser.value.first_name;
-  }
-  if (user.value?.username) {
-    return `@${user.value.username}`;
-  }
-  return "Пользователь";
-});
-
-const avatarUrl = computed(() => tgUser.value?.photo_url || null);
 </script>
 
 <template>

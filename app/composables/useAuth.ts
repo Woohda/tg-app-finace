@@ -3,11 +3,13 @@
  * @fileoverview Глобальное управление состоянием аутентификации пользователя
  *
  * @description
- * Предоставляет реактивный доступ к данным пользователя и JWT токену.
+ * Предоставляет реактивный доступ к данным пользователя, отображаемому имени,
+ * аватару и JWT токену.
  * Инкапсулирует методы входа через Telegram Mini App (или dev-режим) и выхода.
  *
  * ### Логика:
  * - Хранит `token` и `user` в `useState` и куках для SSR-безопасности.
+ * - Вычисляет отображаемое имя `userName` и аватар `avatarUrl` на основе данных Telegram/профиля.
  * - При вызове `loginWithTelegram` отправляет `initData` на сервер для получения JWT.
  * - При вызове `devLogin` выполняет тестовый вход (для локальной разработки без TG).
  */
@@ -49,6 +51,18 @@ export const useAuth = () => {
   const tgUser = useState<TgUser | null>("auth:tgUser", () => null);
 
   const isAuthenticated = computed(() => !!token.value && !!user.value);
+
+  const userName = computed(() => {
+    if (tgUser.value?.first_name) {
+      return tgUser.value.first_name;
+    }
+    if (user.value?.username) {
+      return `@${user.value.username}`;
+    }
+    return "Пользователь";
+  });
+
+  const avatarUrl = computed(() => tgUser.value?.photo_url || null);
 
   const initTelegramUser = () => {
     if (import.meta.client && window.Telegram?.WebApp?.initDataUnsafe?.user) {
@@ -147,6 +161,8 @@ export const useAuth = () => {
     token,
     user,
     tgUser,
+    userName,
+    avatarUrl,
     isAuthenticated,
     loginWithTelegram,
     getTelegramInitData,
