@@ -1,14 +1,14 @@
 /**
  * @module server/utils/format
- * @fileoverview Серверные утилиты форматирования строковых данных.
+ * @fileoverview Серверные утилиты форматирования строковых и числовых данных.
  * @description
  * Предоставляет функции для нормализации пользовательского ввода на сервере,
- * в том числе капитализацию первой буквы для категорий и транзакций.
+ * в том числе капитализацию первой буквы для категорий и транзакций,
+ * а также форматирование денежных сумм для сообщений Telegram-бота.
  * ---
  * ### Логика работы:
- * 1. Безопасно обрабатывает null и undefined.
- * 2. Удаляет внешние пробелы с помощью `trim()`.
- * 3. Переводит первый юникод-символ в верхний регистр.
+ * 1. `capitalizeFirstLetter`: переводит первый юникод-символ в верхний регистр.
+ * 2. `formatBotAmount`: форматирует сумму в рубли с поддержкой копеек (две цифры после запятой).
  */
 
 /**
@@ -27,4 +27,19 @@ export function capitalizeFirstLetter(str?: string | null): string | null | unde
   const chars = Array.from(trimmed);
   chars[0] = chars[0]!.toUpperCase();
   return chars.join("");
+}
+
+/**
+ * Форматирует денежную сумму для сообщений Telegram-бота.
+ * Если сумма целая, выводит без копеек (например, 2 500 ₽).
+ * Если сумма имеет дробную часть, выводит ровно с двумя знаками после запятой (например, 150,50 ₽).
+ */
+export function formatBotAmount(amount: number): string {
+  const isInt = Number.isInteger(amount);
+  return (
+    new Intl.NumberFormat("ru-RU", {
+      minimumFractionDigits: isInt ? 0 : 2,
+      maximumFractionDigits: 2,
+    }).format(amount) + " ₽"
+  );
 }

@@ -235,7 +235,7 @@ const cancelAll = () => {
       <GlassCard
         v-for="(group, catId) in groupedItems"
         :key="catId"
-        class="flex flex-col gap-2 pb-4"
+        class="flex flex-col py-3 pb-1"
       >
         <!-- Заголовок группы -->
         <div class="flex items-center justify-between">
@@ -266,7 +266,7 @@ const cancelAll = () => {
             :date="item.date!"
             :show-full-date="true"
             interactive
-            class="transition-colors px-2 py-1.5"
+            class="transition-colors pt-1.25"
             @click="openEditModal(item)"
             @delete="removeItemById(item.id!)"
           />

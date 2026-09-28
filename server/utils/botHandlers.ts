@@ -3,10 +3,10 @@
  * @fileoverview Обработчики команд и сообщений для Telegram-бота.
  * @description
  * Реализует парсинг текстовых сообщений от пользователей Telegram и обработку Callback-кнопок.
- * Позволяет пользователям добавлять расходы прямо из мессенджера.
+ * Позволяет пользователям добавлять расходы прямо из мессенджера с поддержкой целых и дробных сумм.
  * ---
  * ### Логика работы:
- * 1. `Text Message`: Парсит регулярными выражениями текст (Сумма + Категория или Категория + Сумма).
+ * 1. `Text Message`: Парсит регулярными выражениями текст (Сумма + Категория или Категория + Сумма) с поддержкой запятой и двух знаков.
  * 2. `Category Matching`: Ищет совпадение по названию категории в БД. Если совпадений много — предлагает уточнить кнопками (Callback).
  * 3. `Insertion`: Добавляет транзакцию с локальной датой `formatDateISO()` и присылает сообщение об успехе.
  * 
@@ -17,29 +17,81 @@ import type { Context } from "grammy";
 import { InlineKeyboard } from "grammy";
 import { getBotSupabase } from "./db";
 
+export interface ParsedBotMessage {
+  name: string;
+  amount: number;
+}
+
+/**
+ * Парсит текст сообщения бота для извлечения описания и суммы транзакции.
+ * Поддерживает форматы:
+ * - "Кофе 150" / "150 Кофе"
+ * - "Кофе 150,50" / "150,50 Кофе" (две цифры после запятой)
+ * - "Кофе 150.50" / "150.50 Кофе"
+ * - "Лента 2 500,50 руб." / "2 500,50 ₽ Лента"
+ * Округляет сумму до двух знаков после запятой.
+ */
+export function parseBotMessage(text: string): ParsedBotMessage | null {
+  const cleanText = text.trim();
+  if (!cleanText || cleanText.startsWith("/")) return null;
+
+  const amountPattern = `(?:[+-]?(?:\\d{1,3}(?:\\s\\d{3})+|\\d+)(?:[.,]\\d+)?|[.,]\\d+)`;
+  const currencyPattern = `(?:₽|руб(?:ль|ля|лей|\\.)?|р(?=[\\s.]|$))`;
+
+  const textFirstRegex = new RegExp(
+    `^(.+?)\\s+(${amountPattern})\\s*${currencyPattern}?$`,
+    "i",
+  );
+  const amountFirstRegex = new RegExp(
+    `^(${amountPattern})\\s*${currencyPattern}?\\s+(.+)$`,
+    "i",
+  );
+
+  let rawName: string | undefined;
+  let rawAmountStr: string | undefined;
+
+  const matchTextFirst = cleanText.match(textFirstRegex);
+  if (matchTextFirst) {
+    rawName = matchTextFirst[1];
+    rawAmountStr = matchTextFirst[2];
+  } else {
+    const matchAmountFirst = cleanText.match(amountFirstRegex);
+    if (matchAmountFirst) {
+      rawAmountStr = matchAmountFirst[1];
+      rawName = matchAmountFirst[2];
+    }
+  }
+
+  if (!rawName || !rawAmountStr) return null;
+
+  const normalizedAmountStr = rawAmountStr.replace(/\s+/g, "").replace(",", ".");
+  const parsedNum = parseFloat(normalizedAmountStr);
+
+  if (isNaN(parsedNum) || !Number.isFinite(parsedNum)) return null;
+
+  const amount = Math.round(Math.abs(parsedNum) * 100) / 100;
+  if (amount <= 0) return null;
+
+  const name = capitalizeFirstLetter(rawName.trim());
+  if (!name) return null;
+
+  return { name, amount };
+}
+
 export async function handleBotTextMessage(ctx: Context) {
   if (!ctx.message || !ctx.message.text) return;
   const text = ctx.message.text.trim();
   if (text.startsWith("/")) return;
 
-  let name: string;
-  let amountStr: string;
-
-  const matchTextFirst = text.match(/^(.+?)\s+([+-]?\d+(?:\.\d+)?)$/);
-  const matchAmountFirst = text.match(/^([+-]?\d+(?:\.\d+)?)\s+(.+)$/);
-
-  if (matchTextFirst) {
-    name = matchTextFirst[1]!.trim();
-    amountStr = matchTextFirst[2]!;
-  } else if (matchAmountFirst) {
-    amountStr = matchAmountFirst[1]!;
-    name = matchAmountFirst[2]!.trim();
-  } else {
-    await ctx.reply("Пожалуйста, укажите описание и сумму.\nПример: Лента 2000");
+  const parsed = parseBotMessage(text);
+  if (!parsed) {
+    await ctx.reply(
+      "Пожалуйста, укажите описание и сумму.\nПример: Лента 2000 или Кофе 150,50",
+    );
     return;
   }
 
-  const amount = Math.abs(parseFloat(amountStr));
+  const { name, amount } = parsed;
   const telegramId = ctx.from!.id;
 
   const supabase = getBotSupabase();
@@ -104,7 +156,7 @@ export async function handleBotTextMessage(ctx: Context) {
 
     const typeLabel = type === "income" ? "доход" : "расход";
     await ctx.reply(
-      `✅ Сохранен ${typeLabel}:\n${formattedName} (${matchedCategory.name}) — ${amount} ₽`,
+      `✅ Сохранен ${typeLabel}:\n${formattedName} (${matchedCategory.name}) — ${formatBotAmount(amount)}`,
     );
     return;
   }
@@ -171,10 +223,12 @@ export async function handleBotCallbackQuery(ctx: Context) {
 
     const date = formatDateISO();
 
+    const subName = capitalizeFirstLetter(sub.name);
+
     const { error: insertError } = await supabase.from("transactions").insert({
       user_id: sub.user_id,
       amount: Number(sub.amount),
-      name: `Платёж: ${sub.name}`,
+      name: `Платёж: ${subName}`,
       category_id: categoryId,
       type: "expense",
       date,
@@ -193,7 +247,7 @@ export async function handleBotCallbackQuery(ctx: Context) {
 
     try {
       await ctx.editMessageText(
-        `✅ Платёж «<b>${sub.name}</b>» на сумму <b>${sub.amount} ₽</b> успешно внесён в расходы за ${date}!`,
+        `✅ Платёж «<b>${subName}</b>» на сумму <b>${formatBotAmount(Number(sub.amount))}</b> успешно внесён в расходы за ${date}!`,
         { parse_mode: "HTML" },
       );
     } catch {
@@ -209,7 +263,7 @@ export async function handleBotCallbackQuery(ctx: Context) {
 
   const amountStr = parts[1]!;
   const categoryId = parts[2]!;
-  const amount = parseFloat(amountStr);
+  const amount = Math.round(Math.abs(parseFloat(amountStr.replace(",", "."))) * 100) / 100;
 
   const telegramId = ctx.from!.id;
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -220,17 +274,8 @@ export async function handleBotCallbackQuery(ctx: Context) {
     return;
   }
 
-  let name: string;
-  const matchTextFirst = originalMessageText.match(/^(.+?)\s+([+-]?\d+(?:\.\d+)?)$/);
-  const matchAmountFirst = originalMessageText.match(/^([+-]?\d+(?:\.\d+)?)\s+(.+)$/);
-
-  if (matchTextFirst) {
-    name = matchTextFirst[1]!.trim();
-  } else if (matchAmountFirst) {
-    name = matchAmountFirst[2]!.trim();
-  } else {
-    name = "Транзакция";
-  }
+  const parsed = parseBotMessage(originalMessageText);
+  const name = parsed?.name ?? "Транзакция";
 
   const supabase = getBotSupabase();
   
@@ -277,7 +322,7 @@ export async function handleBotCallbackQuery(ctx: Context) {
   const typeLabel = category.type === "income" ? "доход" : "расход";
 
   await ctx.editMessageText(
-    `✅ Сохранен ${typeLabel}:\n${formattedName} (${category.name}) — ${amount} ₽\n\n_Я запомнил эту категорию на будущее!_`,
+    `✅ Сохранен ${typeLabel}:\n${formattedName} (${category.name}) — ${formatBotAmount(amount)}\n\n_Я запомнил эту категорию на будущее!_`,
     {
       parse_mode: "Markdown",
     },
