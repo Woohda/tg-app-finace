@@ -101,11 +101,6 @@
     scrollbar-width: none;
   }
 
-  /* Фон экрана (убираем монотонный цвет, чтобы просвечивал градиент body) */
-  .bg-glass-ambient {
-    background-color: transparent;
-  }
-
   /* Класс glass-milky используется в навигации и аватаре, делаем их стеклянными */
   .glass-milky {
     background-color: rgba(255, 255, 255, 0.5) !important;
@@ -179,7 +174,9 @@
 .page-leave-active,
 .layout-enter-active,
 .layout-leave-active {
-  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
+  transition:
+    opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1),
+    transform 0.2s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
 .page-enter-from,
@@ -203,4 +200,3 @@
     transform: none;
   }
 }
-
