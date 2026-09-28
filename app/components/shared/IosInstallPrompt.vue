@@ -1,31 +1,46 @@
 <script setup lang="ts">
 /**
  * @module app/components/shared/IosInstallPrompt
- * @fileoverview Баннер-подсказка для установки PWA на экран «Домой» в Safari на iOS
+ * @fileoverview Баннер-подсказка для установки PWA на экран «Домой» (iOS Safari и Android Chrome)
  * @description
- * Отображается только для пользователей iPhone/iPad, открывших приложение в Safari
+ * Отображается только для пользователей мобильных устройств, открывших веб-версию в браузере
  * (вне Telegram Mini App и вне режима standalone PWA).
+ * Автоматически адаптирует интерфейс:
+ * - На Android: кнопка нативной установки в 1 клик (beforeinstallprompt) или инструкция для меню Chrome.
+ * - На iOS: пошаговая подсказка Safari («Поделиться» ➔ «На экран "Домой"»).
  */
 import { ref, onMounted } from "vue";
-import { X, Share, PlusSquare } from "@lucide/vue";
+import { X, Share, PlusSquare, Download, MoreVertical } from "@lucide/vue";
+import { usePwaInstall } from "~/composables/usePwaInstall";
+
+const {
+  init,
+  isIOS,
+  isAndroid,
+  isStandalone,
+  isInTelegram,
+  isInstallable,
+  installApp,
+} = usePwaInstall();
 
 const isVisible = ref(false);
+const isInstalling = ref(false);
 
 onMounted(() => {
   if (!import.meta.client) return;
+  init();
 
-  const isIOS =
-    /iPad|iPhone|iPod/.test(navigator.userAgent) &&
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    !(window as any).MSStream;
+  const isDismissed =
+    localStorage.getItem("fino_pwa_prompt_dismissed") === "1" ||
+    localStorage.getItem("fino_ios_prompt_dismissed") === "1";
 
-  const isInTelegram = !!window.Telegram?.WebApp?.initData;
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const isStandalone = !!(window.navigator as any).standalone;
-  const isDismissed = localStorage.getItem("fino_ios_prompt_dismissed") === "1";
-
-  // Показываем только в Safari на iOS, если не в Telegram, не в PWA и не закрыто ранее
-  if (isIOS && !isInTelegram && !isStandalone && !isDismissed) {
+  // Показываем на iOS или Android в браузере (не в Telegram и не в standalone)
+  if (
+    (isIOS.value || isAndroid.value) &&
+    !isInTelegram.value &&
+    !isStandalone.value &&
+    !isDismissed
+  ) {
     isVisible.value = true;
   }
 });
@@ -33,7 +48,19 @@ onMounted(() => {
 const dismiss = () => {
   isVisible.value = false;
   if (import.meta.client) {
-    localStorage.setItem("fino_ios_prompt_dismissed", "1");
+    localStorage.setItem("fino_pwa_prompt_dismissed", "1");
+  }
+};
+
+const handleAndroidInstall = async () => {
+  isInstalling.value = true;
+  try {
+    const success = await installApp();
+    if (success) {
+      dismiss();
+    }
+  } finally {
+    isInstalling.value = false;
   }
 };
 </script>
@@ -70,22 +97,25 @@ const dismiss = () => {
           </div>
           <div class="flex flex-col pr-6">
             <span class="text-text-primary font-bold text-sm leading-tight">
-              Добавьте FINO на экран
+              {{ isAndroid ? "Установите FINO на телефон" : "Добавьте FINO на экран" }}
             </span>
             <span class="text-text-secondary text-xs mt-0.5">
-              Для работы без браузерных рамок
+              Для быстрого запуска без рамок браузера
             </span>
           </div>
         </div>
 
+        <!-- 1. Вариант для iOS (Safari) -->
         <div
+          v-if="isIOS"
           class="flex flex-col gap-2 pt-2 border-t border-black/10 text-xs text-text-primary"
         >
           <div class="flex items-center gap-2">
             <span
               class="flex items-center justify-center size-5 rounded-full bg-black/5 shrink-0 text-[10px] font-bold"
-              >1</span
             >
+              1
+            </span>
             <span>Нажмите кнопку <b>«Поделиться»</b></span>
             <Share class="size-3.5 text-blue-500 inline-block shrink-0" />
             <span class="text-text-secondary">внизу Safari</span>
@@ -93,22 +123,80 @@ const dismiss = () => {
           <div class="flex items-center gap-2">
             <span
               class="flex items-center justify-center size-5 rounded-full bg-black/5 shrink-0 text-[10px] font-bold"
-              >2</span
             >
+              2
+            </span>
             <span>Выберите <b>«На экран "Домой"»</b></span>
             <PlusSquare
               class="size-3.5 text-text-primary inline-block shrink-0"
             />
           </div>
+
+          <GlassButton
+            variant="soft"
+            class="w-full rounded-2xl text-sm font-semibold text-text-primary transition-all mt-2 shadow-xs"
+            @click="dismiss"
+          >
+            Понятно
+          </GlassButton>
         </div>
 
-        <GlassButton
-          variant="soft"
-          class="w-full rounded-2xl text-sm font-semibold text-text-primary transition-all mt-2 shadow-xs"
-          @click="dismiss"
+        <!-- 2. Вариант для Android с поддержкой прямого клика установки -->
+        <div
+          v-else-if="isAndroid && isInstallable"
+          class="flex flex-col gap-2 pt-2 border-t border-black/10 text-xs text-text-primary"
         >
-          Понятно
-        </GlassButton>
+          <GlassButton
+            variant="primary"
+            class="w-full rounded-2xl text-sm font-semibold transition-all mt-1 shadow-xs flex items-center justify-center gap-2"
+            :disabled="isInstalling"
+            @click="handleAndroidInstall"
+          >
+            <Download class="size-4" />
+            {{ isInstalling ? "Установка..." : "Установить приложение" }}
+          </GlassButton>
+          <button
+            type="button"
+            class="text-xs text-text-secondary hover:text-text-primary text-center py-1 mt-0.5"
+            @click="dismiss"
+          >
+            Не сейчас
+          </button>
+        </div>
+
+        <!-- 3. Вариант для Android при ручной установке через меню Chrome -->
+        <div
+          v-else
+          class="flex flex-col gap-2 pt-2 border-t border-black/10 text-xs text-text-primary"
+        >
+          <div class="flex items-center gap-2">
+            <span
+              class="flex items-center justify-center size-5 rounded-full bg-black/5 shrink-0 text-[10px] font-bold"
+            >
+              1
+            </span>
+            <span>Нажмите меню <b>⋮</b></span>
+            <MoreVertical class="size-3.5 text-text-primary inline-block shrink-0" />
+            <span class="text-text-secondary">в браузере</span>
+          </div>
+          <div class="flex items-center gap-2">
+            <span
+              class="flex items-center justify-center size-5 rounded-full bg-black/5 shrink-0 text-[10px] font-bold"
+            >
+              2
+            </span>
+            <span>Выберите <b>«Установить приложение»</b></span>
+            <Download class="size-3.5 text-text-primary inline-block shrink-0" />
+          </div>
+
+          <GlassButton
+            variant="soft"
+            class="w-full rounded-2xl text-sm font-semibold text-text-primary transition-all mt-2 shadow-xs"
+            @click="dismiss"
+          >
+            Понятно
+          </GlassButton>
+        </div>
       </GlassCard>
     </div>
   </Transition>

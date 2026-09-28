@@ -32,6 +32,22 @@ export async function handleWebLoginCommand(ctx: Context): Promise<void> {
     return;
   }
 
+  const firstName = ctx.from.first_name || null;
+  const username = ctx.from.username || null;
+  if (firstName || username) {
+    try {
+      await supabase
+        .from("users")
+        .update({
+          ...(firstName ? { first_name: firstName } : {}),
+          ...(username ? { username } : {}),
+        })
+        .eq("id", user.id);
+    } catch {
+      // Игнорируем ошибку фонового обновления
+    }
+  }
+
   let jwtSecret: string | undefined;
   try {
     jwtSecret = useRuntimeConfig().jwtSecret;
@@ -54,15 +70,18 @@ export async function handleWebLoginCommand(ctx: Context): Promise<void> {
     : `https://${rawUrl.replace(/\/+$/, "")}`;
   const loginUrl = `${cleanBase}/login?ticket=${encodeURIComponent(ticket)}`;
 
-  const keyboard = new InlineKeyboard().url("🚀 Открыть в Safari", loginUrl);
+  const keyboard = new InlineKeyboard()
+    .url("🚀 Открыть в браузере", loginUrl)
+    .row()
+    .copyText("📋 Скопировать ссылку", loginUrl);
 
   await ctx.reply(
-    `📲 <b>Вход в FINO для iPhone (Safari / PWA)</b>\n\n` +
-      `Нажмите на кнопку ниже, чтобы открыть приложение в Safari без ввода пароля:\n\n` +
+    `📲 <b>Вход в веб-версию FINO</b>\n\n` +
+      `Нажмите на кнопку ниже или скопируйте ссылку, чтобы открыть её в удобном браузере (Safari / Chrome):\n\n` +
+      `<code>${loginUrl}</code>\n\n` +
       `💡 <b>Как добавить на экран «Домой»:</b>\n` +
-      `1. Откройте ссылку в браузере Safari.\n` +
-      `2. Нажмите кнопку <b>«Поделиться»</b> ⎋ внизу экрана.\n` +
-      `3. Выберите пункт <b>«На экран "Домой"»</b> ➕.\n\n` +
+      `• <b>iPhone (Safari):</b> кнопка «Поделиться» ⎋ ➔ «На экран "Домой"» ➕\n` +
+      `• <b>Android (Chrome):</b> меню ⋮ ➔ «Установить приложение» 📲\n\n` +
       `⏳ <i>Ссылка персональная и действует 10 минут.</i>`,
     {
       parse_mode: "HTML",

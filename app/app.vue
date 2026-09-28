@@ -13,6 +13,12 @@
  * 3. Отображает экранный индикатор загрузки при явной активации useGlobalLoading.
  */
 const isLoading = useGlobalLoading();
+const router = useRouter();
+
+// Гарантированный сброс блокирующего лоадера после любого перехода между страницами
+router.afterEach(() => {
+  isLoading.value = false;
+});
 </script>
 
 <template>
