@@ -56,10 +56,10 @@ const { openModal } = useTransactionModal();
 <template>
   <!-- Защитная подложка. -->
   <div
-    class="absolute inset-x-0 bottom-0 pointer-events-auto bg-linear-to-t from-white/40 to-transparent"
+    class="absolute inset-x-0 bottom-0 pointer-events-auto bg-linear-to-t from-white/40 to-transparent blur-xs"
     :style="{
       zIndex: Z_INDEX.BOTTOM_NAV - 1,
-      height: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
+      height: 'calc(5rem + env(safe-area-inset-bottom, 0px))',
     }"
     aria-hidden="true"
   />
