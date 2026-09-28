@@ -181,7 +181,7 @@ onMounted(async () => {
               class="w-full mt-2"
             >
               <GlassButton
-                size="lg"
+                size="default"
                 variant="primary"
                 class="w-full"
                 :disabled="isLoading"

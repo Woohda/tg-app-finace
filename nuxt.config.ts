@@ -27,7 +27,7 @@ export default defineNuxtConfig({
         { name: "apple-mobile-web-app-capable", content: "yes" },
         {
           name: "apple-mobile-web-app-status-bar-style",
-          content: "black-translucent",
+          content: "default",
         },
         { name: "apple-mobile-web-app-title", content: "FINO" },
         { name: "theme-color", content: "#fdf4dc" },
