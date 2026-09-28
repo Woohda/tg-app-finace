@@ -25,11 +25,43 @@ export async function handleWebLoginCommand(ctx: Context): Promise<void> {
     .eq("telegram_id", telegramId)
     .single();
 
+  let rawUrl: string | undefined;
+  try {
+    rawUrl = useRuntimeConfig().webAppUrl;
+  } catch {
+    // Вне контекста Nitro берем из process.env
+  }
+  if (!rawUrl) {
+    rawUrl = process.env.WEB_APP_URL || "https://tg-app-finace.pages.dev";
+  }
+  const cleanBase = rawUrl.startsWith("http")
+    ? rawUrl.replace(/\/+$/, "")
+    : `https://${rawUrl.replace(/\/+$/, "")}`;
+
   if (!user) {
     await ctx.reply(
       "Сначала откройте приложение через кнопку «FINO» внизу, чтобы активировать аккаунт! 🐶",
+      {
+        reply_markup: new InlineKeyboard().webApp("🐶 Открыть FINO", cleanBase),
+      },
     );
     return;
+  }
+
+  const firstName = ctx.from.first_name || null;
+  const username = ctx.from.username || null;
+  if (firstName || username) {
+    try {
+      await supabase
+        .from("users")
+        .update({
+          ...(firstName ? { first_name: firstName } : {}),
+          ...(username ? { username } : {}),
+        })
+        .eq("id", user.id);
+    } catch {
+      // Игнорируем ошибку фонового обновления
+    }
   }
 
   let jwtSecret: string | undefined;
@@ -48,21 +80,22 @@ export async function handleWebLoginCommand(ctx: Context): Promise<void> {
   }
 
   const ticket = await generateLoginTicket(user.id, jwtSecret);
-  const rawUrl = process.env.WEB_APP_URL || "https://tg-app-finace.pages.dev";
-  const cleanBase = rawUrl.startsWith("http")
-    ? rawUrl.replace(/\/+$/, "")
-    : `https://${rawUrl.replace(/\/+$/, "")}`;
   const loginUrl = `${cleanBase}/login?ticket=${encodeURIComponent(ticket)}`;
 
-  const keyboard = new InlineKeyboard().url("🚀 Открыть в Safari", loginUrl);
+  const keyboard = new InlineKeyboard()
+    .url("🚀 Открыть в браузере", loginUrl)
+    .row()
+    .copyText("📋 Скопировать ссылку", loginUrl)
+    .row()
+    .webApp("📱 Открыть в Telegram", cleanBase);
 
   await ctx.reply(
-    `📲 <b>Вход в FINO для iPhone (Safari / PWA)</b>\n\n` +
-      `Нажмите на кнопку ниже, чтобы открыть приложение в Safari без ввода пароля:\n\n` +
+    `📲 <b>Вход в веб-версию FINO</b>\n\n` +
+      `Нажмите на кнопку ниже или скопируйте ссылку, чтобы открыть её в удобном браузере (Safari / Chrome):\n\n` +
+      `<code>${loginUrl}</code>\n\n` +
       `💡 <b>Как добавить на экран «Домой»:</b>\n` +
-      `1. Откройте ссылку в браузере Safari.\n` +
-      `2. Нажмите кнопку <b>«Поделиться»</b> ⎋ внизу экрана.\n` +
-      `3. Выберите пункт <b>«На экран "Домой"»</b> ➕.\n\n` +
+      `• <b>iPhone (Safari):</b> кнопка «Поделиться» ⎋ ➔ «На экран "Домой"» ➕\n` +
+      `• <b>Android (Chrome):</b> меню ⋮ ➔ «Установить приложение» 📲\n\n` +
       `⏳ <i>Ссылка персональная и действует 10 минут.</i>`,
     {
       parse_mode: "HTML",

@@ -27,8 +27,8 @@ const colors = {
 <template>
   <!-- Контейнер фиксирован поверх всего (Z_INDEX.TOAST) -->
   <div
-    class="fixed top-4 left-0 right-0 px-4 pointer-events-none flex flex-col items-center gap-3"
-    :style="{ zIndex: Z_INDEX.TOAST }"
+    class="fixed left-0 right-0 px-4 pointer-events-none flex flex-col items-center gap-3"
+    :style="{ zIndex: Z_INDEX.TOAST, top: 'calc(1rem + env(safe-area-inset-top, 0px))' }"
     role="region"
     aria-label="Всплывающие уведомления"
     aria-live="polite"

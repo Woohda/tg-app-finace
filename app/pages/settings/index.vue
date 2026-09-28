@@ -40,7 +40,42 @@ const { user, userName, avatarUrl, logout, getWebLoginLink } = useAuth();
 const isLoading = useGlobalLoading();
 const isGeneratingLink = ref(false);
 
-const handleOpenInSafari = async () => {
+const {
+  init: initPwa,
+  isIOS,
+  isAndroid,
+  isInstallable,
+  installApp,
+  isInTelegram,
+  isStandalone,
+} = usePwaInstall();
+
+onMounted(() => {
+  if (import.meta.client) {
+    initPwa();
+  }
+});
+
+const installCardTitle = computed(() => {
+  if (isIOS.value) return "Установить на iPhone";
+  if (isAndroid.value) return "Установить на Android";
+  return "Установить приложение";
+});
+
+const installCardDescription = computed(() => {
+  if (isGeneratingLink.value) return "Генерация ссылки...";
+  if (isIOS.value) return "Открыть в Safari и добавить на экран";
+  if (isAndroid.value) return "Открыть в Chrome и установить";
+  return "Открыть веб-версию для установки";
+});
+
+const handleInstallClick = async () => {
+  // Если пользователь уже в браузере на Android и доступен нативный prompt
+  if (isAndroid.value && isInstallable.value && !isInTelegram.value) {
+    await installApp();
+    return;
+  }
+
   try {
     isGeneratingLink.value = true;
     const url = await getWebLoginLink();
@@ -50,7 +85,7 @@ const handleOpenInSafari = async () => {
       window.open(url, "_blank");
     }
   } catch (error) {
-    console.error("Ошибка генерации ссылки для Safari:", error);
+    console.error("Ошибка генерации ссылки:", error);
   } finally {
     isGeneratingLink.value = false;
   }
@@ -123,11 +158,12 @@ const handleLogout = async () => {
       </NuxtLink>
 
       <GlassCard
+        v-if="!isStandalone"
         class="p-5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-95 cursor-pointer border-[0.5px] border-amber-500/20"
         role="button"
         tabindex="0"
-        @click="handleOpenInSafari"
-        @keydown.enter="handleOpenInSafari"
+        @click="handleInstallClick"
+        @keydown.enter="handleInstallClick"
       >
         <div class="flex items-center gap-3">
           <div
@@ -137,10 +173,10 @@ const handleLogout = async () => {
           </div>
           <div class="flex flex-col items-start">
             <span class="text-text-primary font-bold text-base">
-              Установить на iPhone
+              {{ installCardTitle }}
             </span>
             <span class="text-text-secondary text-xs">
-              {{ isGeneratingLink ? "Генерация ссылки..." : "Открыть в Safari и добавить на экран" }}
+              {{ installCardDescription }}
             </span>
           </div>
         </div>

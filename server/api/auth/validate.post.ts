@@ -75,12 +75,14 @@ export default defineEventHandler(async (event) => {
   const tgUser = JSON.parse(userString);
   const telegramId = tgUser.id;
   const username = tgUser.username || null;
+  const firstName = tgUser.first_name || null;
+  const photoUrl = tgUser.photo_url || null;
 
   const supabase = serverSupabaseServiceRole<Database>(event);
 
   const response = await supabase
     .from("users")
-    .select("id, telegram_id, username, timezone")
+    .select("id, telegram_id, username, first_name, photo_url, timezone")
     .eq("telegram_id", telegramId)
     .single();
 
@@ -88,7 +90,7 @@ export default defineEventHandler(async (event) => {
   const fetchError = response.error;
 
   if (fetchError && fetchError.code !== "PGRST116") {
-    // Если ошибка вызвана тем, что колонка timezone еще не добавлена, делаем fallback выборку
+    // Если ошибка вызвана отсутствием новых колонок, делаем fallback выборку
     const fallbackResponse = await supabase
       .from("users")
       .select("id, telegram_id, username")
@@ -99,31 +101,58 @@ export default defineEventHandler(async (event) => {
       console.error("Ошибка БД при поиске пользователя:", fetchError);
       throw createError({ statusCode: 500, statusMessage: "Ошибка базы данных" });
     }
-    user = fallbackResponse.data ? { ...fallbackResponse.data, timezone: null } : null;
+    user = fallbackResponse.data
+      ? {
+          ...fallbackResponse.data,
+          first_name: null,
+          photo_url: null,
+          timezone: null,
+        }
+      : null;
   }
 
   if (user) {
-    if (timezone && user.timezone !== timezone) {
+    const updates: {
+      username?: string | null;
+      first_name?: string | null;
+      photo_url?: string | null;
+      timezone?: string | null;
+    } = {};
+
+    if (username && username !== user.username) updates.username = username;
+    if (firstName && firstName !== user.first_name) updates.first_name = firstName;
+    if (photoUrl && photoUrl !== user.photo_url) updates.photo_url = photoUrl;
+    if (timezone && user.timezone !== timezone) updates.timezone = timezone;
+
+    if (Object.keys(updates).length > 0) {
       try {
         await supabase
           .from("users")
-          .update({ timezone })
+          .update(updates)
           .eq("id", user.id);
-        user.timezone = timezone;
+        Object.assign(user, updates);
       } catch {
-        // Игнорируем ошибку обновления, если колонка timezone еще не создана
+        // Игнорируем ошибку обновления
       }
     }
   } else {
     let newUser = null;
 
-    if (timezone) {
+    try {
       const res = await supabase
         .from("users")
-        .insert({ telegram_id: telegramId, username, timezone })
-        .select("id, telegram_id, username, timezone")
+        .insert({
+          telegram_id: telegramId,
+          username,
+          first_name: firstName,
+          photo_url: photoUrl,
+          timezone: timezone ?? null,
+        })
+        .select("id, telegram_id, username, first_name, photo_url, timezone")
         .single();
       newUser = res.data;
+    } catch {
+      // Игнорируем ошибку и пробуем базовый fallback
     }
 
     if (!newUser) {
@@ -140,7 +169,12 @@ export default defineEventHandler(async (event) => {
           statusMessage: "Не удалось создать пользователя",
         });
       }
-      newUser = { ...fallbackUser, timezone: null };
+      newUser = {
+        ...fallbackUser,
+        first_name: null,
+        photo_url: null,
+        timezone: null,
+      };
     }
 
     user = newUser;

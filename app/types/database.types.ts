@@ -138,6 +138,8 @@ export type Database = {
           id: string;
           telegram_id: number;
           username: string | null;
+          first_name: string | null;
+          photo_url: string | null;
           timezone: string | null;
         };
         Insert: {
@@ -145,6 +147,8 @@ export type Database = {
           id?: string;
           telegram_id: number;
           username?: string | null;
+          first_name?: string | null;
+          photo_url?: string | null;
           timezone?: string | null;
         };
         Update: {
@@ -152,6 +156,8 @@ export type Database = {
           id?: string;
           telegram_id?: number;
           username?: string | null;
+          first_name?: string | null;
+          photo_url?: string | null;
           timezone?: string | null;
         };
         Relationships: [];

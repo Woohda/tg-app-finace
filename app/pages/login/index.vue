@@ -7,6 +7,8 @@
  * на основе `window.Telegram.WebApp.initData`. В обычном браузере в dev-режиме
  * авторизует через dev-endpoint автоматически.
  */
+import { ref, onMounted, onUnmounted } from "vue";
+
 const {
   isAuthenticated,
   getTelegramInitData,
@@ -18,17 +20,18 @@ const router = useRouter();
 const route = useRoute();
 const isDev = import.meta.dev;
 
-if (isAuthenticated.value) {
-  router.replace("/");
-}
+const isLoading = useGlobalLoading();
+const errorMessage = ref<string | null>(null);
+const isInTelegram = ref(false);
 
 definePageMeta({
   layout: false,
 });
 
-const isLoading = useGlobalLoading();
-const errorMessage = ref<string | null>(null);
-const isInTelegram = ref(false);
+if (isAuthenticated.value) {
+  isLoading.value = false;
+  router.replace("/");
+}
 
 // Включаем загрузку сразу на клиенте, чтобы не было "моргания" экрана входа
 // перед автоматической авторизацией через Telegram, Ticket или DevMode.
@@ -36,32 +39,45 @@ if (import.meta.client && !isAuthenticated.value) {
   isLoading.value = true;
 }
 
+onUnmounted(() => {
+  isLoading.value = false;
+});
+
 const handleLogin = async () => {
   errorMessage.value = null;
   isLoading.value = true;
-  const success = await initTelegramAuth();
+  try {
+    const success = await initTelegramAuth();
 
-  if (success) {
-    await router.replace("/");
-  } else {
-    errorMessage.value =
-      "Не удалось авторизоваться через Telegram. Попробуйте еще раз.";
+    if (success) {
+      isLoading.value = false;
+      await router.replace("/");
+    } else {
+      errorMessage.value =
+        "Не удалось авторизоваться через Telegram. Попробуйте еще раз.";
+      isLoading.value = false;
+    }
+  } catch {
+    isLoading.value = false;
   }
-  isLoading.value = false;
 };
 
 const handleDevLogin = async () => {
   errorMessage.value = null;
   isLoading.value = true;
+  try {
+    const success = await devLogin();
 
-  const success = await devLogin();
-
-  if (success) {
-    await router.replace("/");
-  } else {
-    errorMessage.value = "Ошибка dev-авторизации";
+    if (success) {
+      isLoading.value = false;
+      await router.replace("/");
+    } else {
+      errorMessage.value = "Ошибка dev-авторизации";
+      isLoading.value = false;
+    }
+  } catch {
+    isLoading.value = false;
   }
-  isLoading.value = false;
 };
 
 onMounted(async () => {
@@ -69,14 +85,20 @@ onMounted(async () => {
   const ticket = route.query.ticket;
   if (typeof ticket === "string" && ticket.trim()) {
     isLoading.value = true;
-    const success = await loginWithTicket(ticket.trim());
-    if (success) {
-      await router.replace("/");
-      return;
-    } else {
-      errorMessage.value =
-        "Ссылка для входа недействительна или устарела. Запросите новую ссылку у бота командой /web.";
+    try {
+      const success = await loginWithTicket(ticket.trim());
       isLoading.value = false;
+      if (success) {
+        await router.replace("/");
+        return;
+      } else {
+        errorMessage.value =
+          "Ссылка для входа недействительна или устарела. Запросите новую ссылку у бота командой /web.";
+        return;
+      }
+    } catch {
+      isLoading.value = false;
+      errorMessage.value = "Произошла ошибка при входе по ссылке.";
       return;
     }
   }
@@ -159,7 +181,7 @@ onMounted(async () => {
               class="w-full mt-2"
             >
               <GlassButton
-                size="lg"
+                size="default"
                 variant="primary"
                 class="w-full"
                 :disabled="isLoading"
