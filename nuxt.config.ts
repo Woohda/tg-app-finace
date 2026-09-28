@@ -17,12 +17,25 @@ export default defineNuxtConfig({
     pageTransition: { name: "page", mode: "out-in" },
     layoutTransition: { name: "page", mode: "out-in" },
     head: {
+      title: "FINO — Финансы",
       meta: [
         {
           name: "viewport",
           content:
             "width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover, interactive-widget=resizes-content",
         },
+        { name: "apple-mobile-web-app-capable", content: "yes" },
+        {
+          name: "apple-mobile-web-app-status-bar-style",
+          content: "black-translucent",
+        },
+        { name: "apple-mobile-web-app-title", content: "FINO" },
+        { name: "theme-color", content: "#fdf4dc" },
+      ],
+      link: [
+        { rel: "icon", type: "image/png", href: "/favicon.png" },
+        { rel: "manifest", href: "/manifest.webmanifest" },
+        { rel: "apple-touch-icon", href: "/apple-touch-icon.png" },
       ],
       script: [
         {

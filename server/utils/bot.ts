@@ -14,7 +14,11 @@
  * - `configuredToken` используется для пересоздания инстанса при изменении токена (например, в dev-режиме).
  */
 import { Bot } from "grammy";
-import { handleBotTextMessage, handleBotCallbackQuery } from "./botHandlers";
+import {
+  handleBotTextMessage,
+  handleBotCallbackQuery,
+  handleWebLoginCommand,
+} from "./botHandlers";
 
 let botInstance: Bot | null = null;
 let configuredToken: string | null = null;
@@ -61,7 +65,7 @@ export function getBot(customToken?: string): Bot {
     await ctx.reply(
       `*Как добавлять операции текстом:*\n` +
         `Просто отправь мне сообщение в формате: \`Название Сумма\` (или наоборот).\n` +
-        `Например: \`Лента 2500\` или \`5000 Коммуналка\`.\n\n` +
+        `Например: \`Лента 2500\` или \`Кофе 150,50\`.\n\n` +
         `🧠 *Как я подбираю категории:*\n` +
         `Если я вижу такое название впервые, я попрошу тебя выбрать категорию из списка и запомню её. В следующий раз я всё сделаю автоматически! 🐶\n\n` +
         `🛠 *Что делать, если категория выбрана неверно?*\n` +
@@ -82,6 +86,8 @@ export function getBot(customToken?: string): Bot {
       },
     });
   });
+
+  newBot.command("web", handleWebLoginCommand);
 
   newBot.on("message:text", handleBotTextMessage);
   newBot.on("callback_query:data", handleBotCallbackQuery);

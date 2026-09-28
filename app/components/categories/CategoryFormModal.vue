@@ -66,8 +66,9 @@ const closeForm = () => {
 };
 
 const submitForm = async () => {
+  formName.value = capitalizeFirstLetter(formName.value.trim());
   const result = categorySchema.safeParse({
-    name: formName.value.trim(),
+    name: formName.value,
     icon: formIcon.value.trim(),
     type: formType.value,
   });
@@ -136,7 +137,9 @@ const submitForm = async () => {
           type="text"
           label="Название"
           placeholder="Например, Продукты"
+          autocapitalize="sentences"
           class="w-full"
+          @blur="formName = capitalizeFirstLetter(formName)"
         />
         <GlassInput
           v-model="formIcon"

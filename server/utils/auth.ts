@@ -17,7 +17,7 @@
  * - Токен бота и секрет для JWT должны передаваться из переменных окружения (runtime config).
  * - Аутентификация является полностью stateless (без хранения сессий на сервере).
  */
-import { SignJWT } from "jose";
+import { SignJWT, jwtVerify } from "jose";
 
 export async function verifyTelegramWebAppData(
   telegramInitData: string,
@@ -89,3 +89,49 @@ export async function generateJWT(
     .setExpirationTime("7d")
     .sign(secretKey);
 }
+
+/**
+ * Генерирует одноразовый короткоживущий тикет для входа через браузер Safari / PWA.
+ * Срок действия: 10 минут.
+ */
+export async function generateLoginTicket(
+  userId: string,
+  secret: string,
+): Promise<string> {
+  const secretKey = new TextEncoder().encode(secret);
+  const iat = Math.floor(Date.now() / 1000) - 60; // 1 минута запас на рассинхрон
+
+  return await new SignJWT({
+    sub: userId,
+    type: "web_login_ticket",
+    jti: crypto.randomUUID(),
+  })
+    .setProtectedHeader({ alg: "HS256" })
+    .setIssuedAt(iat)
+    .setExpirationTime("10m")
+    .sign(secretKey);
+}
+
+/**
+ * Проверяет подлинность одноразового тикета входа.
+ * Возвращает идентификатор пользователя (userId) или null, если тикет недействителен или просрочен.
+ */
+export async function verifyLoginTicket(
+  ticket: string,
+  secret: string,
+): Promise<string | null> {
+  try {
+    const secretKey = new TextEncoder().encode(secret);
+    const { payload } = await jwtVerify(ticket, secretKey);
+
+    if (payload.type !== "web_login_ticket" || !payload.sub) {
+      return null;
+    }
+
+    return payload.sub;
+  } catch (error) {
+    console.error("Ошибка проверки тикета входа:", error);
+    return null;
+  }
+}
+

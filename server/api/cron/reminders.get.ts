@@ -206,7 +206,7 @@ export default defineEventHandler(async (event) => {
 
         await bot.api.sendMessage(
           telegramId,
-          `💸 Сегодня день платежа «<b>${sub.name}</b>» на сумму <b>${sub.amount} ₽</b>.\n\nВы внесли платёж?`,
+          `💸 Сегодня день платежа «<b>${sub.name}</b>» на сумму <b>${formatBotAmount(Number(sub.amount))}</b>.\n\nВы внесли платёж?`,
           {
             parse_mode: "HTML",
             reply_markup: keyboard,
@@ -225,7 +225,7 @@ export default defineEventHandler(async (event) => {
       try {
         await bot.api.sendMessage(
           telegramId,
-          `⚠️ Напоминание: завтра регулярный платёж «<b>${sub.name}</b>» на сумму <b>${sub.amount} ₽</b>.`,
+          `⚠️ Напоминание: завтра регулярный платёж «<b>${sub.name}</b>» на сумму <b>${formatBotAmount(Number(sub.amount))}</b>.`,
           { parse_mode: "HTML" },
         );
         sentTomorrow++;
@@ -241,7 +241,7 @@ export default defineEventHandler(async (event) => {
       try {
         await bot.api.sendMessage(
           telegramId,
-          `🔔 Напоминание: через 3 дня регулярный платёж «<b>${sub.name}</b>» на сумму <b>${sub.amount} ₽</b>.`,
+          `🔔 Напоминание: через 3 дня регулярный платёж «<b>${sub.name}</b>» на сумму <b>${formatBotAmount(Number(sub.amount))}</b>.`,
           { parse_mode: "HTML" },
         );
         sentIn3Days++;

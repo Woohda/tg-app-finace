@@ -150,6 +150,7 @@ export const useTransactions = (options?: {
     try {
       const payload = {
         ...data,
+        name: data.name ? capitalizeFirstLetter(data.name) : data.name,
         id:
           data.id ||
           (typeof crypto !== "undefined" && crypto.randomUUID
@@ -197,9 +198,16 @@ export const useTransactions = (options?: {
       return { success: false, error: "Запрос уже выполняется" };
     isMutating.value = true;
     try {
+      const payload = {
+        ...data,
+        ...(data.name !== undefined
+          ? { name: data.name ? capitalizeFirstLetter(data.name) : data.name }
+          : {}),
+      };
+
       const updated = await api<Transaction>(`/api/transactions/${id}`, {
         method: "PATCH",
-        body: data,
+        body: payload,
       });
 
       invalidateAll();

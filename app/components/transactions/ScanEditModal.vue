@@ -64,6 +64,9 @@ const filteredCategories = computed(() => {
 
 const save = () => {
   if (localItem.value) {
+    if (localItem.value.name) {
+      localItem.value.name = capitalizeFirstLetter(localItem.value.name) || "";
+    }
     const parsedAmount = parseAmount(localItem.value.amount);
     const result = transactionSchema.safeParse({
       amount: parsedAmount,
@@ -81,6 +84,7 @@ const save = () => {
     formError.value = null;
     emit("save", {
       ...localItem.value,
+      name: result.data.name || localItem.value.name,
       amount: parsedAmount,
     });
   }
@@ -101,6 +105,8 @@ const save = () => {
         v-model="localItem.name"
         type="text"
         placeholder="Название покупки"
+        autocapitalize="sentences"
+        @blur="localItem.name = capitalizeFirstLetter(localItem.name) || ''"
       />
 
       <GlassCategorySelect

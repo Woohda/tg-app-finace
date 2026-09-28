@@ -60,7 +60,7 @@ export default defineEventHandler(async (event) => {
     category_id,
     type,
     date,
-    name: name || null,
+    name: name ? capitalizeFirstLetter(name.trim()) : null,
     user_id: userId,
   };
 

@@ -60,7 +60,8 @@ export default defineEventHandler(async (event) => {
   if (category_id !== undefined) updateData.category_id = category_id;
   if (type !== undefined) updateData.type = type;
   if (date !== undefined) updateData.date = date;
-  if (name !== undefined) updateData.name = name || null;
+  if (name !== undefined)
+    updateData.name = name ? capitalizeFirstLetter(name.trim()) : null;
 
   const { data, error } = await supabase
     .from("transactions")

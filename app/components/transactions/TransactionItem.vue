@@ -68,7 +68,7 @@ function onItemClick() {
     :content-class="
       cn(
         'transaction-content flex items-center bg-transparent border-b border-black/6 group-last:border-none',
-        variant === 'analytics' ? 'justify-between gap-3 p-2' : 'gap-2 pb-3',
+        variant === 'analytics' ? 'justify-between gap-3 p-2' : 'gap-2 pb-2',
         interactive && 'cursor-pointer active:opacity-80',
       )
     "

@@ -75,9 +75,11 @@ export const useCategories = () => {
           ? crypto.randomUUID()
           : undefined);
 
+      const formattedName = capitalizeFirstLetter(name);
+
       const newCategory = await api<Category>("/api/categories", {
         method: "POST",
-        body: { id: categoryId, name, type, icon },
+        body: { id: categoryId, name: formattedName, type, icon },
       });
 
       categories.value.push(newCategory);
@@ -106,9 +108,11 @@ export const useCategories = () => {
     error.value = null;
 
     try {
+      const formattedName = capitalizeFirstLetter(name);
+
       const updated = await api<Category>(`/api/categories/${id}`, {
         method: "PUT",
-        body: { name, icon },
+        body: { name: formattedName, icon },
       });
 
       const index = categories.value.findIndex((c) => c.id === id);

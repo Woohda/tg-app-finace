@@ -36,8 +36,25 @@ const SETTINGS_LINKS: readonly SettingsNavigationItem[] = [
   },
 ] as const;
 
-const { user, userName, avatarUrl, logout } = useAuth();
+const { user, userName, avatarUrl, logout, getWebLoginLink } = useAuth();
 const isLoading = useGlobalLoading();
+const isGeneratingLink = ref(false);
+
+const handleOpenInSafari = async () => {
+  try {
+    isGeneratingLink.value = true;
+    const url = await getWebLoginLink();
+    if (typeof window !== "undefined" && window.Telegram?.WebApp?.openLink) {
+      window.Telegram.WebApp.openLink(url);
+    } else if (typeof window !== "undefined") {
+      window.open(url, "_blank");
+    }
+  } catch (error) {
+    console.error("Ошибка генерации ссылки для Safari:", error);
+  } finally {
+    isGeneratingLink.value = false;
+  }
+};
 
 const handleLogout = async () => {
   isLoading.value = true;
@@ -104,6 +121,31 @@ const handleLogout = async () => {
           <ChevronRight class="size-5 text-text-secondary opacity-60" />
         </GlassCard>
       </NuxtLink>
+
+      <GlassCard
+        class="p-5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-95 cursor-pointer border-[0.5px] border-amber-500/20"
+        role="button"
+        tabindex="0"
+        @click="handleOpenInSafari"
+        @keydown.enter="handleOpenInSafari"
+      >
+        <div class="flex items-center gap-3">
+          <div
+            class="size-10 rounded-full glass-pill flex items-center justify-center text-text-primary shrink-0"
+          >
+            <span class="text-xl">📲</span>
+          </div>
+          <div class="flex flex-col items-start">
+            <span class="text-text-primary font-bold text-base">
+              Установить на iPhone
+            </span>
+            <span class="text-text-secondary text-xs">
+              {{ isGeneratingLink ? "Генерация ссылки..." : "Открыть в Safari и добавить на экран" }}
+            </span>
+          </div>
+        </div>
+        <ChevronRight class="size-5 text-text-secondary opacity-60" />
+      </GlassCard>
     </div>
 
     <GlassCard class="p-5 text-center">
