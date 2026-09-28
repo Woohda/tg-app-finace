@@ -13,6 +13,11 @@ export default defineEventHandler(async (event) => {
     const body = await readBody(event);
     const { message, url, stack, userId } = body;
 
+    // Игнорируем неинформативные анонимные браузерные ошибки Script error
+    if (message && String(message).includes("Script error") && !stack) {
+      return { success: true, ignored: true };
+    }
+
     const bot = getBot(config.telegramBotToken);
 
     const errorMsg = `

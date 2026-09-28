@@ -27,7 +27,7 @@ export default defineNuxtConfig({
         { name: "apple-mobile-web-app-capable", content: "yes" },
         {
           name: "apple-mobile-web-app-status-bar-style",
-          content: "default",
+          content: "black-translucent",
         },
         { name: "apple-mobile-web-app-title", content: "FINO" },
         { name: "theme-color", content: "#fdf4dc" },
@@ -46,18 +46,22 @@ export default defineNuxtConfig({
     },
   },
   css: ["~/assets/css/main.css"],
-  modules: ["@nuxt/eslint", "@nuxt/image", "@nuxt/ui", "@nuxtjs/supabase", "@nuxt/fonts"],
+  modules: [
+    "@nuxt/eslint",
+    "@nuxt/image",
+    "@nuxt/ui",
+    "@nuxtjs/supabase",
+    "@nuxt/fonts",
+  ],
   fonts: {
-    families: [
-      { name: 'Inter', provider: 'google' }
-    ]
+    families: [{ name: "Inter", provider: "google" }],
   },
   components: [
     {
-      path: '~/components',
+      path: "~/components",
       pathPrefix: false,
-      ignore: ['**/index.ts']
-    }
+      ignore: ["**/index.ts"],
+    },
   ],
   runtimeConfig: {
     telegramBotToken: process.env.TELEGRAM_BOT_TOKEN,
