@@ -56,7 +56,7 @@ export default defineEventHandler(async (event) => {
 
   const { data: user, error: userError } = await supabase
     .from("users")
-    .select("id, telegram_id, username, timezone")
+    .select("id, telegram_id, username, first_name, photo_url, timezone")
     .eq("id", userId)
     .single();
 

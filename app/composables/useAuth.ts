@@ -18,6 +18,8 @@ export interface User {
   id: string;
   telegram_id: number;
   username: string | null;
+  first_name?: string | null;
+  photo_url?: string | null;
   timezone?: string | null;
 }
 
@@ -54,6 +56,9 @@ export const useAuth = () => {
   const isAuthenticated = computed(() => !!token.value && !!user.value);
 
   const userName = computed(() => {
+    if (user.value?.first_name) {
+      return user.value.first_name;
+    }
     if (tgUser.value?.first_name) {
       return tgUser.value.first_name;
     }
@@ -63,7 +68,9 @@ export const useAuth = () => {
     return "Пользователь";
   });
 
-  const avatarUrl = computed(() => tgUser.value?.photo_url || null);
+  const avatarUrl = computed(
+    () => user.value?.photo_url || tgUser.value?.photo_url || null,
+  );
 
   const initTelegramUser = () => {
     if (import.meta.client && window.Telegram?.WebApp?.initDataUnsafe?.user) {
