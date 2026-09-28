@@ -19,6 +19,7 @@ import {
   handleBotCallbackQuery,
   handleWebLoginCommand,
 } from "./botHandlers";
+import { getBotSupabase } from "./db";
 
 let botInstance: Bot | null = null;
 let configuredToken: string | null = null;
@@ -54,6 +55,31 @@ export function getBot(customToken?: string): Bot {
   const newBot = new Bot(token);
 
   newBot.command("start", async (ctx) => {
+    const payload = ctx.match?.trim();
+
+    // 1. Если перешли по диплинку авторизации /start web
+    if (payload === "web") {
+      await handleWebLoginCommand(ctx);
+      return;
+    }
+
+    // 2. Если пользователь уже нажимал старт ранее (аккаунт существует в БД)
+    const telegramId = ctx.from?.id;
+    if (telegramId) {
+      const supabase = getBotSupabase();
+      const { data: user } = await supabase
+        .from("users")
+        .select("id")
+        .eq("telegram_id", telegramId)
+        .maybeSingle();
+
+      if (user) {
+        // Пользователь уже зарегистрирован — сразу выдаем персональный доступ к Web и приложению
+        await handleWebLoginCommand(ctx);
+        return;
+      }
+    }
+
     const webAppUrl = getWebAppUrl();
     await ctx.reply(
       `Привет! 👋\n` +
@@ -68,15 +94,16 @@ export function getBot(customToken?: string): Bot {
         `Например: \`Лента 2500\` или \`Кофе 150,50\`.\n\n` +
         `🧠 *Как я подбираю категории:*\n` +
         `Если я вижу такое название впервые, я попрошу тебя выбрать категорию из списка и запомню её. В следующий раз я всё сделаю автоматически! 🐶\n\n` +
-        `🛠 *Что делать, если категория выбрана неверно?*\n` +
+        `✏️ *Что делать, если категория выбрана неверно?*\n` +
         `Просто открой приложение и измени категорию у этой операции. Я мгновенно переучусь и больше не повторю ошибку! ✨`,
       { parse_mode: "Markdown" },
     );
     await ctx.reply(
-      `*Возможности Web-приложения:*\n` +
-        `📸 *Сканирование скриншотов:* прикрепи скрин банковских транзакций, и наш ИИ сам распознает все позиции.\n` +
-        `📈 *Аналитика:* наглядные графики и статистика по всем категориям.\n` +
-        `⚙️ *Категории:* удобная настройка и управление своими категориями.`,
+      `*Возможности приложения:*\n` +
+        `📸 *Сканирование чеков и выписок:* загрузи фото чека или скриншот выписки операций из банка — наш ИИ сам распознает все позиции и суммы.\n` +
+        `💳 *Подписки и регулярные платежи:* держи под контролем сервисы и счета с напоминаниями прямо в боте.\n` +
+        `📊 *Аналитика и бюджет:* интерактивная диаграмма трат, контроль лимита на месяц и финансовые отчеты.\n` +
+        `🏷️ *Категории:* создавай персональные категории с иконками, а я быстро научусь распределять операции за тебя! ✨`,
       { parse_mode: "Markdown" },
     );
     await ctx.reply(`Нажми кнопку ниже, чтобы открыть приложение! 👇`, {

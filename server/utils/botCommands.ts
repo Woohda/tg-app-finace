@@ -25,9 +25,25 @@ export async function handleWebLoginCommand(ctx: Context): Promise<void> {
     .eq("telegram_id", telegramId)
     .single();
 
+  let rawUrl: string | undefined;
+  try {
+    rawUrl = useRuntimeConfig().webAppUrl;
+  } catch {
+    // Вне контекста Nitro берем из process.env
+  }
+  if (!rawUrl) {
+    rawUrl = process.env.WEB_APP_URL || "https://tg-app-finace.pages.dev";
+  }
+  const cleanBase = rawUrl.startsWith("http")
+    ? rawUrl.replace(/\/+$/, "")
+    : `https://${rawUrl.replace(/\/+$/, "")}`;
+
   if (!user) {
     await ctx.reply(
       "Сначала откройте приложение через кнопку «FINO» внизу, чтобы активировать аккаунт! 🐶",
+      {
+        reply_markup: new InlineKeyboard().webApp("🐶 Открыть FINO", cleanBase),
+      },
     );
     return;
   }
@@ -64,16 +80,14 @@ export async function handleWebLoginCommand(ctx: Context): Promise<void> {
   }
 
   const ticket = await generateLoginTicket(user.id, jwtSecret);
-  const rawUrl = process.env.WEB_APP_URL || "https://tg-app-finace.pages.dev";
-  const cleanBase = rawUrl.startsWith("http")
-    ? rawUrl.replace(/\/+$/, "")
-    : `https://${rawUrl.replace(/\/+$/, "")}`;
   const loginUrl = `${cleanBase}/login?ticket=${encodeURIComponent(ticket)}`;
 
   const keyboard = new InlineKeyboard()
     .url("🚀 Открыть в браузере", loginUrl)
     .row()
-    .copyText("📋 Скопировать ссылку", loginUrl);
+    .copyText("📋 Скопировать ссылку", loginUrl)
+    .row()
+    .webApp("📱 Открыть в Telegram", cleanBase);
 
   await ctx.reply(
     `📲 <b>Вход в веб-версию FINO</b>\n\n` +
