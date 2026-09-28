@@ -22,6 +22,7 @@ const isLoading = useGlobalLoading();
 
   <TransactionModal />
   <ToastContainer />
+  <IosInstallPrompt />
 
   <Transition name="fade">
     <div

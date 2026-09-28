@@ -7,9 +7,15 @@
  * на основе `window.Telegram.WebApp.initData`. В обычном браузере в dev-режиме
  * авторизует через dev-endpoint автоматически.
  */
-const { isAuthenticated, getTelegramInitData, initTelegramAuth, devLogin } =
-  useAuth();
+const {
+  isAuthenticated,
+  getTelegramInitData,
+  initTelegramAuth,
+  loginWithTicket,
+  devLogin,
+} = useAuth();
 const router = useRouter();
+const route = useRoute();
 const isDev = import.meta.dev;
 
 if (isAuthenticated.value) {
@@ -25,7 +31,7 @@ const errorMessage = ref<string | null>(null);
 const isInTelegram = ref(false);
 
 // Включаем загрузку сразу на клиенте, чтобы не было "моргания" экрана входа
-// перед автоматической авторизацией через Telegram или DevMode.
+// перед автоматической авторизацией через Telegram, Ticket или DevMode.
 if (import.meta.client && !isAuthenticated.value) {
   isLoading.value = true;
 }
@@ -59,6 +65,23 @@ const handleDevLogin = async () => {
 };
 
 onMounted(async () => {
+  // 1. Проверяем вход по одноразовому тикету из ссылки (/login?ticket=...)
+  const ticket = route.query.ticket;
+  if (typeof ticket === "string" && ticket.trim()) {
+    isLoading.value = true;
+    const success = await loginWithTicket(ticket.trim());
+    if (success) {
+      await router.replace("/");
+      return;
+    } else {
+      errorMessage.value =
+        "Ссылка для входа недействительна или устарела. Запросите новую ссылку у бота командой /web.";
+      isLoading.value = false;
+      return;
+    }
+  }
+
+  // 2. Если открыто внутри Telegram Mini App
   const initData = getTelegramInitData();
   isInTelegram.value = !!initData;
 
@@ -108,39 +131,54 @@ onMounted(async () => {
             </GlassButton>
           </div>
 
-          <div v-else class="flex flex-col items-center gap-3">
-            <p v-if="isDev" class="text-sm text-text-accent font-medium">
-              🛠 Dev Mode
-            </p>
-            <p class="text-sm text-text-secondary">
-              {{
-                isDev
-                  ? "Автоматическая авторизация..."
-                  : "Это приложение разработано для работы внутри Telegram."
-              }}
+          <div v-else class="flex flex-col items-center gap-3 text-center">
+            <div
+              class="w-12 h-12 rounded-2xl glass-milky flex items-center justify-center text-2xl mb-1 shadow-glass-sm"
+            >
+              📲
+            </div>
+            <h2 class="text-base font-semibold text-text-primary">
+              Вход в Safari / PWA
+            </h2>
+            <p class="text-xs text-text-secondary leading-relaxed">
+              Чтобы открыть приложение на iPhone без пароля, запросите ссылку у
+              бота командой
+              <span
+                class="px-1.5 py-0.5 rounded bg-white/10 text-text-accent font-mono text-xs"
+                >/web</span
+              >
             </p>
             <p v-if="errorMessage" class="text-xs text-rose-500 font-medium">
               {{ errorMessage }}
             </p>
-            <p v-if="!isDev" class="text-xs text-text-secondary/70">
-              Пожалуйста, откройте бота в Telegram и запустите Mini App через
-              кнопку «FINO» 🐶.
-            </p>
-            <GlassButton
-              size="lg"
-              variant="primary"
-              class="w-full mt-4"
-              :disabled="isLoading"
-              @click="isDev ? handleDevLogin() : handleLogin()"
+
+            <a
+              href="https://t.me/vfino_bot?start=web"
+              target="_blank"
+              rel="noopener noreferrer"
+              class="w-full mt-2"
             >
-              {{
-                isLoading
-                  ? "Проверка..."
-                  : isDev
-                    ? "Dev Login"
-                    : "Повторить попытку"
-              }}
-            </GlassButton>
+              <GlassButton
+                size="lg"
+                variant="primary"
+                class="w-full"
+                :disabled="isLoading"
+              >
+                💬 Получить ссылку в Telegram
+              </GlassButton>
+            </a>
+
+            <div v-if="isDev" class="w-full pt-3 border-t border-white/10 mt-2">
+              <GlassButton
+                size="sm"
+                variant="soft"
+                class="w-full"
+                :disabled="isLoading"
+                @click="handleDevLogin"
+              >
+                🛠 Dev Login
+              </GlassButton>
+            </div>
           </div>
         </div>
       </div>

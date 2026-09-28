@@ -71,6 +71,39 @@ export const useAuth = () => {
     }
   };
 
+  // Восстановление сессии из localStorage для iOS PWA (защита от Apple ITP)
+  if (import.meta.client && !token.value) {
+    try {
+      const storedToken = localStorage.getItem("auth_token");
+      const storedUser = localStorage.getItem("auth_user");
+      if (storedToken && storedUser) {
+        token.value = storedToken;
+        user.value = JSON.parse(storedUser);
+        tokenCookie.value = storedToken;
+        userCookie.value = user.value;
+      }
+    } catch {
+      // Игнорируем ошибки парсинга хранилища
+    }
+  }
+
+  const syncStorage = (newToken: string | null, newUser: User | null) => {
+    token.value = newToken;
+    user.value = newUser;
+    tokenCookie.value = newToken;
+    userCookie.value = newUser;
+
+    if (import.meta.client) {
+      if (newToken && newUser) {
+        localStorage.setItem("auth_token", newToken);
+        localStorage.setItem("auth_user", JSON.stringify(newUser));
+      } else {
+        localStorage.removeItem("auth_token");
+        localStorage.removeItem("auth_user");
+      }
+    }
+  };
+
   const loginWithTelegram = async (initData: string): Promise<boolean> => {
     try {
       const timezone =
@@ -85,11 +118,8 @@ export const useAuth = () => {
           body: { initData, timezone },
         },
       );
-      token.value = response.token;
-      user.value = response.user;
-      tokenCookie.value = response.token;
-      userCookie.value = response.user;
 
+      syncStorage(response.token, response.user);
       return true;
     } catch (error: unknown) {
       console.error("Ошибка авторизации:", error);
@@ -99,13 +129,43 @@ export const useAuth = () => {
       // Сбрасываем сессию ТОЛЬКО если сервер явно отклонил подпись (401)
       // или если у пользователя вообще не было токена
       if (status === 401 || !token.value) {
-        token.value = null;
-        user.value = null;
-        tokenCookie.value = null;
-        userCookie.value = null;
+        syncStorage(null, null);
       }
       return false;
     }
+  };
+
+  const loginWithTicket = async (ticket: string): Promise<boolean> => {
+    try {
+      const timezone =
+        typeof Intl !== "undefined"
+          ? Intl.DateTimeFormat().resolvedOptions().timeZone
+          : undefined;
+
+      const response = await $fetch<{ token: string; user: User }>(
+        "/api/auth/web-login",
+        {
+          method: "POST",
+          body: { ticket, timezone },
+        },
+      );
+
+      syncStorage(response.token, response.user);
+      return true;
+    } catch (error: unknown) {
+      console.error("Ошибка входа по тикету:", error);
+      return false;
+    }
+  };
+
+  const getWebLoginLink = async (): Promise<string> => {
+    const response = await $fetch<{ url: string }>("/api/auth/web-link", {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${token.value}`,
+      },
+    });
+    return response.url;
   };
 
   const getTelegramInitData = (): string => {
@@ -125,10 +185,7 @@ export const useAuth = () => {
   };
 
   const logout = () => {
-    token.value = null;
-    user.value = null;
-    tokenCookie.value = null;
-    userCookie.value = null;
+    syncStorage(null, null);
     tgUser.value = null;
   };
 
@@ -138,10 +195,7 @@ export const useAuth = () => {
         "/api/auth/dev-login",
         { method: "POST" },
       );
-      token.value = response.token;
-      user.value = response.user;
-      tokenCookie.value = response.token;
-      userCookie.value = response.user;
+      syncStorage(response.token, response.user);
 
       // Фейковые данные Telegram для разработки
       tgUser.value = {
@@ -154,10 +208,7 @@ export const useAuth = () => {
       return true;
     } catch (error) {
       console.error("Ошибка dev-авторизации:", error);
-      token.value = null;
-      user.value = null;
-      tokenCookie.value = null;
-      userCookie.value = null;
+      syncStorage(null, null);
       tgUser.value = null;
       return false;
     }
@@ -171,6 +222,8 @@ export const useAuth = () => {
     avatarUrl,
     isAuthenticated,
     loginWithTelegram,
+    loginWithTicket,
+    getWebLoginLink,
     getTelegramInitData,
     initTelegramAuth,
     initTelegramUser,
@@ -178,3 +231,4 @@ export const useAuth = () => {
     logout,
   };
 };
+
