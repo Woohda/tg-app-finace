@@ -54,6 +54,16 @@ const { openModal } = useTransactionModal();
 </script>
 
 <template>
+  <!-- Защитная подложка. -->
+  <div
+    class="absolute inset-x-0 bottom-0 pointer-events-auto bg-linear-to-t from-white/40 to-transparent"
+    :style="{
+      zIndex: Z_INDEX.BOTTOM_NAV - 1,
+      height: 'calc(6rem + env(safe-area-inset-bottom, 0px))',
+    }"
+    aria-hidden="true"
+  />
+
   <div
     class="absolute left-1/2 -translate-x-1/2 w-full max-w-97 px-2.75 pointer-events-none transition-opacity duration-200"
     :style="{
