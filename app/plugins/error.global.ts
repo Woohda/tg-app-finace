@@ -54,8 +54,17 @@ export default defineNuxtPlugin((nuxtApp) => {
       const message = err instanceof Error ? err.message : String(err);
       const stack = err instanceof Error ? err.stack : "";
 
-      // Игнорируем частые ошибки, если нужно
+      // Игнорируем частые и системные безвредные сбои браузера
+      if (
+        message === "Script error." ||
+        message === "Script error" ||
+        message.toLowerCase().includes("script error")
+      ) {
+        return;
+      }
+
       if (message.includes("Telegram") && message.includes("not defined")) return;
+      if (message.includes("ResizeObserver loop")) return;
 
       const userId = resolveUserId();
 
@@ -80,6 +89,14 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   if (import.meta.client) {
     window.addEventListener("error", (event) => {
+      // Игнорируем браузерные кросс-доменные ошибки без контекста
+      if (
+        event.message === "Script error." ||
+        event.message === "Script error" ||
+        (!event.error && !event.filename)
+      ) {
+        return;
+      }
       sendErrorLog(event.error || event.message, "Window Error");
     });
 
