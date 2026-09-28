@@ -262,6 +262,14 @@ export default defineEventHandler(async (event) => {
       }
 
       const result = JSON.parse(text);
+      if (result && Array.isArray(result.transactions)) {
+        result.transactions = result.transactions.map(
+          (t: { name?: string; [key: string]: unknown }) => ({
+            ...t,
+            name: t.name ? capitalizeFirstLetter(t.name) : t.name,
+          }),
+        );
+      }
       return result;
     } catch (error) {
       console.error(

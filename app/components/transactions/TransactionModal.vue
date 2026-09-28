@@ -96,6 +96,10 @@ watch(
 const submit = async () => {
   if (buttonState.value === "loading") return;
 
+  if (name.value && name.value.trim()) {
+    name.value = capitalizeFirstLetter(name.value.trim()) || "";
+  }
+
   const result = transactionSchema.safeParse({
     amount: parseAmount(amount.value),
     category_id: categoryId.value,
@@ -192,6 +196,8 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
         type="text"
         label="Комментарий"
         placeholder="Например, Обед с коллегами"
+        autocapitalize="sentences"
+        @blur="name = capitalizeFirstLetter(name)"
       />
 
       <div

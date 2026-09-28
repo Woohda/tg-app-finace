@@ -7,6 +7,7 @@
  * (для проверки входящих данных API с помощью `readValidatedBody`).
  */
 import { z } from "zod";
+import { capitalizeFirstLetter } from "../utils/format";
 
 // --- Categories ---
 export const categorySchema = z.object({
@@ -14,7 +15,8 @@ export const categorySchema = z.object({
   name: z
     .string()
     .min(1, "Введите название категории")
-    .max(50, "Название слишком длинное"),
+    .max(50, "Название слишком длинное")
+    .transform((val) => capitalizeFirstLetter(val)),
   icon: z.string().min(1, "Выберите эмодзи").max(10, "Иконка слишком длинная"),
   type: z.enum(["expense", "income"]),
 });
@@ -23,7 +25,8 @@ export const categoryUpdateSchema = z.object({
   name: z
     .string()
     .min(1, "Введите название категории")
-    .max(50, "Название слишком длинное"),
+    .max(50, "Название слишком длинное")
+    .transform((val) => capitalizeFirstLetter(val)),
   icon: z.string().min(1, "Выберите эмодзи").max(10, "Иконка слишком длинная"),
 });
 
@@ -36,7 +39,11 @@ export const transactionSchema = z.object({
   category_id: z.string().min(1, "Выберите категорию"),
   date: z.string().min(1, "Выберите дату"),
   type: z.enum(["expense", "income"]),
-  name: z.string().optional().nullable(),
+  name: z
+    .string()
+    .optional()
+    .nullable()
+    .transform((val) => (val && val.trim() ? capitalizeFirstLetter(val) : val)),
 });
 
 export const transactionPatchSchema = z
@@ -48,7 +55,11 @@ export const transactionPatchSchema = z
     category_id: z.string().min(1, "Не указана категория").optional(),
     type: z.enum(["income", "expense"]).optional(),
     date: z.string().min(1, "Не указана дата").optional(),
-    name: z.string().optional().nullable(),
+    name: z
+      .string()
+      .optional()
+      .nullable()
+      .transform((val) => (val && val.trim() ? capitalizeFirstLetter(val) : val)),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "Нет данных для обновления",

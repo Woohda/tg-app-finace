@@ -67,7 +67,7 @@ onMounted(async () => {
       id: Math.random().toString(36).substring(7), // локальный ID
       type: tx.type || "expense",
       amount: Number(tx.amount),
-      name: tx.name,
+      name: tx.name ? capitalizeFirstLetter(tx.name) : tx.name,
       categoryId: matchedCategory
         ? matchedCategory.id
         : defaultCategory?.id || "",

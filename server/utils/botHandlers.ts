@@ -85,14 +85,15 @@ export async function handleBotTextMessage(ctx: Context) {
   if (matchedCategory) {
     const type = matchedCategory.type;
     const date = formatDateISO();
+    const formattedName = capitalizeFirstLetter(name);
 
     const { error } = await supabase.from("transactions").insert({
       user_id: user.id,
       amount,
-      name,
+      name: formattedName,
       category_id: matchedCategory.id,
       type,
-      date
+      date,
     });
 
     if (error) {
@@ -102,7 +103,9 @@ export async function handleBotTextMessage(ctx: Context) {
     }
 
     const typeLabel = type === "income" ? "доход" : "расход";
-    await ctx.reply(`✅ Сохранен ${typeLabel}:\n${name} (${matchedCategory.name}) — ${amount} ₽`);
+    await ctx.reply(
+      `✅ Сохранен ${typeLabel}:\n${formattedName} (${matchedCategory.name}) — ${amount} ₽`,
+    );
     return;
   }
 
@@ -251,27 +254,34 @@ export async function handleBotCallbackQuery(ctx: Context) {
   }
 
   const date = formatDateISO();
+  const formattedName = capitalizeFirstLetter(name);
 
   const { error } = await supabase.from("transactions").insert({
     user_id: user.id,
     amount,
-    name,
+    name: formattedName,
     category_id: categoryId,
     type: category.type,
-    date
+    date,
   });
 
   if (error) {
-     console.error("Insert error:", error);
-     await ctx.answerCallbackQuery({ text: "Ошибка базы данных", show_alert: true });
-     return;
+    console.error("Insert error:", error);
+    await ctx.answerCallbackQuery({
+      text: "Ошибка базы данных",
+      show_alert: true,
+    });
+    return;
   }
 
   const typeLabel = category.type === "income" ? "доход" : "расход";
-  
-  await ctx.editMessageText(`✅ Сохранен ${typeLabel}:\n${name} (${category.name}) — ${amount} ₽\n\n_Я запомнил эту категорию на будущее!_`, {
-    parse_mode: "Markdown"
-  });
+
+  await ctx.editMessageText(
+    `✅ Сохранен ${typeLabel}:\n${formattedName} (${category.name}) — ${amount} ₽\n\n_Я запомнил эту категорию на будущее!_`,
+    {
+      parse_mode: "Markdown",
+    },
+  );
   
   await ctx.answerCallbackQuery();
 }

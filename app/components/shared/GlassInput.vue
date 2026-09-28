@@ -32,6 +32,7 @@ const props = defineProps<{
     | "search";
   icon?: string | object | Component;
   step?: string | number;
+  autocapitalize?: "none" | "sentences" | "words" | "characters";
 }>();
 
 const inputId = computed(() => props.id || useId());
@@ -118,6 +119,7 @@ defineExpose({ focus });
         :type="type"
         :inputmode="inputmode"
         :step="step"
+        :autocapitalize="autocapitalize"
         :placeholder="placeholder"
         :class="[
           'w-full relative z-10 bg-transparent rounded-full px-5 py-2.5 text-text-primary font-medium outline-none border-none transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu a11y-focus',
