@@ -14,7 +14,11 @@
  * - `configuredToken` используется для пересоздания инстанса при изменении токена (например, в dev-режиме).
  */
 import { Bot } from "grammy";
-import { handleBotTextMessage, handleBotCallbackQuery } from "./botHandlers";
+import {
+  handleBotTextMessage,
+  handleBotCallbackQuery,
+  handleWebLoginCommand,
+} from "./botHandlers";
 
 let botInstance: Bot | null = null;
 let configuredToken: string | null = null;
@@ -82,6 +86,8 @@ export function getBot(customToken?: string): Bot {
       },
     });
   });
+
+  newBot.command("web", handleWebLoginCommand);
 
   newBot.on("message:text", handleBotTextMessage);
   newBot.on("callback_query:data", handleBotCallbackQuery);
