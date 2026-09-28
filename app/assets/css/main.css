@@ -101,6 +101,11 @@
     scrollbar-width: none;
   }
 
+  /* Фон экрана (убираем монотонный цвет, чтобы просвечивал градиент body) */
+  .bg-glass-ambient {
+    background-color: transparent;
+  }
+
   /* Класс glass-milky используется в навигации и аватаре, делаем их стеклянными */
   .glass-milky {
     background-color: rgba(255, 255, 255, 0.5) !important;
