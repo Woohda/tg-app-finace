@@ -15,21 +15,40 @@
  * ### Безопасность и архитектура:
  * - Полностью совместимо с Cloudflare Workers (Edge Runtime).
  */
-import { getBot } from "../../utils/bot";
+import { getBot, getWebhookSecretToken } from "~~/server/utils/bot";
 
 export default defineEventHandler(async (event) => {
   try {
-    const update = await readBody(event);
-    if (!update) {
-      return { ok: true };
-    }
-
     const config = useRuntimeConfig(event);
     const token = config.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN;
 
     if (!token) {
-      console.error("[Telegram Webhook Error] Токен бота не найден в конфигурации!");
+      console.error(
+        "[Telegram Webhook Error] Токен бота не найден в конфигурации!",
+      );
       return { ok: false, error: "Missing token" };
+    }
+
+    // Проверка подлинности вебхука Telegram через secret_token
+    const expectedSecret = await getWebhookSecretToken(
+      token,
+      config.telegramWebhookSecret as string | undefined,
+    );
+    const incomingSecret = getHeader(event, "x-telegram-bot-api-secret-token");
+
+    if (!incomingSecret || incomingSecret !== expectedSecret) {
+      console.warn(
+        "[Telegram Webhook Security] Отклонён неавторизованный запрос к вебхуку",
+      );
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Unauthorized: Invalid or missing webhook secret token",
+      });
+    }
+
+    const update = await readBody(event);
+    if (!update) {
+      return { ok: true };
     }
 
     const botInstance = getBot(token);
