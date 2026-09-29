@@ -34,8 +34,8 @@ onMounted(() => {
       <main
         class="flex-1 overflow-y-auto p-5 relative z-10 scrollbar-hide"
         style="
-          padding-top: calc(env(safe-area-inset-top, 0px) + 1.1rem);
-          padding-bottom: calc(7.5rem + env(safe-area-inset-bottom, 0px));
+          padding-top: calc(env(safe-area-inset-top, 0px) + 1rem);
+          padding-bottom: calc(7rem + env(safe-area-inset-bottom, 0px));
         "
       >
         <slot />
