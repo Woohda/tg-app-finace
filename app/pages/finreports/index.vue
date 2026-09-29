@@ -9,6 +9,7 @@
  */
 
 import { useTransactionModal } from "~/composables/useTransactionModal";
+import { Search, X } from "@lucide/vue";
 
 const { openModal } = useTransactionModal();
 
@@ -21,7 +22,11 @@ const { pending, transactions, deleteTransaction } = useTransactions({
 const {
   activePeriod,
   periods,
+  searchQuery,
   filteredTransactions,
+  filteredExpense,
+  filteredIncome,
+  filteredCount,
   emptyMessage,
   monthlyBudget,
   monthlyExpense,
@@ -29,6 +34,33 @@ const {
 } = useTransactionView(transactions, { currentDate });
 
 const { fetchBudget } = useBudgets();
+
+/**
+ * Форматированная сумма отфильтрованных операций.
+ */
+const filteredAmountText = computed(() => {
+  if (filteredCount.value === 0) return "";
+  if (filteredExpense.value > 0 && filteredIncome.value > 0) {
+    return `−${formatAmount(filteredExpense.value)} / +${formatAmount(filteredIncome.value)}`;
+  }
+  if (filteredIncome.value > 0) {
+    return `+${formatAmount(filteredIncome.value)}`;
+  }
+  return `−${formatAmount(filteredExpense.value)}`;
+});
+
+/**
+ * Текст бейджа в шапке списка транзакций (количество и сумма).
+ */
+const summaryBadgeText = computed(() => {
+  if (filteredCount.value === 0) {
+    return searchQuery.value.trim() ? "Найдено: 0" : "";
+  }
+  if (searchQuery.value.trim()) {
+    return `Найдено: ${filteredCount.value} • ${filteredAmountText.value}`;
+  }
+  return `${filteredCount.value} оп. • ${filteredAmountText.value}`;
+});
 
 onMounted(() => {
   if (!monthlyBudget.value) {
@@ -121,10 +153,20 @@ const currentLabel = computed(() =>
 
     <!-- Финансовый раздел: Список операций -->
     <GlassCard class="relative z-10 pb-0">
-      <div class="flex flex-col gap-3 mb-5">
-        <h2 class="text-lg font-bold text-text-primary tracking-tight">
-          Записанные транзакции
-        </h2>
+      <div class="flex flex-col gap-3 mb-3">
+        <div class="flex items-center justify-between gap-2">
+          <h2
+            class="text-base sm:text-lg font-bold text-text-primary tracking-tight truncate"
+          >
+            Все транзакции:
+          </h2>
+          <span
+            v-if="summaryBadgeText"
+            class="text-xs font-semibold text-text-secondary glass-pill px-2.5 py-0.5 rounded-full shrink-0 max-w-[80%] truncate text-right"
+          >
+            {{ summaryBadgeText }}
+          </span>
+        </div>
 
         <!-- Переключатель периодов -->
         <GlassSegmentedControl
@@ -132,6 +174,26 @@ const currentLabel = computed(() =>
           :options="periods"
           size="md"
         />
+        <!-- Поисковая строка -->
+        <div class="relative flex items-center w-full">
+          <GlassInput
+            v-model="searchQuery"
+            type="text"
+            inputmode="search"
+            placeholder="Поиск по названию или категории..."
+            :icon="Search"
+            class="w-full text-sm"
+          />
+          <button
+            v-if="searchQuery"
+            type="button"
+            aria-label="Очистить поиск"
+            class="absolute right-3 top-1/2 -translate-y-1/2 text-text-secondary hover:text-text-primary p-0.5 cursor-pointer"
+            @click="searchQuery = ''"
+          >
+            <X class="size-5" />
+          </button>
+        </div>
       </div>
 
       <!-- Скелетоны транзакций (загрузка) -->
@@ -172,11 +234,19 @@ const currentLabel = computed(() =>
       <!-- Пустое состояние при отсутствии трат -->
       <div
         v-else
-        class="flex flex-col items-center justify-start text-start pb-5"
+        class="flex flex-col items-center justify-center text-center pb-5 gap-2"
       >
-        <p class="text-text-secondary text-md font-medium">
+        <p class="text-text-secondary text-sm font-medium">
           {{ emptyMessage }}
         </p>
+        <button
+          v-if="searchQuery.trim()"
+          type="button"
+          class="text-xs font-semibold text-text-accent active:scale-95 transition-transform underline underline-offset-3 cursor-pointer"
+          @click="searchQuery = ''"
+        >
+          Сбросить поиск
+        </button>
       </div>
     </GlassCard>
   </div>

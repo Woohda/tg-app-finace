@@ -76,7 +76,7 @@ const { openModal } = useTransactionModal();
       class="relative h-19 glass-milky rounded-[38px] px-4 flex items-center justify-between pointer-events-auto"
     >
       <!-- Левый блок навигации -->
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-px">
         <BottomNavItem
           v-for="item in leftItems"
           :key="item.name"
@@ -103,7 +103,7 @@ const { openModal } = useTransactionModal();
       </div>
 
       <!-- Правый блок навигации -->
-      <div class="flex items-center gap-1">
+      <div class="flex items-center gap-px">
         <BottomNavItem
           v-for="item in rightItems"
           :key="item.name"
