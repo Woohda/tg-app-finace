@@ -46,6 +46,7 @@ export const useTransactionView = (
   options?: { currentDate?: Ref<Date> },
 ) => {
   const activePeriod = ref<PeriodType>("week");
+  const searchQuery = ref("");
 
   if (options?.currentDate) {
     watch(
@@ -64,25 +65,37 @@ export const useTransactionView = (
     { id: "month", label: "Месяц" },
   ];
 
-  // --- Фильтрация по периоду ---
+  // --- Фильтрация по периоду и поисковому запросу ---
 
   const filteredTransactions = computed<Transaction[]>(() => {
-    if (activePeriod.value === "month") {
-      return transactions.value; // Бэкенд уже вернул нужный месяц
+    let list = transactions.value;
+
+    if (activePeriod.value !== "month") {
+      const base = toSafeDate(options?.currentDate?.value);
+      const isCurrent = isCurrentMonth(base);
+      const targetDate = isCurrent ? getNow() : endOfMonthSafe(base);
+      const periodStart = getPeriodStart(activePeriod.value, targetDate);
+      list = list.filter((t) => toSafeDate(t.date) >= periodStart);
     }
 
-    const base = toSafeDate(options?.currentDate?.value);
+    const query = searchQuery.value.trim().toLowerCase();
+    if (!query) {
+      return list;
+    }
 
-    const isCurrent = isCurrentMonth(base);
-
-    // Для текущего месяца считаем от сегодня, для архивных месяцев — от последнего дня того месяца
-    const targetDate = isCurrent ? getNow() : endOfMonthSafe(base);
-
-    const periodStart = getPeriodStart(activePeriod.value, targetDate);
-    return transactions.value.filter((t) => toSafeDate(t.date) >= periodStart);
+    return list.filter((t) => {
+      const nameMatch = t.name?.toLowerCase().includes(query);
+      const categoryMatch = t.categoryName?.toLowerCase().includes(query);
+      const amountMatch = String(t.amount).includes(query);
+      return Boolean(nameMatch || categoryMatch || amountMatch);
+    });
   });
 
   const emptyMessage = computed<string>(() => {
+    if (searchQuery.value.trim()) {
+      return `Ничего не найдено по запросу «${searchQuery.value.trim()}»`;
+    }
+
     switch (activePeriod.value) {
       case "day":
         return "За этот день трат нет";
@@ -121,10 +134,30 @@ export const useTransactionView = (
     return Math.round((monthlyExpense.value / monthlyBudget.value) * 100);
   });
 
+  // --- Агрегации отфильтрованного списка (по периоду и поиску) ---
+
+  const filteredExpense = computed(() =>
+    filteredTransactions.value
+      .filter((t) => t.type === "expense")
+      .reduce((sum, t) => sum + t.amount, 0),
+  );
+
+  const filteredIncome = computed(() =>
+    filteredTransactions.value
+      .filter((t) => t.type === "income")
+      .reduce((sum, t) => sum + t.amount, 0),
+  );
+
+  const filteredCount = computed(() => filteredTransactions.value.length);
+
   return {
     activePeriod,
     periods,
+    searchQuery,
     filteredTransactions,
+    filteredExpense,
+    filteredIncome,
+    filteredCount,
     emptyMessage,
     monthlyExpense,
     monthlyIncome,
