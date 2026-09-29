@@ -10,7 +10,7 @@
  * 1. Получает список пользователей из БД.
  * 2. Отправляет каждому пользователю сообщение через экземпляр `Bot` (Grammy).
  */
-import { Bot } from "grammy";
+import { Bot, InlineKeyboard } from "grammy";
 
 const SUPABASE_URL = process.env.SUPABASE_URL;
 const SUPABASE_SERVICE_KEY = process.env.NUXT_SUPABASE_SECRET_KEY;
@@ -24,16 +24,16 @@ if (!SUPABASE_URL || !SUPABASE_SERVICE_KEY || !TELEGRAM_BOT_TOKEN) {
 const bot = new Bot(TELEGRAM_BOT_TOKEN);
 
 // === ВАШ ТЕКСТ РАССЫЛКИ ===
-const MESSAGE = `
-🚀
-<b>
-Привет! У нас небольшое обновление.
-
-</b>
-
-Теперь приложение стало еще удобнее. Заходите и проверяйте!
-<a href="https://t.me/vfino_bot/app">Открыть приложение</a>`;
-// ==========================
+const MESSAGE = `🚀 <b>Большое обновление FINO: встречайте веб-версию!</b>
+Теперь вести личные финансы стало ещё удобнее — приложением можно пользоваться прямо в браузере или установить на главный экран телефона без Telegram.
+✨ <b>Что нового:</b>
+• <b>Полноэкранный режим:</b> работает быстро, плавно и без рамок Telegram
+• <b>Установка на экран «Домой»:</b> для iPhone (Safari) и Android (Chrome)
+• <b>Безопасный вход:</b> моментальная авторизация по персональной ссылке
+👉 <b>Как попробовать:</b>
+Отправьте боту команду /web, чтобы получить персональную ссылку для входа.
+PS😥:из за хостинга возможна блокировка провайдером, попробуйте зайти через VPN*
+`;
 
 const delay = (ms: number) => new Promise((res) => setTimeout(res, ms));
 
@@ -69,6 +69,10 @@ async function run() {
   let success = 0;
   let failed = 0;
 
+  const keyboard = new InlineKeyboard()
+    .url("🌐 Получить доступ (/web)", "https://t.me/vfino_bot?start=web")
+    .url("📱 Открыть в Telegram", "https://t.me/vfino_bot/app");
+
   for (const user of users) {
     if (!user.telegram_id) continue;
 
@@ -76,21 +80,23 @@ async function run() {
       await bot.api.sendMessage(user.telegram_id, MESSAGE, {
         parse_mode: "HTML",
         link_preview_options: { is_disabled: true },
+        reply_markup: keyboard,
       });
       success++;
-      process.stdout.write(
-        `\rУспешно отправлено: ${success} | Ошибок: ${failed}`,
-      );
-    } catch {
-      // Пользователь мог заблокировать бота или удалить чат
+    } catch (err: unknown) {
       failed++;
+      const message = err instanceof Error ? err.message : String(err);
+      console.error(`\n❌ Ошибка отправки [Пользователь: ${user.telegram_id}]:`, message);
     }
+    process.stdout.write(
+      `\rУспешно отправлено: ${success} | Ошибок: ${failed} / ${users.length}`,
+    );
     await delay(50);
   }
 
   console.log(`\n\n🎉 Рассылка завершена!`);
   console.log(`✅ Успешно: ${success}`);
-  console.log(`❌ Ошибок (бокировки/удаленные аккаунты): ${failed}`);
+  console.log(`❌ Ошибок (блокировки/удаленные аккаунты): ${failed}`);
 }
 
 run();
