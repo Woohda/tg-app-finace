@@ -43,7 +43,7 @@ const topOffset = computed(() => {
     return "1rem";
   }
   // В веб-версии (PWA / Safari)
-  return "calc(env(safe-area-inset-top, 0px) + 1rem)";
+  return "calc(env(safe-area-inset-top, 0px) + 3rem)";
 });
 </script>
 
