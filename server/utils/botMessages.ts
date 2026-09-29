@@ -45,7 +45,7 @@ export async function handleBotTextMessage(ctx: Context): Promise<void> {
     .from("users")
     .select("id")
     .eq("telegram_id", telegramId)
-    .single();
+    .maybeSingle();
 
   if (!user) {
     await ctx.reply(

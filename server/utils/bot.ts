@@ -85,17 +85,24 @@ export function getBot(customToken?: string): Bot {
     // 2. Если пользователь уже нажимал старт ранее (аккаунт существует в БД)
     const telegramId = ctx.from?.id;
     if (telegramId) {
-      const supabase = getBotSupabase();
-      const { data: user } = await supabase
-        .from("users")
-        .select("id")
-        .eq("telegram_id", telegramId)
-        .maybeSingle();
+      try {
+        const supabase = getBotSupabase();
+        const { data: user } = await supabase
+          .from("users")
+          .select("id")
+          .eq("telegram_id", telegramId)
+          .maybeSingle();
 
-      if (user) {
-        // Пользователь уже зарегистрирован — сразу выдаем персональный доступ к Web и приложению
-        await handleWebLoginCommand(ctx);
-        return;
+        if (user) {
+          // Пользователь уже зарегистрирован — сразу выдаем персональный доступ к Web и приложению
+          await handleWebLoginCommand(ctx);
+          return;
+        }
+      } catch (err) {
+        console.warn(
+          "[Telegram Bot] Ошибка проверки пользователя при /start:",
+          err,
+        );
       }
     }
 
@@ -134,6 +141,24 @@ export function getBot(customToken?: string): Bot {
   });
 
   newBot.command("web", handleWebLoginCommand);
+
+  // Команда справки
+  newBot.command("help", async (ctx) => {
+    const webAppUrl = getWebAppUrl();
+    await ctx.reply(
+      `👋 <b>FINO — финансовый помощник</b>\n\n` +
+        `• Чтобы открыть приложение, нажмите кнопку «FINO» внизу или отправьте команду /web\n` +
+        `• Чтобы добавить операцию текстом, напишите: <code>Кофе 150</code> или <code>Лента 2000</code>`,
+      {
+        parse_mode: "HTML",
+        reply_markup: {
+          inline_keyboard: [
+            [{ text: "🐶 Открыть FINO", web_app: { url: webAppUrl } }],
+          ],
+        },
+      },
+    );
+  });
 
   newBot.on("message:text", handleBotTextMessage);
   newBot.on("callback_query:data", handleBotCallbackQuery);

@@ -123,84 +123,69 @@ onMounted(async () => {
   <div
     class="max-w-md mx-auto relative min-h-screen p-4 flex flex-col items-center justify-center bg-glass-ambient shadow-2xl"
   >
-    <GlassCard class="w-full">
-      <div class="p-5 pb-0">
-        <h1 class="text-2xl font-bold text-center text-text-primary">
-          TG Finance
-        </h1>
-      </div>
+    <GlassCard>
+      <div class="text-center">
+        <div v-if="isInTelegram">
+          <p class="mb-6 text-text-secondary text-sm">
+            Вход через Telegram Mini App...
+          </p>
+          <p v-if="errorMessage" class="mb-4 text-xs text-rose-500 font-medium">
+            {{ errorMessage }}
+          </p>
+          <GlassButton
+            size="lg"
+            variant="primary"
+            class="w-full"
+            :disabled="isLoading"
+            @click="handleLogin"
+          >
+            {{ isLoading ? "Авторизация..." : "Войти через Telegram" }}
+          </GlassButton>
+        </div>
 
-      <div class="p-5">
-        <div class="text-center py-4">
-          <div v-if="isInTelegram">
-            <p class="mb-6 text-text-secondary text-sm">
-              Вход через Telegram Mini App...
-            </p>
-            <p
-              v-if="errorMessage"
-              class="mb-4 text-xs text-rose-500 font-medium"
+        <div v-else class="flex flex-col items-center gap-2 text-center">
+          <NuxtImg src="/apple-touch-icon.png" class="w-16" />
+          <h2 class="text-base font-semibold text-text-primary">
+            Вход в Safari / PWA
+          </h2>
+          <p class="text-xs text-text-secondary leading-relaxed">
+            Чтобы открыть приложение на iPhone без пароля, запросите ссылку у
+            бота командой
+            <span
+              class="px-1 rounded bg-white/10 text-text-accent font-mono text-xs"
+              >/web</span
             >
-              {{ errorMessage }}
-            </p>
+          </p>
+          <p v-if="errorMessage" class="text-xs text-rose-500 font-medium">
+            {{ errorMessage }}
+          </p>
+
+          <a
+            href="https://t.me/vfino_bot?start=web"
+            target="_blank"
+            rel="noopener noreferrer"
+            class="w-full pt-2"
+          >
             <GlassButton
-              size="lg"
+              size="default"
               variant="primary"
               class="w-full"
               :disabled="isLoading"
-              @click="handleLogin"
             >
-              {{ isLoading ? "Авторизация..." : "Войти через Telegram" }}
+              💬 Получить ссылку в Telegram
             </GlassButton>
-          </div>
+          </a>
 
-          <div v-else class="flex flex-col items-center gap-3 text-center">
-            <div
-              class="w-12 h-12 rounded-2xl glass-milky flex items-center justify-center text-2xl mb-1 shadow-glass-sm"
+          <div v-if="isDev" class="w-full border-t border-white/10 mt-2">
+            <GlassButton
+              size="sm"
+              variant="soft"
+              class="w-full"
+              :disabled="isLoading"
+              @click="handleDevLogin"
             >
-              📲
-            </div>
-            <h2 class="text-base font-semibold text-text-primary">
-              Вход в Safari / PWA
-            </h2>
-            <p class="text-xs text-text-secondary leading-relaxed">
-              Чтобы открыть приложение на iPhone без пароля, запросите ссылку у
-              бота командой
-              <span
-                class="px-1.5 py-0.5 rounded bg-white/10 text-text-accent font-mono text-xs"
-                >/web</span
-              >
-            </p>
-            <p v-if="errorMessage" class="text-xs text-rose-500 font-medium">
-              {{ errorMessage }}
-            </p>
-
-            <a
-              href="https://t.me/vfino_bot?start=web"
-              target="_blank"
-              rel="noopener noreferrer"
-              class="w-full mt-2"
-            >
-              <GlassButton
-                size="default"
-                variant="primary"
-                class="w-full"
-                :disabled="isLoading"
-              >
-                💬 Получить ссылку в Telegram
-              </GlassButton>
-            </a>
-
-            <div v-if="isDev" class="w-full pt-3 border-t border-white/10 mt-2">
-              <GlassButton
-                size="sm"
-                variant="soft"
-                class="w-full"
-                :disabled="isLoading"
-                @click="handleDevLogin"
-              >
-                🛠 Dev Login
-              </GlassButton>
-            </div>
+              🛠 Dev Login
+            </GlassButton>
           </div>
         </div>
       </div>

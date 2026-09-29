@@ -68,7 +68,15 @@ export default defineEventHandler(async (event) => {
         config.telegramWebhookSecret as string | undefined,
       );
       telegramResponse = await $fetch(
-        `https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}&secret_token=${encodeURIComponent(secretToken)}`,
+        `https://api.telegram.org/bot${token}/setWebhook`,
+        {
+          method: "POST",
+          body: {
+            url: webhookUrl,
+            secret_token: secretToken,
+            drop_pending_updates: false,
+          },
+        },
       );
     }
 
