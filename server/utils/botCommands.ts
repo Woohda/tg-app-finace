@@ -85,21 +85,25 @@ export async function handleWebLoginCommand(ctx: Context): Promise<void> {
   const keyboard = new InlineKeyboard()
     .url("🚀 Открыть в браузере", loginUrl)
     .row()
-    .copyText("📋 Скопировать ссылку", loginUrl)
-    .row()
     .webApp("📱 Открыть в Telegram", cleanBase);
 
-  await ctx.reply(
-    `📲 <b>Вход в веб-версию FINO</b>\n\n` +
-      `Нажмите на кнопку ниже или скопируйте ссылку, чтобы открыть её в удобном браузере (Safari / Chrome):\n\n` +
-      `<code>${loginUrl}</code>\n\n` +
-      `💡 <b>Как добавить на экран «Домой»:</b>\n` +
-      `• <b>iPhone (Safari):</b> кнопка «Поделиться» ⎋ ➔ «На экран "Домой"» ➕\n` +
-      `• <b>Android (Chrome):</b> меню ⋮ ➔ «Установить приложение» 📲\n\n` +
-      `⏳ <i>Ссылка персональная и действует 10 минут.</i>`,
-    {
-      parse_mode: "HTML",
-      reply_markup: keyboard,
-    },
-  );
+  try {
+    await ctx.reply(
+      `📲 <b>Вход в веб-версию FINO</b>\n\n` +
+        `Нажмите на кнопку ниже или нажмите на ссылку, чтобы скопировать её:\n\n` +
+        `<code>${loginUrl}</code>\n\n` +
+        `💡 <b>Как добавить на экран «Домой»:</b>\n` +
+        `• <b>iPhone (Safari):</b> кнопка «Поделиться» ⎋ ➔ «На экран "Домой"» ➕\n` +
+        `• <b>Android (Chrome):</b> меню ⋮ ➔ «Установить приложение» 📲\n\n` +
+        `⏳ <i>Ссылка персональная и действует 10 минут.</i>`,
+      {
+        parse_mode: "HTML",
+        reply_markup: keyboard,
+      },
+    );
+  } catch (replyError) {
+    console.error("[handleWebLoginCommand] Ошибка отправки карточки входа:", replyError);
+    // Фолбек: гарантированная доставка ссылки текстом, если инлайн-кнопки отклонены клиентом
+    await ctx.reply(`📲 Вход в веб-версию FINO:\n${loginUrl}`);
+  }
 }
