@@ -23,7 +23,7 @@ export async function handleWebLoginCommand(ctx: Context): Promise<void> {
     .from("users")
     .select("id")
     .eq("telegram_id", telegramId)
-    .single();
+    .maybeSingle();
 
   let rawUrl: string | undefined;
   try {
