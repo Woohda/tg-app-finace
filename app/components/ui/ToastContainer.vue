@@ -6,6 +6,7 @@
  * Рендерит список активных уведомлений из глобального стейта `useAppToast`.
  * Поддерживает анимации появления/исчезновения.
  */
+import { ref, computed, onMounted } from "vue";
 import { useAppToast } from "~/composables/useAppToast";
 import { CheckCircle2, AlertCircle, Info, X } from "@lucide/vue";
 
@@ -22,13 +23,38 @@ const colors = {
   error: "text-text-accent",
   info: "text-blue-400",
 };
+
+const isTelegram = ref(
+  import.meta.client
+    ? Boolean(window.Telegram?.WebApp?.initData) ||
+        /telegram/i.test(navigator.userAgent || "")
+    : false,
+);
+
+onMounted(() => {
+  isTelegram.value =
+    Boolean(window.Telegram?.WebApp?.initData) ||
+    /telegram/i.test(navigator.userAgent || "");
+});
+
+const topOffset = computed(() => {
+  // Внутри Telegram Mini App
+  if (isTelegram.value) {
+    return "1rem";
+  }
+  // В веб-версии (PWA / Safari)
+  return "calc(env(safe-area-inset-top, 0px) + 1rem)";
+});
 </script>
 
 <template>
   <!-- Контейнер фиксирован поверх всего (Z_INDEX.TOAST) -->
   <div
-    class="fixed top-4 left-0 right-0 px-4 pointer-events-none flex flex-col items-center gap-3"
-    :style="{ zIndex: Z_INDEX.TOAST }"
+    class="fixed left-0 right-0 px-4 pointer-events-none flex flex-col items-center gap-3"
+    :style="{
+      zIndex: Z_INDEX.TOAST,
+      top: topOffset,
+    }"
     role="region"
     aria-label="Всплывающие уведомления"
     aria-live="polite"

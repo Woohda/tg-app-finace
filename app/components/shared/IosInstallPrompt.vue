@@ -76,7 +76,7 @@ const handleAndroidInstall = async () => {
   >
     <div
       v-if="isVisible"
-      class="fixed bottom-24 left-4 right-4 z-50 max-w-sm mx-auto"
+      class="fixed bottom-4 left-4 right-4 z-50 max-w-sm mx-auto"
     >
       <GlassCard>
         <!-- Кнопка закрытия -->
@@ -97,7 +97,11 @@ const handleAndroidInstall = async () => {
           </div>
           <div class="flex flex-col pr-6">
             <span class="text-text-primary font-bold text-sm leading-tight">
-              {{ isAndroid ? "Установите FINO на телефон" : "Добавьте FINO на экран" }}
+              {{
+                isAndroid
+                  ? "Установите FINO на телефон"
+                  : "Добавьте FINO на экран"
+              }}
             </span>
             <span class="text-text-secondary text-xs mt-0.5">
               Для быстрого запуска без рамок браузера
@@ -176,7 +180,9 @@ const handleAndroidInstall = async () => {
               1
             </span>
             <span>Нажмите меню <b>⋮</b></span>
-            <MoreVertical class="size-3.5 text-text-primary inline-block shrink-0" />
+            <MoreVertical
+              class="size-3.5 text-text-primary inline-block shrink-0"
+            />
             <span class="text-text-secondary">в браузере</span>
           </div>
           <div class="flex items-center gap-2">
@@ -186,7 +192,9 @@ const handleAndroidInstall = async () => {
               2
             </span>
             <span>Выберите <b>«Установить приложение»</b></span>
-            <Download class="size-3.5 text-text-primary inline-block shrink-0" />
+            <Download
+              class="size-3.5 text-text-primary inline-block shrink-0"
+            />
           </div>
 
           <GlassButton
