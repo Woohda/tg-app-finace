@@ -27,6 +27,18 @@ export async function verifyTelegramWebAppData(
     const urlParams = new URLSearchParams(telegramInitData);
     const hash = urlParams.get("hash");
     if (!hash) return false;
+
+    // Защита от Replay-атак: проверяем свежесть данных auth_date (не старше 24 часов)
+    const authDateStr = urlParams.get("auth_date");
+    if (!authDateStr) return false;
+    const authDate = Number(authDateStr);
+    if (!Number.isFinite(authDate) || authDate <= 0) return false;
+    const nowSeconds = Math.floor(Date.now() / 1000);
+    if (nowSeconds - authDate > 86400 || authDate - nowSeconds > 60) {
+      console.warn("verifyTelegramWebAppData: auth_date expired or invalid:", authDate, "now:", nowSeconds);
+      return false;
+    }
+
     urlParams.delete("hash");
     const keys = Array.from(urlParams.keys());
     keys.sort();

@@ -65,6 +65,19 @@ export default defineEventHandler(async (event) => {
   };
 
   if (id) {
+    const { data: existing } = await supabase
+      .from("transactions")
+      .select("user_id")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (existing && existing.user_id !== userId) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "Доступ запрещен: транзакция принадлежит другому пользователю",
+      });
+    }
+
     payload.id = id;
   }
 

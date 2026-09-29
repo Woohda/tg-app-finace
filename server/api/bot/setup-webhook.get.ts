@@ -62,9 +62,13 @@ export default defineEventHandler(async (event) => {
         `https://api.telegram.org/bot${token}/deleteWebhook`,
       );
     } else {
-      // Устанавливаем вебхук для продакшена (Cloudflare)
+      // Устанавливаем защищенный вебхук с секретным токеном для продакшена (Cloudflare)
+      const secretToken = await getWebhookSecretToken(
+        token,
+        config.telegramWebhookSecret as string | undefined,
+      );
       telegramResponse = await $fetch(
-        `https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}`,
+        `https://api.telegram.org/bot${token}/setWebhook?url=${encodeURIComponent(webhookUrl)}&secret_token=${encodeURIComponent(secretToken)}`,
       );
     }
 

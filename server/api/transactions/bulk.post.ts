@@ -53,6 +53,30 @@ export default defineEventHandler(async (event) => {
   }));
 
   const hasIds = transactionsToInsert.some((t) => "id" in t);
+  if (hasIds) {
+    const ids = transactionsToInsert
+      .map((t) => ("id" in t ? (t as { id: string }).id : null))
+      .filter((id): id is string => Boolean(id));
+
+    if (ids.length > 0) {
+      const { data: existingRecords } = await supabase
+        .from("transactions")
+        .select("id, user_id")
+        .in("id", ids);
+
+      if (
+        existingRecords &&
+        existingRecords.some((r) => r.user_id !== userId)
+      ) {
+        throw createError({
+          statusCode: 403,
+          statusMessage:
+            "Доступ запрещен: одна или несколько транзакций принадлежат другому пользователю",
+        });
+      }
+    }
+  }
+
   const dbQuery = hasIds
     ? supabase.from("transactions").upsert(transactionsToInsert, { onConflict: "id" })
     : supabase.from("transactions").insert(transactionsToInsert);

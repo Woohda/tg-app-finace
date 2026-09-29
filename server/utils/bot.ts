@@ -33,6 +33,25 @@ function getWebAppUrl(): string {
   return `https://${rawUrl}`;
 }
 
+/**
+ * Вычисляет или возвращает секретный токен для вебхука Telegram.
+ * Использует Web Crypto API для совместимости с Cloudflare Workers / Nitro.
+ */
+export async function getWebhookSecretToken(
+  botToken: string,
+  configuredSecret?: string,
+): Promise<string> {
+  if (configuredSecret && configuredSecret.trim()) {
+    return configuredSecret.trim();
+  }
+  const encoder = new TextEncoder();
+  const data = encoder.encode(`tg_webhook_secret:${botToken}`);
+  const hashBuffer = await crypto.subtle.digest("SHA-256", data);
+  return Array.from(new Uint8Array(hashBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+}
+
 export function getBot(customToken?: string): Bot {
   let token = customToken;
 
