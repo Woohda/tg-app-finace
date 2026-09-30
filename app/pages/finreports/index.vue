@@ -94,15 +94,13 @@ const currentLabel = computed(() =>
 
 <template>
   <div class="flex flex-col gap-5">
-    <div class="flex items-center justify-center gap-3">
-      <div class="flex flex-col text-center">
-        <h1 class="text-text-primary text-xl font-bold tracking-wide">
-          Финансовый отчет
-        </h1>
-        <p class="text-text-secondary text-xs">
-          Отчет о ваших тратах и всех транзакциях
-        </p>
-      </div>
+    <div class="flex flex-col text-center">
+      <h1 class="text-text-primary text-xl font-bold tracking-wide">
+        Финансовый отчет
+      </h1>
+      <p class="text-text-secondary text-xs">
+        Отчет о ваших тратах и всех транзакциях
+      </p>
     </div>
 
     <!-- Селектор месяца -->

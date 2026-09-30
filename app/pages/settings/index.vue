@@ -20,13 +20,13 @@ const SETTINGS_LINKS: readonly SettingsNavigationItem[] = [
     to: "/budget",
     icon: "🎯",
     title: "Бюджет и цели",
-    description: "Лимиты и накопления",
+    description: "Планирование расходов",
   },
   {
     to: "/categories",
     icon: "📁",
     title: "Мои категории",
-    description: "Добавление и редактирование",
+    description: "Настроить свои категории",
   },
   {
     to: "/subscription",
@@ -101,20 +101,14 @@ const handleLogout = async () => {
 
 <template>
   <div class="flex flex-col gap-5">
-    <div class="flex items-center justify-center gap-3">
-      <div class="flex flex-col text-center">
-        <h1 class="text-text-primary text-xl font-bold tracking-tight">
-          Настройки
-        </h1>
-        <p class="text-text-secondary text-xs">
-          Профиль и параметры приложения
-        </p>
-      </div>
+    <div class="flex flex-col text-center">
+      <h1 class="text-text-primary text-xl font-bold tracking-wide">
+        Настройки
+      </h1>
+      <p class="text-text-secondary text-xs">Профиль и параметры приложения</p>
     </div>
 
-    <GlassCard
-      class="p-5 flex flex-col items-center justify-center gap-3 text-center"
-    >
+    <GlassCard>
       <div class="w-full flex gap-3 items-center justify-start">
         <Avatar :src="avatarUrl" size="lg" />
         <div class="flex flex-col gap-0.5 items-start">
@@ -136,13 +130,13 @@ const handleLogout = async () => {
         class="block a11y-focus rounded-3xl focus-visible:outline-offset-4"
       >
         <GlassCard
-          class="p-5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
+          class="p-4 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-95 cursor-pointer"
         >
           <div class="flex items-center gap-3">
             <div
-              class="size-10 rounded-full glass-pill flex items-center justify-center text-text-primary shrink-0"
+              class="size-11 rounded-full glass-pill flex items-center justify-center text-text-primary shrink-0"
             >
-              <span class="text-xl">{{ item.icon }}</span>
+              <span class="text-[22px]">{{ item.icon }}</span>
             </div>
             <div class="flex flex-col items-start">
               <span class="text-text-primary font-bold text-base">
@@ -159,7 +153,7 @@ const handleLogout = async () => {
 
       <GlassCard
         v-if="!isStandalone"
-        class="p-5 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-95 cursor-pointer border-[0.5px] border-amber-500/20"
+        class="p-4 flex items-center justify-between transition-all hover:scale-[1.02] active:scale-95 cursor-pointer a11y-focus"
         role="button"
         tabindex="0"
         @click="handleInstallClick"
@@ -167,9 +161,9 @@ const handleLogout = async () => {
       >
         <div class="flex items-center gap-3">
           <div
-            class="size-10 rounded-full glass-pill flex items-center justify-center text-text-primary shrink-0"
+            class="size-11 rounded-full glass-pill flex items-center justify-center text-text-primary shrink-0"
           >
-            <span class="text-xl">📲</span>
+            <span class="text-[22px]">📲</span>
           </div>
           <div class="flex flex-col items-start">
             <span class="text-text-primary font-bold text-base">
@@ -184,7 +178,7 @@ const handleLogout = async () => {
       </GlassCard>
     </div>
 
-    <GlassCard class="p-5 text-center">
+    <GlassCard>
       <GlassButton
         variant="soft"
         class="w-full"

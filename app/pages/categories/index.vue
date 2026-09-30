@@ -107,7 +107,7 @@ const cancelDelete = () => {
       </GlassButton>
 
       <div class="flex flex-col text-center">
-        <h1 class="text-text-primary text-xl font-bold tracking-tight">
+        <h1 class="text-text-primary text-xl font-bold tracking-wide">
           Мои категории
         </h1>
         <p class="text-text-secondary text-xs">Управление списком категорий</p>

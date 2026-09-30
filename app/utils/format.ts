@@ -9,6 +9,7 @@
  * 1. `formatAmount`: форматирует число в валюту (рубли) с двумя знаками после запятой по локали `ru-RU`.
  * 2. `parseAmount`: очищает строку или число от пробелов, неразрывных пробелов, запятых, валютных символов и возвращает округленный `number` или `NaN`.
  * 3. `formatPercent`: форматирует динамику изменений с явным знаком плюса/минуса и заданным суффиксом.
+ * 4. `getPluralSub`: склоняет существительное "платеж" по заданному числу (единственное/множественное число)
  */
 
 export function formatAmount(
@@ -74,8 +75,12 @@ export function formatPercent(
 export function capitalizeFirstLetter(str: string): string;
 export function capitalizeFirstLetter(str: null): null;
 export function capitalizeFirstLetter(str: undefined): undefined;
-export function capitalizeFirstLetter(str?: string | null): string | null | undefined;
-export function capitalizeFirstLetter(str?: string | null): string | null | undefined {
+export function capitalizeFirstLetter(
+  str?: string | null,
+): string | null | undefined;
+export function capitalizeFirstLetter(
+  str?: string | null,
+): string | null | undefined {
   if (str === null) return null;
   if (str === undefined) return undefined;
   const trimmed = str.trim();
@@ -83,4 +88,16 @@ export function capitalizeFirstLetter(str?: string | null): string | null | unde
   const chars = Array.from(trimmed);
   chars[0] = chars[0]!.toUpperCase();
   return chars.join("");
+}
+
+/**
+ * Склоняет существительное "платеж" по заданному числу (единственное/множественное число)
+ */
+export function getPluralSub(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod100 >= 11 && mod100 <= 19) return "платежей";
+  if (mod10 === 1) return "платёж";
+  if (mod10 >= 2 && mod10 <= 4) return "платежа";
+  return "платежей";
 }

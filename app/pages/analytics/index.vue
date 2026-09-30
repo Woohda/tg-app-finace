@@ -89,8 +89,8 @@ const closeCategoryAnalytics = () => {
 <template>
   <div class="flex flex-col gap-5">
     <!-- Шапка -->
-    <div class="flex flex-col text-center mt-2">
-      <h1 class="text-text-primary text-2xl font-bold tracking-wide">
+    <div class="flex flex-col text-center">
+      <h1 class="text-text-primary text-xl font-bold tracking-wide">
         Аналитика
       </h1>
       <p class="text-text-secondary text-xs">Сводка расходов по периодам</p>
