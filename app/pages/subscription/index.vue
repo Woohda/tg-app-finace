@@ -84,6 +84,7 @@ const handleDelete = async () => {
       </NuxtLink>
 
       <GlassButton
+        v-if="subscriptions.length"
         variant="soft"
         size="icon"
         class="px-2 absolute right-0 top-1/2 -translate-y-1/2"
@@ -144,28 +145,24 @@ const handleDelete = async () => {
       <!-- Пустое состояние -->
       <GlassCard
         v-else-if="subscriptions.length === 0"
-        class="text-center flex flex-col items-center"
+        class="text-center flex flex-col gap-2 items-center"
       >
-        <div
-          class="rounded-full glass-inner flex items-center justify-center text-4xl"
-        >
-          📅
-        </div>
-        <div class="flex flex-col gap-1">
+        <span class="text-4xl"> 📅 </span>
+        <div class="flex flex-col gap-px">
           <span class="text-text-primary font-bold text-base">
             Нет регулярных платежей
           </span>
-          <span class="text-text-secondary text-xs max-w-xs">
+          <span class="text-text-secondary text-xs">
             Добавьте подписки, аренду или кредит, чтобы бот напоминал о них
             заранее
           </span>
         </div>
         <GlassButton
           variant="primary"
-          class="mt-1 gap-px"
+          class="mt-1 gap-0.5"
           @click="openCreateForm"
         >
-          <Plus :stroke-width="2" />
+          <Plus class="w-5 h-5" :stroke-width="2" />
           <span>Добавить первый платёж</span>
         </GlassButton>
       </GlassCard>

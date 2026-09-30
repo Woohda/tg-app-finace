@@ -9,7 +9,7 @@
  * Предоставляет быстрый переход к экрану управления регулярными платежами.
  */
 import { ref, onMounted } from "vue";
-import { CalendarClock, ChevronRight, Plus } from "@lucide/vue";
+import { CalendarClock, Plus } from "@lucide/vue";
 import { formatAmount, getPluralSub } from "~/utils/format";
 import type { Subscription } from "~/composables/useSubscriptions";
 
@@ -45,29 +45,25 @@ function closeEditModal() {
     <!-- Шапка карточки -->
     <div class="flex items-center justify-between mb-2">
       <div class="flex items-center gap-2.5">
-        <div
-          class="size-8 rounded-xl glass-inner flex items-center justify-center text-text-accent shrink-0 glass-pill"
-        >
-          <CalendarClock class="size-4" :stroke-width="2" />
-        </div>
-        <h2 class="text-lg font-extrabold text-text-primary">
+        <h2 class="text-xl font-extrabold text-text-primary tracking-wide">
           Регулярные платежи
         </h2>
       </div>
 
       <NuxtLink
+        v-if="subscriptions.length > 0"
         to="/subscription"
-        class="text-xs font-bold text-text-secondary hover:text-text-primary flex items-center gap-0.5 transition-colors a11y-focus rounded px-1.5 py-1"
+        aria-label="Управление регулярными платежами"
+        class="text-text-secondary a11y-focus rounded-md"
       >
-        <span class="text-sm">Все</span>
-        <ChevronRight class="size-4 mt-px" :stroke-width="2" />
+        <CalendarClock :stroke-width="1.5" />
       </NuxtLink>
     </div>
 
     <!-- Состояние 1: Загрузка первичных данных -->
     <div
       v-if="pending && subscriptions.length === 0"
-      class="flex flex-col gap-2 mt-2"
+      class="flex flex-col gap-2"
     >
       <div class="flex justify-between items-center py-1">
         <Skeleton class="w-32 h-3.5 rounded-xl" />
@@ -80,25 +76,25 @@ function closeEditModal() {
     <!-- Состояние 2: Подписок нет -->
     <div
       v-else-if="subscriptions.length === 0"
-      class="flex flex-col items-center justify-center text-center py-3 px-2 mt-1"
+      class="flex flex-col items-center justify-center text-center"
     >
       <p class="text-xs text-text-secondary max-w-65 leading-relaxed">
         Добавьте подписки и обязательные счета — бот напомнит перед списанием
       </p>
       <NuxtLink
         to="/subscription"
-        class="mt-3 inline-flex items-center gap-1.5 text-xs font-bold text-text-primary px-3.5 py-1.5 rounded-full glass-milky border-[0.5px] border-white/60 active:scale-95 transition-transform a11y-focus"
+        class="mt-3 inline-flex items-center gap-1 text-sm font-bold text-text-primary px-3.5 py-1.5 rounded-full glass-milky border-[0.5px] border-white/60 active:scale-95 transition-transform a11y-focus"
       >
-        <Plus class="size-3.5" :stroke-width="2" />
+        <Plus class="size-4" :stroke-width="2" />
         <span>Настроить платежи</span>
       </NuxtLink>
     </div>
 
     <!-- Состояние 3: Список регулярных платежей -->
-    <div v-else class="flex flex-col gap-2.5 mt-2">
+    <div v-else class="flex flex-col gap-2.5 mt-1">
       <!-- Сводка суммы в месяц -->
       <div class="flex items-baseline justify-between px-1">
-        <span class="text-xs text-text-secondary font-medium">
+        <span class="text-sm text-text-secondary font-medium">
           Всего в этом месяце:
         </span>
         <span class="text-base font-extrabold text-text-primary">

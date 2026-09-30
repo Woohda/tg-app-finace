@@ -4,17 +4,18 @@
  * @fileoverview Список целей расходов по категориям со сводкой и пустым состоянием
  * @description
  * Отображает заголовок секции с подсчетом суммы запланированных лимитов и доли от бюджета,
- * кнопку добавления новой цели, список строк `CategoryGoalItem` со свайпом для удаления
- * и информативное пустое состояние при отсутствии целей.
+ * кнопку добавления новой цели, скелетоны во время загрузки, список строк `CategoryGoalItem`
+ * со свайпом для удаления и информативное пустое состояние при отсутствии целей.
  * ---
  * ### Логика работы:
- * 1. Получает массив целей `goals`, сумму общего бюджета и флаг доступности категорий через пропсы.
- * 2. Вычисляет общую сумму всех установленных целей трат.
- * 3. Отрисовывает элементы списка `CategoryGoalItem` со свайп-удалением и редактированием по тапу.
- * 4. Генерирует события `add`, `edit` и `delete` для управления целями на родительской странице.
+ * 1. Получает массив целей `goals`, сумму общего бюджета, флаг загрузки `loading` и флаг доступности категорий через пропсы.
+ * 2. При `loading === true` отображает мерцающие скелетоны карточек `Skeleton`.
+ * 3. Вычисляет общую сумму всех установленных целей трат.
+ * 4. Отрисовывает элементы списка `CategoryGoalItem` со свайп-удалением и редактированием по тапу.
+ * 5. Генерирует события `add`, `edit` и `delete` для управления целями на родительской странице.
  */
 import { computed } from "vue";
-import { Target, Plus } from "@lucide/vue";
+import { Plus } from "@lucide/vue";
 import { formatAmount } from "~/utils/format";
 
 export interface GoalItemData {
@@ -29,11 +30,15 @@ interface Props {
   goals: GoalItemData[];
   budget?: number;
   canAddGoal?: boolean;
+  loading?: boolean;
+  skeletonCount?: number;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   budget: 0,
   canAddGoal: true,
+  loading: false,
+  skeletonCount: 3,
 });
 
 const emit = defineEmits<{
@@ -71,7 +76,10 @@ const budgetPercent = computed(() => {
             Цели по категориям
           </h2>
           <div class="text-xs truncate">
-            <template v-if="goals.length > 0">
+            <template v-if="loading">
+              <Skeleton class="h-3.5 w-32 rounded-md mt-0.5" />
+            </template>
+            <template v-else-if="goals.length > 0">
               <span class="text-text-secondary"
                 >Лимиты: {{ formatAmount(totalGoalsAmount) }}</span
               >
@@ -93,7 +101,7 @@ const budgetPercent = computed(() => {
 
       <!-- Кнопка добавления цели -->
       <button
-        v-if="canAddGoal"
+        v-if="goals.length"
         type="button"
         class="p-3 rounded-full glass-pill text-text-accent hover:text-text-primary transition-all active:scale-95 cursor-pointer a11y-focus"
         @click="emit('add')"
@@ -102,8 +110,46 @@ const budgetPercent = computed(() => {
       </button>
     </div>
 
+    <!-- Скелетон загрузки списка целей -->
+    <div v-if="loading" class="flex flex-col gap-2.5">
+      <div
+        v-for="i in skeletonCount"
+        :key="i"
+        class="glass-pill rounded-4xl py-3 px-5 flex flex-col gap-2.5"
+      >
+        <div class="flex items-center justify-between gap-2">
+          <!-- Название категории и потраченная сумма -->
+          <div class="flex flex-col gap-1.5 min-w-0 flex-1">
+            <Skeleton
+              class="h-4 rounded-md"
+              :class="i === 1 ? 'w-28' : i === 2 ? 'w-36' : 'w-24'"
+            />
+            <Skeleton
+              class="h-3 rounded-md"
+              :class="i === 1 ? 'w-20' : i === 2 ? 'w-24' : 'w-16'"
+            />
+          </div>
+
+          <!-- Сумма лимита и процент -->
+          <div class="flex flex-col items-end gap-1.5 shrink-0">
+            <Skeleton
+              class="h-4 rounded-md"
+              :class="i === 1 ? 'w-16' : i === 2 ? 'w-20' : 'w-14'"
+            />
+            <Skeleton
+              class="h-3 rounded-md"
+              :class="i === 1 ? 'w-14' : i === 2 ? 'w-16' : 'w-12'"
+            />
+          </div>
+        </div>
+
+        <!-- Прогресс-бар цели -->
+        <Skeleton class="w-full h-1.5" rounded="rounded-full" />
+      </div>
+    </div>
+
     <!-- Список установленных целей -->
-    <div v-if="goals.length > 0" class="flex flex-col gap-2.5">
+    <div v-else-if="goals.length > 0" class="flex flex-col gap-2.5">
       <CategoryGoalItem
         v-for="goal in goals"
         :key="goal.categoryId"
@@ -118,17 +164,11 @@ const budgetPercent = computed(() => {
     </div>
 
     <!-- Пустое состояние -->
-    <div
-      v-else
-      class="flex flex-col items-center justify-center gap-3 py-6 px-4 text-center rounded-2xl glass-milky border-[0.5px] border-white/30"
-    >
+    <div v-else class="flex flex-col items-center justify-center gap-3">
       <div
-        class="size-12 rounded-full glass-pill shadow-glass-inner flex items-center justify-center text-text-accent"
+        class="flex flex-col gap-1 items-center text-center glass-pill rounded-4xl p-4"
       >
-        <Target class="w-6 h-6" />
-      </div>
-      <div class="flex flex-col gap-1 max-w-64">
-        <h3 class="text-text-primary font-bold text-sm">
+        <h3 class="text-text-primary font-bold text-[15px]">
           Цели по категориям еще не заданы
         </h3>
         <p class="text-text-secondary text-xs">
@@ -141,12 +181,11 @@ const budgetPercent = computed(() => {
         v-if="canAddGoal"
         type="button"
         variant="primary"
-        size="sm"
-        class="h-10 px-5 mt-1 shadow-xs font-semibold"
+        class="w-full gap-0.5"
         @click="emit('add')"
       >
-        <Plus class="w-4 h-4 mr-1.5" :stroke-width="2" />
-        <span>Установить цель</span>
+        <Plus class="w-5 h-5" :stroke-width="2" />
+        <span class="text-base">Добавить первую цель</span>
       </GlassButton>
     </div>
   </GlassCard>

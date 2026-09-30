@@ -28,9 +28,26 @@ const {
   error: budgetError,
   fetchBudget,
 } = useBudgets();
-const { categories, fetchCategories } = useCategories();
-const { goalsMap, fetchGoals, removeGoal } = useCategoryGoals();
+const {
+  categories,
+  fetchCategories,
+  isLoading: isCategoriesLoading,
+} = useCategories();
+const {
+  goalsMap,
+  fetchGoals,
+  removeGoal,
+  isLoaded: isGoalsLoaded,
+  error: goalsError,
+} = useCategoryGoals();
 const { transactions } = useTransactions();
+
+const isGoalsLoading = computed(() => {
+  return (
+    (!isGoalsLoaded.value && !goalsError.value) ||
+    (categories.value.length === 0 && isCategoriesLoading.value)
+  );
+});
 
 const amount = ref<string | number>(budget.value || "");
 const buttonState = ref<"idle" | "loading" | "success">("idle");
@@ -227,7 +244,8 @@ const handleDeleteGoal = async (categoryId: string) => {
           :state="buttonState"
           :disabled="isSubmitDisabled"
         >
-          <span>🎯 Зафиксировать лимит</span>
+          <span class="text-xl">🎯</span>
+          <span class="text-base">Зафиксировать лимит</span>
         </GlassMorphButton>
       </form>
     </GlassCard>
@@ -237,6 +255,7 @@ const handleDeleteGoal = async (categoryId: string) => {
       :goals="categoryGoalsList"
       :budget="budget"
       :can-add-goal="availableCategoriesForGoal.length > 0"
+      :loading="isGoalsLoading"
       @add="openAddGoalModal"
       @edit="openEditGoalModal"
       @delete="handleDeleteGoal"
