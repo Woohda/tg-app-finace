@@ -3,7 +3,7 @@
  * @module app/components/analytics/AuroraBudget
  * @fileoverview Фоновое "дышащее" пятно для отображения состояния бюджета.
  * @description
- * Отображает анимированный радиальный градиент. Меняет цвет от сине-фиолетового 
+ * Отображает анимированный радиальный градиент. Меняет цвет от сине-фиолетового
  * (бюджет в норме) к оранжево-красному (бюджет превышен) в зависимости от процента трат.
  */
 import { computed } from "vue";
@@ -61,7 +61,7 @@ const baseScale = computed(() => {
     <!-- Текст процента в верхнем правом углу (эффект вдавленного стекла) -->
     <div class="absolute top-2 right-4 flex items-start pointer-events-none">
       <span
-        class="text-[80px] font-extrabold tracking-tighter leading-none glass-text"
+        class="text-[80px] font-extrabold tracking-tight leading-none glass-text"
         style="font-family: var(--font-sans)"
       >
         {{ Math.round(percent) }}

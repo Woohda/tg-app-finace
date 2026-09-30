@@ -1,11 +1,17 @@
 <script setup lang="ts">
 /**
- * @module app/components/GlassMorphButton
+ * @module app/components/shared/GlassMorphButton
  * @fileoverview Кнопка с поддержкой состояний (idle, loading, success) и гласс-морфингом
  * @description
- * Кнопка, которая при загрузке сжимается в круг, а при успехе вспыхивает
- * белым светом (без использования зеленого цвета) с тактильным откликом.
- * Оптимизирована для плавных 60/120fps анимаций в Safari / iOS WebKit.
+ * Интерактивная кнопка с плавным морфингом формы при смене состояний ожидания, загрузки и успеха.
+ * Поддерживает стандартный и компактный размеры (`default` и `sm`), тактильный отклик Telegram
+ * и оптимизирована для аппаратного ускорения в iOS WebKit.
+ * ---
+ * ### Логика работы:
+ * 1. Отслеживает реактивное состояние `state` (idle, loading, success).
+ * 2. При переходе в статус `success` инициирует тактильные сигналы (`heavy` impact и `success` notification).
+ * 3. Трансформирует ширину, внутренние отступы и радиус скругления с помощью CSS cubic-bezier переходов.
+ * 4. Блокирует взаимодействие и клики во время выполнения асинхронного действия.
  */
 import type { ButtonHTMLAttributes } from "vue";
 import { watch } from "vue";
@@ -16,6 +22,7 @@ import { getHapticFeedback } from "~/utils/haptics";
 interface Props {
   type?: ButtonHTMLAttributes["type"];
   state?: "idle" | "loading" | "success";
+  size?: "default" | "sm";
   disabled?: boolean;
   class?: string;
   variant?: "primary" | "delete";
@@ -24,6 +31,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   type: "button",
   state: "idle",
+  size: "default",
   disabled: false,
   variant: "primary",
   class: undefined,
@@ -52,9 +60,13 @@ watch(
         'outline-none a11y-focus select-none',
         'transition-[width,max-width,transform,background-color,box-shadow,opacity] duration-500 ease-[cubic-bezier(0.32,0.72,0,1)]',
         // Размеры и форма
-        state === 'idle'
-          ? 'h-12 w-full max-w-full px-5 rounded-pill'
-          : 'h-12 w-12 max-w-12 rounded-full mx-auto p-0',
+        props.size === 'sm'
+          ? state === 'idle'
+            ? 'h-10 w-full max-w-full px-4 rounded-pill'
+            : 'h-10 w-10 max-w-10 rounded-full mx-auto p-0'
+          : state === 'idle'
+            ? 'h-12 w-full max-w-full px-5 rounded-pill'
+            : 'h-12 w-12 max-w-12 rounded-full mx-auto p-0',
 
         // Цвета (primary)
         variant === 'primary' &&
@@ -127,7 +139,11 @@ watch(
         class="absolute inset-0 flex items-center justify-center pointer-events-none"
       >
         <slot name="success">
-          <Check class="w-6 h-6 text-text-accent" :stroke-width="2.5" />
+          <Check
+            :class="size === 'sm' ? 'w-5 h-5' : 'w-6 h-6'"
+            class="text-text-accent"
+            :stroke-width="2.5"
+          />
         </slot>
       </div>
     </Transition>

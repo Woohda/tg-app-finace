@@ -31,11 +31,11 @@ const trendIcon = computed(() => {
 <template>
   <GlassCard class="flex-1 p-4 flex flex-col justify-center gap-1">
     <p
-      class="text-text-secondary text-[11px] font-bold uppercase tracking-wide"
+      class="text-text-secondary text-[11px] font-bold uppercase tracking-wider"
     >
       {{ title }}
     </p>
-    <span class="text-text-primary text-xl font-bold tracking-tighter">{{
+    <span class="text-text-primary text-xl font-bold tracking-tight">{{
       formatAmount(amount)
     }}</span>
 

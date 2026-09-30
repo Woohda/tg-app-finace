@@ -212,7 +212,7 @@ const cancelAll = () => {
     <div class="flex items-center justify-center gap-3 relative">
       <div class="flex flex-col text-center">
         <h1
-          class="text-text-primary text-xl font-bold tracking-tight flex items-center gap-2 justify-center"
+          class="text-text-primary text-xl font-bold flex items-center gap-2 justify-center tracking-wide"
         >
           <Sparkles class="size-5 text-text-accent" :stroke-width="1.5" />
           Скриншот распознан

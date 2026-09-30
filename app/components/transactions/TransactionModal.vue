@@ -173,19 +173,13 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
       />
 
       <!-- Category -->
-      <div class="flex flex-col gap-1">
-        <label class="text-xs font-bold text-text-primary pl-2"
-          >Категория</label
-        >
-        <GlassCategorySelect
-          v-model="categoryId"
-          :categories="filteredCategories"
-          :disabled="pending"
-          :placeholder="
-            pending ? 'Загрузка категорий...' : 'Выберите категорию'
-          "
-        />
-      </div>
+      <GlassCategorySelect
+        v-model="categoryId"
+        :categories="filteredCategories"
+        :disabled="pending"
+        label="Категория"
+        :placeholder="pending ? 'Загрузка категорий...' : 'Выберите категорию'"
+      />
 
       <!-- Date -->
       <GlassInput v-model="date" type="date" label="Дата" :icon="Calendar" />
@@ -194,7 +188,7 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
       <GlassInput
         v-model="name"
         type="text"
-        label="Комментарий"
+        label="Название транзакции"
         placeholder="Например, Обед с коллегами"
         autocapitalize="sentences"
         @blur="name = capitalizeFirstLetter(name)"

@@ -8,11 +8,8 @@
  */
 import { ref, onMounted } from "vue";
 import { ChevronLeft, Plus, CalendarClock, Flame } from "@lucide/vue";
-import { formatAmount } from "~/utils/format";
-import {
-  useSubscriptions,
-  type Subscription,
-} from "~/composables/useSubscriptions";
+import { formatAmount, getPluralSub } from "~/utils/format";
+import type { Subscription } from "~/composables/useSubscriptions";
 
 const {
   subscriptions,
@@ -97,7 +94,7 @@ const handleDelete = async () => {
       </GlassButton>
 
       <div class="flex flex-col text-center w-74">
-        <h1 class="text-text-primary text-xl font-bold tracking-tight">
+        <h1 class="text-text-primary text-xl font-bold tracking-wide">
           Регулярные платежи
         </h1>
         <p class="text-text-secondary text-xs">Ежемесячные подписки и счета</p>
@@ -105,18 +102,18 @@ const handleDelete = async () => {
     </div>
 
     <!-- Сводная карточка -->
-    <GlassCard class="p-5 flex flex-col gap-2">
+    <GlassCard class="flex flex-col gap-1">
       <div class="flex items-center justify-between">
-        <span class="text-text-secondary text-xs"> Всего в месяц </span>
-        <CalendarClock class="size-4 text-text-secondary" />
+        <span class="text-text-secondary text-sm"> Всего в месяц </span>
+        <CalendarClock class="size-5 text-text-secondary" />
       </div>
-      <div class="flex items-baseline gap-2">
+      <div class="flex items-baseline gap-1">
         <span class="text-3xl font-black text-text-primary tracking-tight">
           {{ formatAmount(totalMonthly) }}
         </span>
-        <span class="text-xs text-text-secondary font-medium">
+        <span class="text-sm text-text-secondary font-medium">
           / {{ subscriptions.length }}
-          {{ subscriptions.length === 1 ? "платёж" : "платежей" }}
+          {{ getPluralSub(subscriptions.length) }}
         </span>
       </div>
     </GlassCard>

@@ -1,7 +1,7 @@
 <script setup lang="ts">
 /**
  * @module app/components/shared/GlassModal
- * @fileoverview Базовый переиспользуемый UI-компонент модального окна в стиле Glassmorphism.
+ * @fileoverview Базовый UI-компонент модального окна в стиле Glassmorphism
  * @description
  * Предоставляет унифицированную обертку для модальных окон приложения (создание и редактирование
  * транзакций, аналитика категорий, управление подписками и диалоги подтверждения).
@@ -17,14 +17,14 @@
  * 4. **Блокировка взаимодействия с фоном**:
  *    - Фиксирует скролл страницы (`document.body.style.overflow = "hidden"`).
  *    - Отключает вертикальные свайпы Telegram Mini App (`disableVerticalSwipes`) для предотвращения случайного закрытия шторки приложения.
- * 
+ *
  * ### Входные параметры (Props):
  * - `isOpen`: Флаг видимости модального окна (по умолчанию `false`).
  * - `title`: Заголовок в шапке модалки.
  * - `position`: Расположение окна — `"center"` по центру экрана или `"bottom"` в виде нижней шторки (по умолчанию `"center"`).
  * - `showClose`: Отображать ли кнопку закрытия с иконкой крестика (по умолчанию `true`).
  * - `zIndex`: Уровень z-index контейнера оверлея (по умолчанию `Z_INDEX.MODAL_BASE`).
- * 
+ *
  * ### События (Emits):
  * - `close`: Вызывается при нажатии на кнопку закрытия, клике по затемненному оверлею или свайпе.
  */
@@ -146,21 +146,25 @@ onUnmounted(() => {
         >
           <div
             v-if="title || showClose || $slots.header"
-            class="flex justify-between items-center"
+            class="flex justify-between items-center gap-3 min-w-0 w-full"
           >
-            <slot name="header">
-              <h2 v-if="title" class="text-text-primary text-xl font-bold">
-                {{ title }}
-              </h2>
-              <div v-else class="flex-1" />
-            </slot>
+            <div class="min-w-0 flex-1">
+              <slot name="header">
+                <h2
+                  v-if="title"
+                  class="text-text-primary text-xl font-bold truncate"
+                >
+                  {{ title }}
+                </h2>
+              </slot>
+            </div>
 
             <GlassButton
               v-if="showClose"
               variant="soft"
               size="sm"
               aria-label="Закрыть"
-              class="px-2.25 text-text-primary shrink-0"
+              class="shrink-0!"
               @click="close"
             >
               <X :stroke-width="1.5" />

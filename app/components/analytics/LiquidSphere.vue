@@ -86,12 +86,12 @@ const liquidColor = "var(--color-accent-mid)";
 
     <!-- Текст -->
     <span
-      class="relative z-10 text-[10px] font-extrabold uppercase tracking-widest text-white/90 drop-shadow-md mb-0.5"
+      class="relative z-10 text-[10px] font-extrabold uppercase tracking-wider text-white/90 drop-shadow-md mb-0.5"
     >
       {{ label }}
     </span>
     <span
-      class="relative z-10 text-base font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] tracking-tighter leading-none"
+      class="relative z-10 text-base font-black text-white drop-shadow-[0_2px_4px_rgba(0,0,0,0.5)] tracking-tight leading-none"
     >
       {{ amount }}
     </span>

@@ -3,19 +3,21 @@
  * @module app/components/analytics/CategoryAnalyticsModal
  * @fileoverview Детальная аналитика по одной категории
  * @description
- * Модальное окно, показывающее динамику трат (график), инсайты
- * и список операций конкретно для выбранной категории за текущий месяц.
+ * Модальное окно, показывающее сводку расходов, управление лимитом трат,
+ * динамику расходов на графике и список операций по выбранной категории.
  * ---
  * ### Логика работы:
  * 1. Получает `categoryId` и `period` из пропсов.
- * 2. Вызывает `useAnalyticsData` с фильтром по `categoryId`.
- * 3. Фильтрует операции категории за текущий месяц через `filterCurrentMonthCategoryTransactions`.
- * 4. Отрисовывает `AnalyticsBarChart`, метрики и список операций месяца под графиком.
+ * 2. Запрашивает агрегированные данные категории через `useAnalyticsData`.
+ * 3. Фильтрует операции категории за текущий месяц (`filterCurrentMonthCategoryTransactions`).
+ * 4. Предоставляет интерфейс управления целью через `CategoryGoalCard`.
+ * 5. Отрисовывает график динамики трат `AnalyticsBarChart` и список операций за месяц.
  */
 import { toRef, computed, ref } from "vue";
 import { TrendingUp, TrendingDown } from "@lucide/vue";
 import type { AnalyticsPeriodType } from "~/composables/useAnalyticsPeriod";
 import { formatAmount } from "~/utils/format";
+import CategoryGoalCard from "~/components/goals/CategoryGoalCard.vue";
 
 const props = defineProps<{
   isOpen: boolean;
@@ -48,6 +50,13 @@ const { pending, totalSpent, percentChange, chartData, categoryStats } =
 const filteredTransactions = computed(() =>
   filterCurrentMonthCategoryTransactions(transactions.value, props.categoryId),
 );
+
+const monthSpent = computed(() => {
+  return filteredTransactions.value.reduce(
+    (sum, tx) => sum + (tx.amount || 0),
+    0,
+  );
+});
 
 const deletingId = ref<string | null>(null);
 
@@ -97,16 +106,18 @@ const close = () => emit("close");
     <template #header>
       <div class="flex items-center gap-3">
         <div
-          class="w-11 h-11 flex items-center justify-center rounded-full glass-pill text-base"
+          class="w-11 h-11 shrink-0 flex items-center justify-center rounded-full glass-pill text-base"
         >
           {{ currentCategory?.categoryIcon || "📂" }}
         </div>
-        <div class="flex flex-col">
-          <h2 class="text-text-primary text-base font-bold tracking-tight">
+        <div class="flex flex-col min-w-0">
+          <h2
+            class="text-text-primary text-base font-bold tracking-wide truncate"
+          >
             {{ currentCategory?.categoryName || "Категория" }}
           </h2>
           <p
-            class="text-text-secondary text-xs uppercase tracking-wide font-semibold mt-0.5"
+            class="text-text-secondary text-xs uppercase tracking-wider font-semibold mt-0.5"
           >
             Аналитика
           </p>
@@ -130,7 +141,7 @@ const close = () => emit("close");
               Траты за период
             </p>
             <span
-              class="text-text-primary text-2xl font-extrabold tracking-tighter"
+              class="text-text-primary text-2xl font-extrabold tracking-tight"
               >{{ formatAmount(totalSpent) }}</span
             >
           </div>
@@ -142,19 +153,17 @@ const close = () => emit("close");
               {{ prevPeriodLabel }}
             </p>
             <div class="flex items-center gap-1">
-              <div
-                class="mt-0.5 p-1 rounded-full bg-white/5 shadow-sm border border-white/10"
-              >
+              <div class="mt-0.5 p-1 rounded-full glass-pill">
                 <component
                   :is="percentChange > 0 ? TrendingUp : TrendingDown"
-                  class="w-4 h-4"
+                  class="w-4 h-4 stroke-2"
                   :class="
                     percentChange > 0 ? 'text-text-accent' : 'text-text-success'
                   "
                 />
               </div>
               <span
-                class="text-sm font-bold"
+                class="text-sm mt-1"
                 :class="
                   percentChange > 0 ? 'text-text-accent' : 'text-text-success'
                 "
@@ -165,10 +174,13 @@ const close = () => emit("close");
           </div>
         </GlassCard>
 
+        <!-- Цель на месяц -->
+        <CategoryGoalCard :category-id="categoryId" :month-spent="monthSpent" />
+
         <!-- График -->
         <GlassCard class="p-5 flex flex-col gap-4">
           <h2
-            class="text-text-primary font-bold text-sm uppercase tracking-wide"
+            class="text-text-secondary font-bold text-sm uppercase tracking-wider"
           >
             Динамика по категории
           </h2>
@@ -176,10 +188,10 @@ const close = () => emit("close");
         </GlassCard>
 
         <!-- Операции за текущий месяц -->
-        <GlassCard class="p-4 flex flex-col gap-px pb-0">
+        <GlassCard class="p-4 flex flex-col gap-px pb-1">
           <div class="flex justify-between items-center px-1">
             <h3
-              class="text-text-secondary font-bold text-sm uppercase tracking-wide"
+              class="text-text-secondary font-bold text-xs uppercase tracking-wider"
             >
               Операции за месяц
             </h3>

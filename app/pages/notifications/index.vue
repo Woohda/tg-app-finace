@@ -83,7 +83,7 @@ const getColor = (type: string) => {
       </div>
 
       <div class="flex flex-col text-center">
-        <h1 class="text-text-primary text-xl font-bold tracking-tight">
+        <h1 class="text-text-primary text-xl font-bold tracking-wide">
           Уведомления
         </h1>
         <p class="text-text-secondary text-xs">История действий</p>
