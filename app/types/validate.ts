@@ -2,9 +2,9 @@
  * @module app/types/validate
  * @fileoverview Единый реестр Zod-схем для валидации данных во всем приложении
  * @description
- * Этот файл содержит схемы валидации для категорий, транзакций и бюджетов.
- * Схемы используются как на клиенте (для валидации форм), так и на сервере
- * (для проверки входящих данных API с помощью `readValidatedBody`).
+ * Этот файл содержит схемы валидации для категорий, транзакций, бюджетов,
+ * подписок и целей трат по категориям. Схемы используются как на клиенте
+ * (для валидации форм), так и на сервере (для проверки входящих данных API).
  */
 import { z } from "zod";
 import { capitalizeFirstLetter } from "../utils/format";
@@ -59,7 +59,9 @@ export const transactionPatchSchema = z
       .string()
       .optional()
       .nullable()
-      .transform((val) => (val && val.trim() ? capitalizeFirstLetter(val) : val)),
+      .transform((val) =>
+        val && val.trim() ? capitalizeFirstLetter(val) : val,
+      ),
   })
   .refine((data) => Object.keys(data).length > 0, {
     message: "Нет данных для обновления",
@@ -101,7 +103,19 @@ export const subscriptionSchema = z.object({
   is_active: z.boolean().optional(),
 });
 
-export const subscriptionUpdateSchema = subscriptionSchema.partial().refine(
-  (data) => Object.keys(data).length > 0,
-  { message: "Нет данных для обновления" },
-);
+export const subscriptionUpdateSchema = subscriptionSchema
+  .partial()
+  .refine((data) => Object.keys(data).length > 0, {
+    message: "Нет данных для обновления",
+  });
+
+// --- Category Goals ---
+export const categoryGoalSchema = z.object({
+  categoryId: z.string().uuid("Некорректный ID категории"),
+  targetAmount: z
+    .number("Введите корректную сумму")
+    .positive("Цель должна быть больше 0")
+    .max(100_000_000, "Слишком большая сумма"),
+});
+
+export type CategoryGoalInput = z.infer<typeof categoryGoalSchema>;
