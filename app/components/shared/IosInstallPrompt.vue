@@ -82,7 +82,7 @@ const handleAndroidInstall = async () => {
         <!-- Кнопка закрытия -->
         <GlassButton
           variant="soft"
-          class="absolute top-3 right-3 h-6 px-1.25 text-text-primary shrink-0 shadow-xs"
+          class="absolute top-3 right-3 h-6 px-1.25 shadow-xs"
           aria-label="Закрыть"
           @click="dismiss"
         >
@@ -138,7 +138,7 @@ const handleAndroidInstall = async () => {
 
           <GlassButton
             variant="soft"
-            class="w-full rounded-2xl text-sm font-semibold text-text-primary transition-all mt-2 shadow-xs"
+            class="w-full rounded-2xl text-sm font-semibold transition-all mt-2 shadow-xs"
             @click="dismiss"
           >
             Понятно
@@ -199,7 +199,7 @@ const handleAndroidInstall = async () => {
 
           <GlassButton
             variant="soft"
-            class="w-full rounded-2xl text-sm font-semibold text-text-primary transition-all mt-2 shadow-xs"
+            class="w-full rounded-2xl text-sm font-semibold transition-all mt-2 shadow-xs"
             @click="dismiss"
           >
             Понятно

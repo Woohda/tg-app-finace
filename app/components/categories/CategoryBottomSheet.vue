@@ -169,7 +169,6 @@ onBeforeUnmount(() => {
             variant="soft"
             size="sm"
             aria-label="Закрыть"
-            class="px-2.25 text-text-primary shrink-0"
             @click="handleClose"
           >
             <X :stroke-width="1.5" />

@@ -56,7 +56,8 @@ const props = withDefaults(defineProps<Props>(), {
         // Размеры (Mobile First — приоритет мобильных)
         size === 'default' && 'h-12 px-6 rounded-pill text-base',
         size === 'lg' && 'h-14 px-8 rounded-pill text-lg font-semibold',
-        size === 'sm' && 'h-11 px-4 rounded-pill text-base',
+        size === 'sm' &&
+          'h-11 p-2.25 text-text-primary shrink-0 rounded-pill text-base',
         size === 'icon' && 'size-12 rounded-pill',
         props.class,
       )

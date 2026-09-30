@@ -117,7 +117,7 @@ function onKeyDown(e: KeyboardEvent) {
       class="relative rounded-full flex items-center justify-center cursor-pointer select-none transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
       :class="[
         // Размеры
-        size === 'sm' ? 'px-5 py-1.25 text-xs' : 'px-7 py-1.5 text-sm',
+        size === 'sm' ? 'px-5.5 py-1.25 text-[13px]' : 'px-7 py-1.5 text-sm',
         'h-auto',
         // Нахлест соседних карточек (кроме первой)
         index > 0 ? '-ml-5' : '',
