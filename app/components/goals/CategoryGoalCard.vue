@@ -1,21 +1,22 @@
 <script setup lang="ts">
 /**
- * @module app/components/analytics/CategoryGoalCard
+ * @module app/components/goals/CategoryGoalCard
  * @fileoverview Карточка управления месячной целью расходов по категории
  * @description
  * Отображает текущий лимит расходов, статус выполнения, сумму остатка или перерасхода,
- * а также предоставляет инлайн-форму для создания, изменения и удаления цели.
+ * динамический прогресс-бар и предоставляет инлайн-форму для создания, изменения и удаления цели.
+ * Используется в модальном окне аналитики категории.
  * ---
  * ### Логика работы:
  * 1. Получает `categoryId` и `monthSpent` из пропсов.
  * 2. Синхронизирует значение цели через `useCategoryGoals`.
- * 3. Позволяет пользователю вводить сумму цели с валидацией и тактильным откликом.
- * 4. Переключается между режимом отображения и редактирования.
+ * 3. Рассчитывает процент выполнения лимита, сумму остатка или перерасхода.
+ * 4. Предоставляет инлайн-редактирование суммы цели с валидацией и тактильным откликом.
+ * 5. Позволяет сбросить цель при нажатии на кнопку удаления.
  */
 import { computed, ref, watch } from "vue";
 import { Target, Pencil, RussianRuble, Trash2, Plus, X } from "@lucide/vue";
 import { formatAmount } from "~/utils/format";
-import { useCategoryGoals } from "~/composables/useCategoryGoals";
 import { getHapticFeedback } from "~/utils/haptics";
 
 interface Props {
@@ -25,7 +26,12 @@ interface Props {
 
 const props = defineProps<Props>();
 
+const emit = defineEmits<{
+  (e: "saved" | "delete"): void;
+}>();
+
 const { getGoal, setGoal, removeGoal } = useCategoryGoals();
+const haptics = getHapticFeedback();
 
 const currentGoalAmount = computed(() => {
   if (!props.categoryId) return null;
@@ -90,19 +96,19 @@ const handleSaveGoal = async () => {
   const raw = String(goalInputValue.value ?? "").trim();
   if (!raw) {
     goalInputError.value = "Укажите сумму лимита";
-    getHapticFeedback().notification("error");
+    haptics.notification("error");
     return;
   }
 
   const num = Number(raw);
   if (isNaN(num) || num <= 0) {
     goalInputError.value = "Сумма должна быть больше 0";
-    getHapticFeedback().notification("error");
+    haptics.notification("error");
     return;
   }
   if (num > 100_000_000) {
     goalInputError.value = "Сумма не может превышать 100 млн";
-    getHapticFeedback().notification("error");
+    haptics.notification("error");
     return;
   }
 
@@ -118,6 +124,7 @@ const handleSaveGoal = async () => {
     setTimeout(() => {
       isEditingGoal.value = false;
       buttonState.value = "idle";
+      emit("saved");
     }, 600);
   } else {
     buttonState.value = "idle";
@@ -127,9 +134,12 @@ const handleSaveGoal = async () => {
 const handleDeleteGoal = async () => {
   if (!props.categoryId) return;
   isSubmittingGoal.value = true;
-  await removeGoal(props.categoryId);
+  const success = await removeGoal(props.categoryId);
   isSubmittingGoal.value = false;
   isEditingGoal.value = false;
+  if (success) {
+    emit("delete");
+  }
 };
 
 watch(
@@ -320,7 +330,11 @@ watch(
     <!-- Режим отображения: Цель еще не задана -->
     <div v-else class="flex items-center justify-between gap-3">
       <div class="flex items-center gap-2.5">
-        <div class="py-1 px-2 rounded-full glass-pill text-xl">🎯</div>
+        <div
+          class="size-10 rounded-full glass-pill flex items-center justify-center shrink-0"
+        >
+          <span class="text-[22px]">🎯</span>
+        </div>
         <div class="flex flex-col">
           <span class="text-text-primary text-xs font-bold">
             Цель на месяц не задана

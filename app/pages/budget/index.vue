@@ -1,31 +1,50 @@
 <script setup lang="ts">
 /**
  * @module app/pages/budget
- * @fileoverview Экран настройки ежемесячного бюджета
+ * @fileoverview Экран настройки ежемесячного бюджета и целей по категориям
  * @description
- * Позволяет пользователю задать лимит трат на месяц.
- * Использует Zod для валидации ввода на стороне клиента.
+ * Позволяет пользователю управлять общим месячным лимитом расходов,
+ * а также просматривать, создавать, изменять и удалять лимиты трат по категориям.
+ * Делегирует отображение целей компонентам `CategoryGoalList` и `CategoryGoalModal`.
+ * ---
+ * ### Логика работы:
+ * 1. Загрузка общего бюджета (`useBudgets`), категорий (`useCategories`) и целей (`useCategoryGoals`).
+ * 2. Агрегация фактических расходов текущего месяца по каждой категории (`useTransactions`).
+ * 3. Сохранение общего бюджета с валидацией через `budgetSchema`.
+ * 4. Управление целями по категориям через компонент `CategoryGoalList` и модалку `CategoryGoalModal`.
  */
-import { ref, watch, onMounted } from "vue";
-import { ChevronLeft, Target } from "@lucide/vue";
+import { ref, watch, computed, onMounted } from "vue";
+import { ChevronLeft, RussianRuble } from "@lucide/vue";
 import { budgetSchema } from "~/types/validate";
 import { parseAmount } from "~/utils/format";
 import { formatZodError } from "~/utils/zod";
+import { isCurrentMonth } from "~/utils/date";
+import type { GoalItemData } from "~/components/goals/CategoryGoalList.vue";
 
-const { budget, updateBudget, isLoading, error, fetchBudget } = useBudgets();
+const {
+  budget,
+  updateBudget,
+  isLoading: isBudgetLoading,
+  error: budgetError,
+  fetchBudget,
+} = useBudgets();
+const { categories, fetchCategories } = useCategories();
+const { goalsMap, fetchGoals, removeGoal } = useCategoryGoals();
+const { transactions } = useTransactions();
 
 const amount = ref<string | number>(budget.value || "");
 const buttonState = ref<"idle" | "loading" | "success">("idle");
+const localError = ref<string>("");
 
 const isSubmitDisabled = computed(() => {
-  if (isLoading.value) return true;
+  if (isBudgetLoading.value) return true;
   const parsed = parseAmount(amount.value);
   return isNaN(parsed) || parsed <= 0;
 });
 
 watch(amount, () => {
-  if (error.value) {
-    error.value = "";
+  if (localError.value) {
+    localError.value = "";
   }
 });
 
@@ -37,17 +56,19 @@ watch(budget, (newVal) => {
 
 onMounted(() => {
   fetchBudget();
+  fetchCategories();
+  fetchGoals();
 });
 
 const saveBudget = async () => {
   const result = budgetSchema.safeParse({ amount: parseAmount(amount.value) });
 
   if (!result.success) {
-    error.value = formatZodError(result.error);
+    localError.value = formatZodError(result.error);
     return;
   }
 
-  error.value = "";
+  localError.value = "";
   buttonState.value = "loading";
 
   const success = await updateBudget(result.data.amount);
@@ -60,6 +81,92 @@ const saveBudget = async () => {
   } else {
     buttonState.value = "idle";
   }
+};
+
+// --- Цели по категориям ---
+const expenseCategories = computed(() => {
+  return categories.value.filter((c) => c.type === "expense");
+});
+
+const currentMonthExpensesByCategory = computed(() => {
+  const map: Record<string, number> = {};
+  if (!transactions.value?.length) return map;
+
+  for (const tx of transactions.value) {
+    if (tx.type === "expense" && tx.categoryId && isCurrentMonth(tx.date)) {
+      map[tx.categoryId] = (map[tx.categoryId] || 0) + (tx.amount || 0);
+    }
+  }
+  return map;
+});
+
+const categoryGoalsList = computed<GoalItemData[]>(() => {
+  const list: GoalItemData[] = [];
+  for (const cat of expenseCategories.value) {
+    const goal = goalsMap.value[cat.id];
+    if (goal && goal > 0) {
+      list.push({
+        categoryId: cat.id,
+        categoryName: cat.name,
+        categoryIcon: cat.icon || "📂",
+        targetAmount: goal,
+        spent: currentMonthExpensesByCategory.value[cat.id] || 0,
+      });
+    }
+  }
+  // Сортировка: сначала категории с наибольшим расходом относительно цели
+  return list.sort((a, b) => {
+    const ratioA = a.targetAmount > 0 ? a.spent / a.targetAmount : 0;
+    const ratioB = b.targetAmount > 0 ? b.spent / b.targetAmount : 0;
+    return ratioB - ratioA;
+  });
+});
+
+const availableCategoriesForGoal = computed(() => {
+  return expenseCategories.value
+    .filter((c) => !goalsMap.value[c.id])
+    .map((c) => ({
+      id: c.id,
+      name: c.name,
+      icon: c.icon,
+      type: c.type,
+    }));
+});
+
+// Модальное окно создания / редактирования цели
+const isGoalModalOpen = ref(false);
+const isGoalModalEdit = ref(false);
+const editingGoal = ref<{
+  categoryId: string;
+  name: string;
+  icon: string;
+  amount: number;
+} | null>(null);
+
+const openAddGoalModal = () => {
+  isGoalModalEdit.value = false;
+  editingGoal.value = null;
+  isGoalModalOpen.value = true;
+};
+
+const openEditGoalModal = (goal: GoalItemData) => {
+  isGoalModalEdit.value = true;
+  editingGoal.value = {
+    categoryId: goal.categoryId,
+    name: goal.categoryName,
+    icon: goal.categoryIcon,
+    amount: goal.targetAmount,
+  };
+  isGoalModalOpen.value = true;
+};
+
+const closeGoalModal = () => {
+  isGoalModalOpen.value = false;
+  editingGoal.value = null;
+};
+
+const handleDeleteGoal = async (categoryId: string) => {
+  await removeGoal(categoryId);
 };
 </script>
 
@@ -75,7 +182,7 @@ const saveBudget = async () => {
         <ChevronLeft class="text-text-primary -ml-px" :stroke-width="1.5" />
       </NuxtLink>
       <div class="flex flex-col text-center">
-        <h1 class="text-text-primary text-xl font-bold tracking-tight">
+        <h1 class="text-text-primary text-xl font-bold tracking-wide">
           Бюджет и цели
         </h1>
         <p class="text-text-secondary text-xs">Планирование финансов</p>
@@ -83,12 +190,12 @@ const saveBudget = async () => {
     </div>
 
     <!-- Monthly Budget -->
-    <GlassCard class="p-6 flex flex-col gap-5">
+    <GlassCard class="flex flex-col gap-3">
       <div class="flex items-center gap-3">
         <div
-          class="size-10 rounded-full glass-milky flex items-center justify-center text-text-primary"
+          class="size-12.5 rounded-full glass-pill flex items-center justify-center shrink-0"
         >
-          <span class="text-xl">💰</span>
+          <span class="text-[28px]">💰</span>
         </div>
         <div class="flex flex-col">
           <h2 class="text-text-primary font-bold">Бюджет на месяц</h2>
@@ -96,18 +203,22 @@ const saveBudget = async () => {
         </div>
       </div>
 
-      <form class="flex flex-col gap-4 mt-2" @submit.prevent="saveBudget">
+      <form class="flex flex-col gap-4" @submit.prevent="saveBudget">
         <GlassInput
           v-model="amount"
           type="number"
           step="1"
+          inputmode="numeric"
           label="Сумма"
           placeholder="Например, 60000"
-          icon="₽"
+          :icon="RussianRuble"
         />
 
-        <div v-if="error" class="text-text-accent text-sm text-center">
-          {{ error }}
+        <div
+          v-if="localError || budgetError"
+          class="text-text-accent text-sm text-center"
+        >
+          {{ localError || budgetError }}
         </div>
 
         <GlassMorphButton
@@ -121,22 +232,27 @@ const saveBudget = async () => {
       </form>
     </GlassCard>
 
-    <!-- Goals Placeholder -->
-    <GlassCard
-      class="p-6 flex flex-col items-center justify-center gap-3 text-center opacity-70"
-    >
-      <div
-        class="size-12 rounded-full glass-milky shadow-glass-inner flex items-center justify-center text-text-primary"
-      >
-        <Target class="size-6 text-text-secondary" />
-      </div>
-      <div>
-        <h2 class="text-text-primary font-bold">Цели и Копилки</h2>
-        <p class="text-text-secondary text-xs mt-1 max-w-50">
-          Скоро здесь появится возможность создавать финансовые цели и
-          откладывать деньги.
-        </p>
-      </div>
-    </GlassCard>
+    <!-- Секция: Список целей по категориям -->
+    <CategoryGoalList
+      :goals="categoryGoalsList"
+      :budget="budget"
+      :can-add-goal="availableCategoriesForGoal.length > 0"
+      @add="openAddGoalModal"
+      @edit="openEditGoalModal"
+      @delete="handleDeleteGoal"
+    />
+
+    <!-- Модальное окно добавления / изменения цели -->
+    <CategoryGoalModal
+      :is-open="isGoalModalOpen"
+      :is-edit="isGoalModalEdit"
+      :initial-category-id="editingGoal?.categoryId"
+      :initial-category-name="editingGoal?.name"
+      :initial-category-icon="editingGoal?.icon"
+      :initial-amount="editingGoal?.amount"
+      :available-categories="availableCategoriesForGoal"
+      @close="closeGoalModal"
+      @saved="closeGoalModal"
+    />
   </div>
 </template>

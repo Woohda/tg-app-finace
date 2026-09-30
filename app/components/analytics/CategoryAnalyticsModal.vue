@@ -17,7 +17,7 @@ import { toRef, computed, ref } from "vue";
 import { TrendingUp, TrendingDown } from "@lucide/vue";
 import type { AnalyticsPeriodType } from "~/composables/useAnalyticsPeriod";
 import { formatAmount } from "~/utils/format";
-import CategoryGoalCard from "./CategoryGoalCard.vue";
+import CategoryGoalCard from "~/components/goals/CategoryGoalCard.vue";
 
 const props = defineProps<{
   isOpen: boolean;
