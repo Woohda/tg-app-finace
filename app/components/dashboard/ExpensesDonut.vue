@@ -55,7 +55,9 @@ const { segments, radius, strokeWidth } = useDonutMath(
 <template>
   <GlassCard>
     <div class="flex justify-between items-center mb-3">
-      <h2 class="text-xl font-extrabold text-text-primary">Расходы</h2>
+      <h2 class="text-xl font-bold text-text-primary tracking-wide">
+        Главные расходы
+      </h2>
       <NuxtLink
         to="/analytics"
         aria-label="Подробная аналитика расходов"
