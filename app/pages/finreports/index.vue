@@ -96,7 +96,7 @@ const currentLabel = computed(() =>
   <div class="flex flex-col gap-5">
     <div class="flex items-center justify-center gap-3">
       <div class="flex flex-col text-center">
-        <h1 class="text-text-primary text-xl font-bold tracking-tight">
+        <h1 class="text-text-primary text-xl font-bold tracking-wide">
           Финансовый отчет
         </h1>
         <p class="text-text-secondary text-xs">
@@ -120,10 +120,12 @@ const currentLabel = computed(() =>
         </div>
 
         <div v-else class="fade-in">
-          <p class="text-text-secondary text-[12px] font-semibold mb-1">
+          <p
+            class="text-text-secondary text-[13px] font-medium mb-1 tracking-wide"
+          >
             {{ currentLabel }}
           </p>
-          <h2 class="text-3xl font-extrabold text-text-primary tracking-tight">
+          <h2 class="text-3xl font-extrabold text-text-primary">
             {{ formatAmount(currentAmount) }}
           </h2>
         </div>
@@ -152,11 +154,11 @@ const currentLabel = computed(() =>
     </GlassCard>
 
     <!-- Финансовый раздел: Список операций -->
-    <GlassCard class="relative z-10 pb-0">
+    <GlassCard class="relative z-10 pb-2">
       <div class="flex flex-col gap-3 mb-3">
         <div class="flex items-center justify-between gap-2">
           <h2
-            class="text-base sm:text-lg font-bold text-text-primary tracking-tight truncate"
+            class="text-base font-bold text-text-primary uppercase tracking-wide truncate"
           >
             Все транзакции:
           </h2>

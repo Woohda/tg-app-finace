@@ -80,7 +80,9 @@ function onItemClick() {
     <!-- Режим analytics: минималистичный вид без иконки категории -->
     <template v-if="variant === 'analytics'">
       <div class="flex-1 min-w-0 pr-2">
-        <p class="text-base font-semibold text-text-primary truncate">
+        <p
+          class="text-[15px] font-medium text-text-primary truncate tracking-wide"
+        >
           {{ title }}
         </p>
         <div class="w-full flex text-xs text-text-secondary">
@@ -112,7 +114,7 @@ function onItemClick() {
 
       <!-- Название + описание + дата -->
       <div class="flex-1 min-w-0">
-        <p class="text-sm font-medium text-text-primary truncate">
+        <p class="text-sm font-medium text-text-primary tracking-wide truncate">
           {{ title }}
         </p>
         <div class="w-full flex text-xs text-text-secondary mt-0.5">

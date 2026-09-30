@@ -3,14 +3,16 @@
  * @module app/pages/analytics
  * @fileoverview Экран подробной аналитики и отчетов
  * @description
- * Отображает графики и детальную сводку по категориям расходов.
+ * Отображает графики динамики, прогноз расходов, сводку доходов и расходов,
+ * а также список категорий с прогрессом выполнения лимитов трат.
  * ---
  * ### Логика работы:
- * 1. Выбор периода (Неделя, Месяц, 3 Месяца).
- * 2. Расчет данных для графиков и списка категорий (`useAnalyticsData`).
- * 3. Генерация текстовых инсайтов (`useAnalyticsInsights`).
+ * 1. Выбор периода анализа (Неделя, Месяц, 3 Месяца).
+ * 2. Загрузка установленных лимитов трат по категориям (`useCategoryGoals`).
+ * 3. Расчет агрегированных данных, прогноза и распределения трат (`useAnalyticsData`).
+ * 4. Предоставление детального модального окна для выбранной категории (`CategoryAnalyticsModal`).
  */
-import { ref } from "vue";
+import { ref, onMounted } from "vue";
 import { TrendingUp, TrendingDown } from "@lucide/vue";
 import { formatAmount } from "~/utils/format";
 
@@ -23,6 +25,12 @@ const {
   prevPeriodLabel,
   monthsLabel,
 } = useAnalyticsPeriod();
+
+const { fetchGoals } = useCategoryGoals();
+
+onMounted(() => {
+  fetchGoals();
+});
 
 const {
   pending,
@@ -82,12 +90,10 @@ const closeCategoryAnalytics = () => {
   <div class="flex flex-col gap-5">
     <!-- Шапка -->
     <div class="flex flex-col text-center mt-2">
-      <h1 class="text-text-primary text-2xl font-black tracking-tight">
+      <h1 class="text-text-primary text-2xl font-bold tracking-wide">
         Аналитика
       </h1>
-      <p class="text-text-secondary text-xs mt-1">
-        Сводка расходов по периодам
-      </p>
+      <p class="text-text-secondary text-xs">Сводка расходов по периодам</p>
     </div>
 
     <!-- Селектор периодов -->
@@ -145,12 +151,12 @@ const closeCategoryAnalytics = () => {
         <div class="flex flex-col gap-2 flex-1">
           <div class="flex flex-col gap-px">
             <span
-              class="text-text-secondary text-[11px] font-bold uppercase tracking-wide"
+              class="text-text-secondary text-[11px] font-bold uppercase tracking-wider"
             >
               Средний чек
             </span>
             <span
-              class="text-text-primary text-base font-extrabold tracking-tighter"
+              class="text-text-primary text-base font-extrabold tracking-tight"
             >
               {{ formatAmount(avgDaily)
               }}<span class="text-xs font-bold text-text-secondary">/день</span>
@@ -197,7 +203,7 @@ const closeCategoryAnalytics = () => {
       <GlassCard class="p-5 flex flex-col gap-1">
         <div class="flex justify-between items-center">
           <h2
-            class="text-text-primary font-bold text-sm uppercase tracking-wide"
+            class="text-text-primary font-bold text-sm uppercase tracking-wider"
           >
             Динамика расходов
           </h2>
@@ -208,7 +214,7 @@ const closeCategoryAnalytics = () => {
       <!-- Топ категорий -->
       <div class="flex flex-col gap-3 mt-2">
         <h2
-          class="text-text-primary font-bold text-sm uppercase tracking-wide px-1"
+          class="text-text-primary font-bold text-sm uppercase tracking-wider px-1"
         >
           По категориям
         </h2>

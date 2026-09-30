@@ -69,7 +69,9 @@ export function toSafeDate(input?: Date | string | number | null): Date {
  * formatDateISO() // "2026-09-26"
  * formatDateISO(new Date(2026, 8, 5)) // "2026-09-05"
  */
-export function formatDateISO(dateInput?: Date | string | number | null): string {
+export function formatDateISO(
+  dateInput?: Date | string | number | null,
+): string {
   const date = toSafeDate(dateInput);
   return format(date, "yyyy-MM-dd");
 }
@@ -77,21 +79,27 @@ export function formatDateISO(dateInput?: Date | string | number | null): string
 /**
  * Возвращает число месяца (1..31).
  */
-export function getDayOfMonth(dateInput?: Date | string | number | null): number {
+export function getDayOfMonth(
+  dateInput?: Date | string | number | null,
+): number {
   return getDate(toSafeDate(dateInput));
 }
 
 /**
  * Возвращает индекс месяца (0..11, где 0 — январь, 11 — декабрь).
  */
-export function getMonthIndex(dateInput?: Date | string | number | null): number {
+export function getMonthIndex(
+  dateInput?: Date | string | number | null,
+): number {
   return getMonth(toSafeDate(dateInput));
 }
 
 /**
  * Возвращает порядковый номер месяца (1..12, где 1 — январь, 12 — декабрь).
  */
-export function getMonthNumber(dateInput?: Date | string | number | null): number {
+export function getMonthNumber(
+  dateInput?: Date | string | number | null,
+): number {
   return getMonth(toSafeDate(dateInput)) + 1;
 }
 
@@ -105,21 +113,27 @@ export function getYear(dateInput?: Date | string | number | null): number {
 /**
  * Возвращает общее количество дней в месяце (28, 29, 30, 31).
  */
-export function getDaysInMonthCount(dateInput?: Date | string | number | null): number {
+export function getDaysInMonthCount(
+  dateInput?: Date | string | number | null,
+): number {
   return getDaysInMonth(toSafeDate(dateInput));
 }
 
 /**
  * Возвращает количество прошедших дней в месяце (1..31).
  */
-export function getDaysPassedInMonth(dateInput?: Date | string | number | null): number {
+export function getDaysPassedInMonth(
+  dateInput?: Date | string | number | null,
+): number {
   return getDate(toSafeDate(dateInput));
 }
 
 /**
  * Возвращает количество оставшихся дней в месяце (включая сегодня, минимум 1).
  */
-export function getDaysLeftInMonth(dateInput?: Date | string | number | null): number {
+export function getDaysLeftInMonth(
+  dateInput?: Date | string | number | null,
+): number {
   const date = toSafeDate(dateInput);
   return Math.max(1, getDaysInMonth(date) - getDate(date) + 1);
 }
@@ -207,21 +221,27 @@ export function getUserLocalDateISO(
 /**
  * Проверяет, совпадает ли месяц и год переданной даты с текущим моментом.
  */
-export function isCurrentMonth(dateInput?: Date | string | number | null): boolean {
+export function isCurrentMonth(
+  dateInput?: Date | string | number | null,
+): boolean {
   return isSameMonth(toSafeDate(dateInput), getNow());
 }
 
 /**
  * Проверяет, совпадает ли год переданной даты с текущим годом.
  */
-export function isCurrentYear(dateInput?: Date | string | number | null): boolean {
+export function isCurrentYear(
+  dateInput?: Date | string | number | null,
+): boolean {
   return getYear(dateInput) === getYear(getNow());
 }
 
 /**
  * Проверяет, приходится ли дата на сегодняшний день.
  */
-export function isCurrentDay(dateInput?: Date | string | number | null): boolean {
+export function isCurrentDay(
+  dateInput?: Date | string | number | null,
+): boolean {
   return isToday(toSafeDate(dateInput));
 }
 
@@ -231,7 +251,9 @@ export function isCurrentDay(dateInput?: Date | string | number | null): boolean
  * @example
  * formatLastDayOfMonth(new Date(2026, 8, 1)) // "30 сентября"
  */
-export function formatLastDayOfMonth(dateInput?: Date | string | number | null): string {
+export function formatLastDayOfMonth(
+  dateInput?: Date | string | number | null,
+): string {
   const lastDay = endOfMonth(toSafeDate(dateInput));
   return format(lastDay, "d MMMM", { locale: ru });
 }
@@ -242,7 +264,9 @@ export function formatLastDayOfMonth(dateInput?: Date | string | number | null):
  * @example
  * formatWeekdayAndDate(new Date()) // "суббота, 26 сентября"
  */
-export function formatWeekdayAndDate(dateInput?: Date | string | number | null): string {
+export function formatWeekdayAndDate(
+  dateInput?: Date | string | number | null,
+): string {
   const date = toSafeDate(dateInput);
   return format(date, "EEEE, d MMMM", { locale: ru });
 }
@@ -253,7 +277,9 @@ export function formatWeekdayAndDate(dateInput?: Date | string | number | null):
  * @example
  * formatMonthYear(new Date(2026, 8, 1)) // "Сентябрь 2026"
  */
-export function formatMonthYear(dateInput?: Date | string | number | null): string {
+export function formatMonthYear(
+  dateInput?: Date | string | number | null,
+): string {
   const date = toSafeDate(dateInput);
   const formatted = format(date, "LLLL yyyy", { locale: ru });
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
@@ -275,24 +301,26 @@ const RUSSIAN_MONTHS_DATIVE = [
 ] as const;
 
 const RUSSIAN_MONTHS_PREPOSITIONAL = [
-  "в январе",
-  "в феврале",
-  "в марте",
-  "в апреле",
-  "в мае",
-  "в июне",
-  "в июле",
-  "в августе",
-  "в сентябре",
-  "в октябре",
-  "в ноябре",
-  "в декабре",
+  "январе",
+  "феврале",
+  "марте",
+  "апреле",
+  "мае",
+  "июне",
+  "июле",
+  "августе",
+  "сентябре",
+  "октябре",
+  "ноябре",
+  "декабре",
 ] as const;
 
 /**
  * Возвращает название месяца в дательном падеже с предлогом "к" (например, "к сентябрю").
  */
-export function formatMonthDative(dateInput?: Date | string | number | null): string {
+export function formatMonthDative(
+  dateInput?: Date | string | number | null,
+): string {
   const monthIdx = getMonthIndex(dateInput);
   return RUSSIAN_MONTHS_DATIVE[monthIdx] ?? "к прошлому";
 }
@@ -300,7 +328,9 @@ export function formatMonthDative(dateInput?: Date | string | number | null): st
 /**
  * Возвращает название месяца в предложном падеже с предлогом "в" (например, "в сентябре").
  */
-export function formatMonthPrepositional(dateInput?: Date | string | number | null): string {
+export function formatMonthPrepositional(
+  dateInput?: Date | string | number | null,
+): string {
   const monthIdx = getMonthIndex(dateInput);
   return RUSSIAN_MONTHS_PREPOSITIONAL[monthIdx] ?? "";
 }
@@ -308,7 +338,9 @@ export function formatMonthPrepositional(dateInput?: Date | string | number | nu
 /**
  * Форматирует краткую дату (например "26 сен").
  */
-export function formatShortDayMonth(dateInput?: Date | string | number | null): string {
+export function formatShortDayMonth(
+  dateInput?: Date | string | number | null,
+): string {
   const date = toSafeDate(dateInput);
   return format(date, "d MMM", { locale: ru });
 }
@@ -316,7 +348,9 @@ export function formatShortDayMonth(dateInput?: Date | string | number | null): 
 /**
  * Форматирует краткое название месяца (например "сен").
  */
-export function formatShortMonth(dateInput?: Date | string | number | null): string {
+export function formatShortMonth(
+  dateInput?: Date | string | number | null,
+): string {
   const date = toSafeDate(dateInput);
   return format(date, "LLL", { locale: ru });
 }
@@ -344,7 +378,9 @@ export function formatDisplayDate(
 /**
  * Форматирует дату и время (например "26 сен, 14:30") для истории уведомлений.
  */
-export function formatDateTime(dateInput: Date | string | number | null | undefined): string {
+export function formatDateTime(
+  dateInput: Date | string | number | null | undefined,
+): string {
   if (!dateInput) return "";
   const date = toSafeDate(dateInput);
   return format(date, "dd MMM, HH:mm", { locale: ru });
@@ -353,7 +389,10 @@ export function formatDateTime(dateInput: Date | string | number | null | undefi
 /**
  * Вычисляет дату смещения на N дней назад в формате YYYY-MM-DD.
  */
-export function getPastDateISO(daysAgo: number, baseDate?: Date | string | number): string {
+export function getPastDateISO(
+  daysAgo: number,
+  baseDate?: Date | string | number,
+): string {
   const base = toSafeDate(baseDate);
   return formatDateISO(subDays(base, daysAgo));
 }
@@ -361,14 +400,20 @@ export function getPastDateISO(daysAgo: number, baseDate?: Date | string | numbe
 /**
  * Добавляет указанное количество дней к дате.
  */
-export function addDaysSafe(dateInput: Date | string | number | null | undefined, days: number): Date {
+export function addDaysSafe(
+  dateInput: Date | string | number | null | undefined,
+  days: number,
+): Date {
   return addDays(toSafeDate(dateInput), days);
 }
 
 /**
  * Вычитает указанное количество дней из даты.
  */
-export function subDaysSafe(dateInput: Date | string | number | null | undefined, days: number): Date {
+export function subDaysSafe(
+  dateInput: Date | string | number | null | undefined,
+  days: number,
+): Date {
   return subDays(toSafeDate(dateInput), days);
 }
 
@@ -389,14 +434,18 @@ export function getPrevMonth(dateInput?: Date | string | number | null): Date {
 /**
  * Возвращает дату начала месяца (00:00:00).
  */
-export function startOfMonthSafe(dateInput?: Date | string | number | null): Date {
+export function startOfMonthSafe(
+  dateInput?: Date | string | number | null,
+): Date {
   return startOfMonth(toSafeDate(dateInput));
 }
 
 /**
  * Возвращает дату конца месяца (23:59:59.999).
  */
-export function endOfMonthSafe(dateInput?: Date | string | number | null): Date {
+export function endOfMonthSafe(
+  dateInput?: Date | string | number | null,
+): Date {
   return endOfMonth(toSafeDate(dateInput));
 }
 
