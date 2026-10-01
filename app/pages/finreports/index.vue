@@ -175,7 +175,10 @@ const currentLabel = computed(() =>
           size="md"
         />
         <!-- Поисковая строка -->
-        <div class="relative flex items-center w-full">
+        <div
+          v-if="filteredTransactions.length > 10"
+          class="relative flex items-center w-full"
+        >
           <GlassInput
             v-model="searchQuery"
             type="text"
