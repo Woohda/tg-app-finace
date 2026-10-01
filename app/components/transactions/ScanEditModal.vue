@@ -118,7 +118,7 @@ const save = () => {
 
       <div class="w-full flex gap-3">
         <GlassInput
-          v-model="localItem.date"
+          :v-model="formatDate(localItem.date)"
           type="date"
           :icon="Calendar"
           label="Дата"
