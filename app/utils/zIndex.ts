@@ -38,6 +38,7 @@ export const Z_INDEX = {
   MODAL_CONFIRM: 90,
   CATEGORY_DELETE: 90,
   SCAN_EDIT: 90,
+  DATE_PICKER: 95,
 
   // Системные полноэкранные оверлеи
   LOADER: 100,

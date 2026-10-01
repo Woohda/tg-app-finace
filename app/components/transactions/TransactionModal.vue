@@ -17,7 +17,7 @@
 import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 
-import { Calendar, RussianRuble, Camera } from "@lucide/vue";
+import { RussianRuble, Camera } from "@lucide/vue";
 import { transactionSchema } from "~/types/validate";
 import { parseAmount } from "~/utils/format";
 import { formatZodError } from "~/utils/zod";
@@ -182,7 +182,7 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
       />
 
       <!-- Date -->
-      <GlassInput v-model="date" type="date" label="Дата" :icon="Calendar" />
+      <GlassDatePicker v-model="date" label="Дата" />
 
       <!-- Name -->
       <GlassInput
