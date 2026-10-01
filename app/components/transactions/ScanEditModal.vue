@@ -62,6 +62,8 @@ const filteredCategories = computed(() => {
   return props.categories.filter((c) => c.type === localItem.value!.type);
 });
 
+const formattedDate = computed(() => formatDate(props.item?.date));
+
 const save = () => {
   if (localItem.value) {
     if (localItem.value.name) {
@@ -118,7 +120,7 @@ const save = () => {
 
       <div class="w-full flex gap-3">
         <GlassInput
-          :v-model="formatDate(localItem.date)"
+          v-model="formattedDate"
           type="date"
           :icon="Calendar"
           label="Дата"

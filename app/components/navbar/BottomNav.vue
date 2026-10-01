@@ -51,68 +51,96 @@ function isItemActive(to: string): boolean {
 }
 
 const { openModal } = useTransactionModal();
+const isLoading = useGlobalLoading();
 </script>
 
 <template>
-  <!-- Защитная подложка. -->
-  <div
-    class="absolute inset-x-0 bottom-0 pointer-events-auto bg-linear-to-t from-white/50 to-transparent blur-sm"
-    :style="{
-      zIndex: Z_INDEX.BOTTOM_NAV - 1,
-      height: 'calc(2rem + env(safe-area-inset-bottom, 0px))',
-    }"
-    aria-hidden="true"
-  />
-
-  <div
-    class="absolute left-1/2 -translate-x-1/2 w-full max-w-97 px-2.75 pointer-events-none transition-opacity duration-200"
-    :style="{
-      zIndex: Z_INDEX.BOTTOM_NAV,
-      bottom: 'calc(1rem + env(safe-area-inset-bottom))',
-    }"
-  >
-    <nav
-      aria-label="Основная навигация"
-      class="relative h-19 glass-milky rounded-[38px] px-4 flex items-center justify-between pointer-events-auto"
+  <Transition name="nav-slide" appear>
+    <div
+      v-if="!isLoading"
+      class="absolute inset-x-0 bottom-0 pointer-events-none"
+      :style="{ zIndex: Z_INDEX.BOTTOM_NAV }"
     >
-      <!-- Левый блок навигации -->
-      <div class="flex items-center gap-px">
-        <BottomNavItem
-          v-for="item in leftItems"
-          :key="item.name"
-          :to="item.to"
-          :icon="item.icon"
-          :label="item.label"
-          :is-active="isItemActive(item.to)"
-        />
-      </div>
+      <!-- Защитная подложка. -->
+      <div
+        class="absolute inset-x-0 bottom-0 pointer-events-auto bg-linear-to-t from-white/50 to-transparent blur-sm"
+        :style="{
+          zIndex: -1,
+          height: 'calc(2rem + env(safe-area-inset-bottom, 0px))',
+        }"
+        aria-hidden="true"
+      />
 
-      <!-- Центральная кнопка (Добавить транзакцию) -->
-      <div class="absolute left-1/2 -top-5 -translate-x-1/2">
-        <!-- Выпуклая матовая кнопка с блюром -->
-        <GlassButton
-          type="button"
-          variant="soft"
-          class="size-17 rounded-full flex items-center justify-center text-text-accent text-4xl font-light active:scale-90 transition-transform pointer-events-auto outline-none a11y-focus backdrop-blur-3xl"
-          style="background-color: rgba(242, 242, 242, 0.9)"
-          aria-label="Добавить операцию"
-          @click="openModal()"
+      <div
+        class="absolute left-1/2 -translate-x-1/2 w-full max-w-97 px-2.75 pointer-events-none transition-opacity duration-200"
+        :style="{
+          bottom: 'calc(1rem + env(safe-area-inset-bottom))',
+        }"
+      >
+        <nav
+          aria-label="Основная навигация"
+          class="relative h-19 glass-milky rounded-[38px] px-4 flex items-center justify-between pointer-events-auto"
         >
-          <Plus :stroke-width="2.5" />
-        </GlassButton>
-      </div>
+          <!-- Левый блок навигации -->
+          <div class="flex items-center gap-px">
+            <BottomNavItem
+              v-for="item in leftItems"
+              :key="item.name"
+              :to="item.to"
+              :icon="item.icon"
+              :label="item.label"
+              :is-active="isItemActive(item.to)"
+            />
+          </div>
 
-      <!-- Правый блок навигации -->
-      <div class="flex items-center gap-px">
-        <BottomNavItem
-          v-for="item in rightItems"
-          :key="item.name"
-          :to="item.to"
-          :icon="item.icon"
-          :label="item.label"
-          :is-active="isItemActive(item.to)"
-        />
+          <!-- Центральная кнопка (Добавить транзакцию) -->
+          <div class="absolute left-1/2 -top-5 -translate-x-1/2">
+            <!-- Выпуклая матовая кнопка с блюром -->
+            <GlassButton
+              type="button"
+              variant="soft"
+              class="size-17 rounded-full flex items-center justify-center text-text-accent text-4xl font-light active:scale-90 transition-transform pointer-events-auto outline-none a11y-focus backdrop-blur-3xl"
+              style="background-color: rgba(242, 242, 242, 0.9)"
+              aria-label="Добавить операцию"
+              @click="openModal()"
+            >
+              <Plus :stroke-width="2.5" />
+            </GlassButton>
+          </div>
+
+          <!-- Правый блок навигации -->
+          <div class="flex items-center gap-px">
+            <BottomNavItem
+              v-for="item in rightItems"
+              :key="item.name"
+              :to="item.to"
+              :icon="item.icon"
+              :label="item.label"
+              :is-active="isItemActive(item.to)"
+            />
+          </div>
+        </nav>
       </div>
-    </nav>
-  </div>
+    </div>
+  </Transition>
 </template>
+
+<style scoped>
+.nav-slide-enter-active {
+  transition:
+    transform 0.4s cubic-bezier(0.16, 1, 0.3, 1) 0.1s,
+    opacity 0.3s ease 0.1s;
+}
+
+.nav-slide-leave-active {
+  transition:
+    transform 0.25s ease-in,
+    opacity 0.2s ease;
+}
+
+.nav-slide-enter-from,
+.nav-slide-leave-to {
+  transform: translateY(180px);
+  opacity: 0;
+}
+</style>
