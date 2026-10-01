@@ -93,7 +93,7 @@ const progress = computed<CategoryProgress>(() => {
             {{ stat.categoryName }}
           </span>
           <span class="text-[11px] text-text-secondary">{{
-            `${stat.percent}% от расходов за месяц`
+            `Доля в расходах: ${stat.percent}%`
           }}</span>
         </div>
       </div>
@@ -121,7 +121,7 @@ const progress = computed<CategoryProgress>(() => {
                 ? `${progress.percent}% ${
                     progress.isOverspent ? "• перерасход" : "от цели"
                   }`
-                : `Без цели`
+                : ``
             }}
           </span>
         </div>

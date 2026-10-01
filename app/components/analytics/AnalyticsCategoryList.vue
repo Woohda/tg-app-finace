@@ -41,10 +41,9 @@ const maxAmount = computed(() => {
 
     <div
       v-if="stats.length === 0"
-      class="text-center text-text-secondary text-sm py-4"
+      class="text-center text-text-secondary text-sm py-3"
     >
       Нет трат за этот период
     </div>
   </div>
 </template>
-

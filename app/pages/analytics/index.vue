@@ -175,7 +175,10 @@ const closeCategoryAnalytics = () => {
             </span>
           </div>
 
-          <div v-if="prevTotalSpent > 0" class="flex items-start gap-1.5 mt-px">
+          <div
+            v-if="prevTotalSpent > 0"
+            class="flex items-center gap-1.5 mt-px"
+          >
             <div class="mt-px p-1 rounded-full glass-pill">
               <component
                 :is="isOverspending ? TrendingUp : TrendingDown"
@@ -186,13 +189,13 @@ const closeCategoryAnalytics = () => {
               />
             </div>
             <p
-              class="text-[10px] font-bold leading-tight"
+              class="text-[10px] font-bold leading-tight whitespace-pre-line"
               :class="isOverspending ? 'text-text-accent' : 'text-text-success'"
             >
               {{
                 isOverspending
-                  ? "Тратите быстрее, чем в прошлом месяце"
-                  : "Отличный темп, вы экономите"
+                  ? `Тратите больше,\nчем в прошлом месяце`
+                  : `Отличный темп,\nвы экономите`
               }}
             </p>
           </div>
@@ -212,7 +215,7 @@ const closeCategoryAnalytics = () => {
       </GlassCard>
 
       <!-- Топ категорий -->
-      <div class="flex flex-col gap-3 mt-2">
+      <div class="flex flex-col gap-3">
         <h2
           class="text-text-primary font-bold text-sm uppercase tracking-wider px-1"
         >

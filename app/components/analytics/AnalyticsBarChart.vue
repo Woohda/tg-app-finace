@@ -134,7 +134,7 @@ const labelFontSize = computed(() => {
   <div class="w-full relative select-none">
     <div
       v-if="data.length === 0"
-      class="flex items-center justify-center h-48 text-text-secondary text-sm"
+      class="flex items-center justify-center h-11 text-text-secondary text-sm"
     >
       Нет данных за этот период
     </div>
