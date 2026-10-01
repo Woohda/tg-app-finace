@@ -62,7 +62,7 @@ const filteredCategories = computed(() => {
   return props.categories.filter((c) => c.type === localItem.value!.type);
 });
 
-const formattedDate = computed(() => formatDate(localItem.value?.date));
+const formattedDate = computed(() => formatDate(props.item?.date));
 
 const save = () => {
   if (localItem.value) {
