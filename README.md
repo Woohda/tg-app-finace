@@ -1,75 +1,198 @@
-# Nuxt Minimal Starter
+# 🐶 FINO — Персональный финансовый помощник
 
-Look at the [Nuxt documentation](https://nuxt.com/docs/getting-started/introduction) to learn more.
+> **FINO** — современное приложение для управления личными финансами, созданное как гибридный **Telegram Mini App (TMA)** с полноценной **Web / PWA версией**. Построено на стеке **Nuxt 4**, **Cloudflare Pages/Workers**, **Supabase (PostgreSQL)** и **Google Gemini AI**.
 
-## Setup
+[![Nuxt 4](https://img.shields.io/badge/Nuxt-4.x-00DC82?logo=nuxt.js&logoColor=white)](https://nuxt.com/)
+[![Vue 3](https://img.shields.io/badge/Vue-3.5-4FC08D?logo=vue.js&logoColor=white)](https://vuejs.org/)
+[![Cloudflare Pages](https://img.shields.io/badge/Cloudflare-Pages%20%2F%20Workers-F38020?logo=cloudflare&logoColor=white)](https://pages.cloudflare.com/)
+[![Supabase](https://img.shields.io/badge/Database-Supabase%20PostgreSQL-3ECF8E?logo=supabase&logoColor=white)](https://supabase.com/)
+[![Google Gemini](https://img.shields.io/badge/AI-Google%20Gemini-4285F4?logo=google-gemini&logoColor=white)](https://ai.google.dev/)
+[![Grammy](https://img.shields.io/badge/Telegram%20Bot-Grammy-24A1DE?logo=telegram&logoColor=white)](https://grammy.dev/)
+[![TypeScript](https://img.shields.io/badge/TypeScript-Strict-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 
-Make sure to install dependencies:
+---
 
-```bash
-# npm
-npm install
+## 📌 Содержание
 
-# pnpm
-pnpm install
+- [Обзор проекта](#-обзор-проекта)
+- [Ключевые возможности](#-ключевые-возможности)
+  - [📱 Telegram Mini App и Web/PWA](#-telegram-mini-app-и-webpwa)
+  - [🤖 Умный Telegram-бот (@vfino_bot)](#-умный-telegram-бот-vfinobot)
+  - [📸 AI-сканирование чеков и выписок](#-ai-сканирование-чеков-и-выписок)
+  - [📊 Аналитика, бюджет и цели трат](#-аналитика-бюджет-и-цели-трат)
+  - [💳 Подписки и регулярные платежи](#-подписки-и-регулярные-платежи)
+  - [🏷️ Категории и детальные отчеты](#️-категории-и-детальные-отчеты)
+- [Архитектура и стек технологий](#-архитектура-и-стек-технологий)
+  - [Стек](#стек)
+  - [Принципы безопасности](#принципы-безопасности)
+- [Структура базы данных](#-структура-базы-данных)
+- [Структура репозитория](#-структура-репозитория)
 
-# yarn
-yarn install
+---
 
-# bun
-bun install
+## 🧭 Обзор проекта
+
+Большинство трекеров расходов требуют либо долгого ручного ввода каждой покупки, либо небезопасной привязки банковских данных. **FINO** решает эту проблему комбинацией трёх каналов:
+
+1. **Мгновенный ввод текстом прямо в Telegram-чат**: написали боту `Лента 2500` или `Кофе 180` — операция моментально занесена в нужную категорию.
+2. **AI-распознавание чеков и выписок**: загрузили скриншот банковской выписки или фото бумажного чека — мультимодальная модель Google Gemini распознает позиции, нормализует даты и привяжет к вашим категориям.
+3. **Полноценный интерактивный интерфейс**: открывается прямо в Telegram как Mini App или в браузере Safari/Chrome (PWA) с красивым Glassmorphism-дизайном, графиками, аналитикой и контролем бюджета.
+
+---
+
+## ✨ Ключевые возможности
+
+### 📱 Telegram Mini App и Web/PWA
+
+- **Нативный мобильный опыт**: оптимизирован под WebView Telegram (поддержка `safe-area-inset`, блокировка случайных закрывающих свайпов `disableVerticalSwipes`, системные шрифты, адаптация под светлую/тёмную тему Telegram).
+- **Полноценная Web-версия (PWA)**: приложение работает в обычном браузере на iPhone (Safari) и Android (Chrome) без рамок Telegram с возможностью установки на экран «Домой».
+- **Бесшовный вход**: моментальная авторизация по персональной ссылке через бота (`/web`) с 10-минутным подписанным токеном без необходимости вводить логины и пароли.
+
+### 🤖 Умный Telegram-бот (@vfino_bot)
+
+- **Парсинг естественного текста**: понимает форматы `Название Сумма` и `Сумма Название` (например: `Такси 450`, `3200 Озон`, `150,50 Кофе`).
+- **Самообучение категориям**:
+  - Если операция встречается впервые, бот предлагает выбрать категорию через инлайн-кнопки и сохраняет связь.
+  - Если вы измените категорию операции в приложении, бот мгновенно переучивается и в будущем использует выбранную категорию.
+
+### 📸 AI-сканирование чеков и выписок
+
+- **Google Gemini (Vision & Structured Output)**: извлекает название покупок, точную сумму, дату и автоматически подбирает наиболее подходящую категорию из персонального списка пользователя.
+- **Отказоустойчивость**: каскадный перебор моделей (`gemini-2.5-flash-lite` ➔ `gemini-2.5-flash`) и распределение по нескольким API-ключам для гарантированной работы при исчерпании лимитов (Rate Limits / 429).
+- **Безопасность данных (Review Screen)**: распознанные позиции обязательно выводятся на экран предварительного просмотра. Пользователь может отредактировать любую сумму, дату, название или удалить лишние строки перед сохранением в базу.
+
+### 📊 Аналитика, бюджет и цели трат
+
+- **Главный экран (Dashboard)**: остаток средств, доходы и расходы за выбранный месяц, интерактивная круговая диаграмма (Donut Chart) распределения трат.
+- **Общий бюджет**: установка ежемесячного лимита и прогноз темпа расходов до конца месяца.
+- **Цели трат по категориям (Category Spending Goals)**: персональные лимиты по отдельным категориям с цветовой индикацией прогресса и предупреждением о перерасходе.
+- **Динамика расходов**: наглядные графики (Bar Chart) с группировкой по дням и сравнением с прошлым месяцем.
+
+### 💳 Подписки и регулярные платежи
+
+- **Учёт периодических платежей**: сервисы, коммунальные услуги, кредиты или абонементы с фиксацией дня списания.
+- **Умные уведомления в Telegram**: бот присылает напоминания с учётом часового пояса пользователя в комфортное дневное окно (за 3 дня, за 1 день и в день списания).
+- **Внесение в 1 клик**: в день списания бот присылает интерактивную кнопку «Платёж внесён в расходы» — нажатие сразу создает транзакцию в нужной категории.
+
+### 🏷️ Категории и детальные отчеты
+
+- **Кастомные категории**: гибкое создание категорий доходов и расходов с эмодзи-иконками.
+- **Безопасное удаление**: атомарный перенос связанных операций в категорию по умолчанию («Другое») без потери истории.
+- **Финансовые отчеты**: журнал операций с поиском, фильтрацией по типу и датам.
+
+---
+
+## 🏗️ Архитектура и стек технологий
+
+```
+               [ Telegram Client ]          [ Web / Safari / PWA ]
+                        │                               │
+                        ▼                               ▼
+                 Telegram WebApp                Direct HTTPS
+                        │                               │
+                        └───────────────┬───────────────┘
+                                        │
+                                        ▼
+                         [ Cloudflare Pages / Nitro ]
+                       Edge-runtime, Web Crypto API
+                        │               │              │
+       ┌────────────────┘               │              └────────────────┐
+       ▼                                ▼                               ▼
+[ Auth & API ]                  [ Telegram Bot ]               [ AI Recognition ]
+• JWT (jose)                    • Grammy Webhook Engine         • Google Gemini API
+• Telegram initData HMAC        • /web One-time Tickets         • Multi-key failover
+• Zod Validation Boundary       • Inline Callbacks              • Structured JSON Output
+       │                                │                               │
+       └────────────────┬───────────────┴───────────────────────────────┘
+                        │
+                        ▼
+               [ Supabase PostgreSQL ]
+         • users, transactions, categories
+         • budgets, subscriptions, category_goals
+         • Service-Role REST isolation
 ```
 
-## Development Server
+### Стек
 
-Start the development server on `http://localhost:3000`:
+| Компонент            | Технология                                                            | Назначение / Особенности                                           |
+| -------------------- | --------------------------------------------------------------------- | ------------------------------------------------------------------ |
+| **Фреймворк**        | [Nuxt 4](https://nuxt.com/) (Vue 3, Vite)                             | SSR/SPA с пресетом `cloudflare-pages`, высокая скорость отклика    |
+| **Стилизация**       | [Tailwind CSS v4](https://tailwindcss.com/)                           | Glassmorphism-дизайн, плавная адаптация тем оформления             |
+| **UI-компоненты**    | [Reka UI](https://reka-ui.com/) + [Lucide Icons](https://lucide.dev/) | Доступные примитивы, жесты свайпа (`SwipeableRow`), модальные окна |
+| **Графика**          | [Chart.js](https://www.chartjs.org/) + `vue-chartjs`                  | Интерактивные диаграммы расходов и динамика трат                   |
+| **База данных**      | [Supabase](https://supabase.com/) (PostgreSQL)                        | REST-доступ через `@supabase/supabase-js`, строгая изоляция данных |
+| **Telegram Bot**     | [Grammy](https://grammy.dev/)                                         | Вебхук-архитектура, обработка команд, сообщений и callback-кнопок  |
+| **AI OCR**           | [@google/genai](https://www.npmjs.com/package/@google/genai)          | Мультимодальное распознавание чеков через Gemini 2.5 Flash         |
+| **Аутентификация**   | [jose](https://github.com/panva/jose) + Web Crypto                    | Stateless JWT, криптографическая проверка подписи `initData`       |
+| **Валидация**        | [Zod](https://zod.dev/)                                               | Строгая типизация запросов на границе клиент/сервер                |
+| **Среда выполнения** | [Cloudflare Workers](https://workers.cloudflare.com/)                 | Edge-рантайм (без зависимостей от Node-модулей `fs`, `pg` и т.д.)  |
 
-```bash
-# npm
-npm run dev
+### Принципы безопасности
 
-# pnpm
-pnpm dev
+1. **Frontend не доверен**: все права доступа, фильтрация по `user_id` и валидация данных происходят строго на стороне сервера (Nitro).
+2. **Stateless JWT**: токены подписываются секретом `JWT_SECRET` с использованием алгоритма HS256 через Web Crypto API.
+3. **Защита Telegram InitData**: данные инициализации мини-приложения валидируются по алгоритму HMAC-SHA256 с токеном бота. Подделка идентификатора пользователя со стороны клиента невозможна.
+4. **Безопасность Edge**: отсутствие серверных Node-only зависимостей, работа исключительно через Web Standard APIs (`fetch`, `crypto.subtle`).
 
-# yarn
-yarn dev
+---
 
-# bun
-bun run dev
+## 🗄️ Структура базы данных
+
+В Supabase используются следующие основные таблицы:
+
+- **`users`** — аккаунты пользователей (`id` UUID, `telegram_id` BIGINT UNIQUE, `username`, `first_name`, `photo_url`, `timezone`).
+- **`categories`** — категории операций (`id` UUID, `user_id` UUID NULL для системных, `name`, `type` `expense|income`, `icon`).
+- **`transactions`** — финансовые транзакции (`id` UUID, `user_id`, `category_id`, `amount` NUMERIC(12,2), `type`, `date`, `name`).
+- **`budgets`** — ежемесячный общий лимит расходов (`id` UUID, `user_id`, `amount`, `period_date` DATE).
+- **`category_goals`** — персональные месячные цели расходов по категориям (`id` UUID, `user_id`, `category_id`, `target_amount`).
+- **`subscriptions`** — регулярные платежи и подписки (`id` UUID, `user_id`, `name`, `amount`, `day_of_month`, `category_id`, `is_active`, `last_reminded_at`).
+
+---
+
+## 📂 Структура репозитория
+
+```
+tg-app-finace/
+├── app/                          # Клиентская часть Nuxt 4
+│   ├── assets/css/               # Базовые стили и Tailwind
+│   ├── components/               # Vue-компоненты
+│   │   ├── analytics/            # Графики, динамика, цели категорий
+│   │   ├── categories/           # Модалки и списки категорий
+│   │   ├── dashboard/            # Карточки баланса, Donut-диаграмма, бюджет
+│   │   ├── goals/                # Управление целями трат по категориям
+│   │   ├── navbar/               # Нижняя навигационная панель (BottomNav)
+│   │   ├── shared/               # Glass-компоненты (Card, Button, Modal, Input)
+│   │   ├── subscription/         # Компоненты регулярных платежей
+│   │   ├── transactions/         # Формы транзакций и окно верификации скана
+│   │   └── ui/                   # Аватары, тосты, селекторы месяцев
+│   ├── composables/              # Бизнес-логика и реактивное состояние (Pinia/Vue)
+│   ├── layouts/                  # Макеты (default, clean, web)
+│   ├── middleware/               # Клиентские middleware (авторизация, лэйауты)
+│   ├── pages/                    # Страницы роутера (дашборд, аналитика, скан и др.)
+│   ├── plugins/                  # Плагины (Telegram WebApp SDK, ошибки)
+│   ├── types/                    # Описания типов БД и Zod-схемы
+│   └── utils/                    # Хелперы форматирования дат, чисел и валют
+├── server/                       # Серверная часть (Nitro / Edge API)
+│   ├── api/
+│   │   ├── ai/                   # Эндпоинт распознавания чеков через Gemini
+│   │   ├── auth/                 # Авторизация (Telegram initData, Web Ticket, Dev)
+│   │   ├── bot/                  # Обработка вебхука Telegram, логов и настройка
+│   │   ├── budgets/              # Управление бюджетом
+│   │   ├── categories/           # CRUD категорий
+│   │   ├── category-goals/       # Управление лимитами по категориям
+│   │   ├── cron/                 # Крон утренних напоминаний о платежах
+│   │   ├── subscriptions/        # CRUD подписок
+│   │   └── transactions/         # CRUD и массовая вставка транзакций
+│   └── utils/                    # Серверные утилиты (БД, JWT, обработчики бота)
+├── scripts/                      # Служебные CLI-скрипты (массовая рассылка и т.д.)
+├── public/                       # Статические файлы, манифест PWA, иконки
+├── nuxt.config.ts                # Конфигурация Nuxt 4 и Cloudflare Nitro
+├── tailwind.config.ts            # Конфигурация стилей
+└── package.json                  # Зависимости и npm-скрипты
 ```
 
-## Production
+---
 
-Build the application for production:
-
-```bash
-# npm
-npm run build
-
-# pnpm
-pnpm build
-
-# yarn
-yarn build
-
-# bun
-bun run build
-```
-
-Locally preview production build:
-
-```bash
-# npm
-npm run preview
-
-# pnpm
-pnpm preview
-
-# yarn
-yarn preview
-
-# bun
-bun run preview
-```
-
-Check out the [deployment documentation](https://nuxt.com/docs/getting-started/deployment) for more information.
+<div align="center">
+  <sub>Разработано с заботой о личных финансах и уважением к вашим данным 🐶</sub>
+</div>
