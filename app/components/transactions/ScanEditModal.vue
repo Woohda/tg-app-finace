@@ -12,7 +12,7 @@
  * 3. Возвращает измененный объект через событие `save`.
  */
 import { computed, ref, watch } from "vue";
-import { Calendar, RussianRuble } from "@lucide/vue";
+import { RussianRuble } from "@lucide/vue";
 import type { Database } from "~/types/database.types";
 import { transactionSchema } from "~/types/validate";
 import { parseAmount } from "~/utils/format";
@@ -61,8 +61,6 @@ const filteredCategories = computed(() => {
   if (!localItem.value) return [];
   return props.categories.filter((c) => c.type === localItem.value!.type);
 });
-
-const formattedDate = computed(() => formatDate(props.item?.date));
 
 const save = () => {
   if (localItem.value) {
@@ -119,12 +117,11 @@ const save = () => {
       />
 
       <div class="w-full flex gap-3">
-        <GlassInput
-          v-model="formattedDate"
-          type="date"
-          :icon="Calendar"
+        <GlassDatePicker
+          v-model="localItem.date"
           label="Дата"
-          class="w-38 shrink-0"
+          date-format="numeric"
+          class="max-w-37"
         />
         <GlassInput
           v-model="localItem.amount"
@@ -134,7 +131,6 @@ const save = () => {
           label="Сумма"
           placeholder="0.00"
           :icon="RussianRuble"
-          class="flex-1 min-w-0"
         />
       </div>
 
