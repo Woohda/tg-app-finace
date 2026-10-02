@@ -3,20 +3,34 @@
  * @module app/components/analytics/CategoryAnalyticsModal
  * @fileoverview Детальная аналитика по одной категории
  * @description
- * Модальное окно, показывающее сводку расходов, управление лимитом трат,
- * динамику расходов на графике и список операций по выбранной категории.
+ * Модальное окно, показывающее сводку расходов, управление лимитом трат (только для месяца),
+ * динамику расходов на графике и список операций по выбранной категории за выбранный период.
  * ---
  * ### Логика работы:
  * 1. Получает `categoryId` и `period` из пропсов.
- * 2. Запрашивает агрегированные данные категории через `useAnalyticsData`.
- * 3. Фильтрует операции категории за текущий месяц (`filterCurrentMonthCategoryTransactions`).
- * 4. Предоставляет интерфейс управления целью через `CategoryGoalCard`.
- * 5. Отрисовывает график динамики трат `AnalyticsBarChart` и список операций за месяц.
+ * 2. Синхронизирует даты интервала через `useAnalyticsPeriod(localPeriod)`.
+ * 3. Запрашивает агрегированные данные категории через `useAnalyticsData`.
+ * 4. Отображает операции категории за выбранный период (`currentExpenses`).
+ * 5. Отображает цель на месяц `CategoryGoalCard` только во вкладке «Месяц» (`1M`).
+ * 6. Отрисовывает график динамики трат `AnalyticsBarChart` строго за выбранный период.
  */
-import { toRef, computed, ref } from "vue";
-import { TrendingUp, TrendingDown } from "@lucide/vue";
+import { toRef, computed, ref, watch, onMounted, onUnmounted } from "vue";
+import {
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  CalendarClock,
+  RotateCcw,
+} from "@lucide/vue";
 import type { AnalyticsPeriodType } from "~/composables/useAnalyticsPeriod";
 import { formatAmount } from "~/utils/format";
+import {
+  toSafeDate,
+  formatMonthYear,
+  formatPreviousMonth,
+  formatMonthPrepositional,
+} from "~/utils/date";
+import { Z_INDEX } from "~/utils/zIndex";
 import CategoryGoalCard from "~/components/goals/CategoryGoalCard.vue";
 
 const props = defineProps<{
@@ -27,35 +41,148 @@ const props = defineProps<{
 
 const emit = defineEmits(["close"]);
 
-const { startDate, endDate, prevStartDate, prevEndDate } = useAnalyticsPeriod();
-const {
-  transactions,
-  pending: pendingTransactions,
-  deleteTransaction,
-} = useTransactions();
-const { openModal } = useTransactionModal();
-
 const localPeriod = toRef(props, "period");
 
-const { pending, totalSpent, percentChange, chartData, categoryStats } =
-  useAnalyticsData(
-    localPeriod,
-    startDate,
-    endDate,
-    prevStartDate,
-    prevEndDate,
-    toRef(props, "categoryId"),
-  );
+const { startDate, endDate, prevStartDate, prevEndDate, prevPeriodLabel } =
+  useAnalyticsPeriod(localPeriod);
 
-const filteredTransactions = computed(() =>
-  filterCurrentMonthCategoryTransactions(transactions.value, props.categoryId),
+const { deleteTransaction } = useTransactions();
+const { openModal } = useTransactionModal();
+
+const {
+  pending,
+  totalSpent,
+  prevTotalSpent,
+  currentExpenses,
+  prevExpenses,
+  percentChange,
+  chartData,
+  prevChartData,
+  categoryStats,
+} = useAnalyticsData(
+  localPeriod,
+  startDate,
+  endDate,
+  prevStartDate,
+  prevEndDate,
+  toRef(props, "categoryId"),
 );
 
-const monthSpent = computed(() => {
-  return filteredTransactions.value.reduce(
-    (sum, tx) => sum + (tx.amount || 0),
-    0,
+const isPrevPeriodChart = ref(false);
+const isOperationsLoading = ref(false);
+
+const INITIAL_PAGE_SIZE = 10;
+const displayedLimit = ref(INITIAL_PAGE_SIZE);
+
+watch([() => props.isOpen, () => props.categoryId, localPeriod], () => {
+  isPrevPeriodChart.value = false;
+  displayedLimit.value = INITIAL_PAGE_SIZE;
+  isOperationsLoading.value = false;
+});
+
+watch(isPrevPeriodChart, () => {
+  isOperationsLoading.value = true;
+  displayedLimit.value = INITIAL_PAGE_SIZE;
+  setTimeout(() => {
+    isOperationsLoading.value = false;
+  }, 220);
+});
+
+const prevPeriodName = computed(() => {
+  if (localPeriod.value === "1M") {
+    return formatMonthYear(prevStartDate.value);
+  }
+  if (localPeriod.value === "1W") {
+    return "Прошлая неделя";
+  }
+  if (localPeriod.value === "3M") {
+    return "Прошлые 3 месяца";
+  }
+  if (localPeriod.value === "6M") {
+    return "Прошлые 6 месяцев";
+  }
+  if (localPeriod.value === "1Y") {
+    return "Прошлый год";
+  }
+  return "Прошлый период";
+});
+
+const prevPeriodButtonName = computed(() => {
+  switch (localPeriod.value) {
+    case "1M":
+      return `за ${formatPreviousMonth()}`;
+    case "1W":
+      return "за прошлую неделю";
+    case "3M":
+      return "за прошлые 3 месяца";
+    case "6M":
+      return "за прошлые 6 месяцев";
+    case "1Y":
+      return "за прошлый год";
+    default:
+      return "за прошлый период";
+  }
+});
+
+const activeTransactions = computed(() => {
+  const source = isPrevPeriodChart.value
+    ? prevExpenses.value
+    : currentExpenses.value;
+  return [...source].sort(
+    (a, b) => toSafeDate(b.date).getTime() - toSafeDate(a.date).getTime(),
   );
+});
+
+const displayedTransactions = computed(() =>
+  activeTransactions.value.slice(0, displayedLimit.value),
+);
+
+const hasMoreTransactions = computed(
+  () => displayedLimit.value < activeTransactions.value.length,
+);
+
+const remainingCount = computed(
+  () => activeTransactions.value.length - displayedLimit.value,
+);
+
+const loadMore = () => {
+  displayedLimit.value += INITIAL_PAGE_SIZE;
+};
+
+const loadMoreTriggerRef = ref<HTMLElement | null>(null);
+let observer: IntersectionObserver | null = null;
+
+onMounted(() => {
+  if (typeof IntersectionObserver !== "undefined") {
+    observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0]?.isIntersecting &&
+          hasMoreTransactions.value &&
+          !isOperationsLoading.value
+        ) {
+          loadMore();
+        }
+      },
+      { rootMargin: "120px" },
+    );
+  }
+});
+
+watch(loadMoreTriggerRef, (el) => {
+  if (observer) {
+    observer.disconnect();
+    if (el) {
+      observer.observe(el);
+    }
+  }
+});
+
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
 });
 
 const deletingId = ref<string | null>(null);
@@ -70,27 +197,84 @@ function handleEdit(id: string) {
   openModal(id);
 }
 
-const prevPeriodLabel = computed(() => {
-  switch (localPeriod.value) {
-    case "1W":
-      return "К прошлой неделе";
-    case "1M":
-      return "К прошлому месяцу";
-    case "3M":
-      return "К прошлым 3 мес";
-    case "6M":
-      return "К прошлому полугодию";
-    case "1Y":
-      return "К прошлому году";
-    default:
-      return "К прошлому";
-  }
+const trendColor = computed(() => {
+  if (percentChange.value === 0) return "text-text-secondary";
+  return percentChange.value > 0 ? "text-text-accent" : "text-text-success";
+});
+
+const trendIcon = computed(() => {
+  if (percentChange.value === 0) return Minus;
+  return percentChange.value > 0 ? TrendingUp : TrendingDown;
 });
 
 // Получаем инфу о категории из stats (там будет ровно 1 элемент)
 const currentCategory = computed(() => {
   if (categoryStats.value.length > 0) return categoryStats.value[0];
   return null;
+});
+
+const operationsTitle = computed(() => {
+  if (isPrevPeriodChart.value) {
+    switch (localPeriod.value) {
+      case "1M":
+        return `Операции ${prevPeriodButtonName.value}`;
+      case "1W":
+        return "Операции за прошлую неделю";
+      case "3M":
+        return "Операции за прошлые 3 месяца";
+      case "6M":
+        return "Операции за прошлые 6 месяцев";
+      case "1Y":
+        return "Операции за прошлый год";
+      default:
+        return "Операции за прошлый период";
+    }
+  }
+
+  switch (localPeriod.value) {
+    case "1W":
+      return "Операции за неделю";
+    case "3M":
+      return "Операции за 3 месяца";
+    case "6M":
+      return "Операции за 6 месяцев";
+    case "1Y":
+      return "Операции за год";
+    default:
+      return "Операции за месяц";
+  }
+});
+
+const emptyTransactionsText = computed(() => {
+  if (isPrevPeriodChart.value) {
+    switch (localPeriod.value) {
+      case "1M":
+        return `В ${formatMonthPrepositional(prevStartDate.value)} операций по категории не было`;
+      case "1W":
+        return "На прошлой неделе операций по категории не было";
+      case "3M":
+        return "За прошлые 3 месяца операций по категории не было";
+      case "6M":
+        return "За прошлые полгода операций по категории не было";
+      case "1Y":
+        return "В прошлом году операций по категории не было";
+      default:
+        return "В прошлом периоде операций по категории не было";
+    }
+  }
+
+  switch (localPeriod.value) {
+    case "1W":
+      return "На этой неделе операций по категории ещё не было";
+    case "3M":
+      return "За 3 месяца операций по категории ещё не было";
+    case "6M":
+      return "За полгода операций по категории ещё не было";
+    case "1Y":
+      return "За год операций по категории ещё не было";
+    default:
+      return "В этом месяце операций по категории ещё не было";
+  }
 });
 
 const close = () => emit("close");
@@ -133,7 +317,7 @@ const close = () => emit("close");
 
       <div v-else class="flex flex-col gap-5">
         <!-- Сводка -->
-        <GlassCard class="p-4 flex justify-between items-center">
+        <GlassCard class="p-4 flex justify-between items-start">
           <div class="flex flex-col gap-1">
             <p
               class="text-text-secondary text-[10px] uppercase font-bold tracking-wide"
@@ -146,62 +330,92 @@ const close = () => emit("close");
             >
           </div>
 
-          <div class="flex flex-col items-end gap-1">
+          <div class="flex flex-col items-end gap-1.5">
             <p
               class="text-text-secondary text-[10px] uppercase font-bold tracking-wide"
             >
               {{ prevPeriodLabel }}
             </p>
-            <div class="flex items-center gap-1">
+            <div v-if="prevTotalSpent > 0" class="flex items-center gap-1.5">
               <div class="mt-0.5 p-1 rounded-full glass-pill">
                 <component
-                  :is="percentChange > 0 ? TrendingUp : TrendingDown"
+                  :is="trendIcon"
                   class="w-4 h-4 stroke-2"
-                  :class="
-                    percentChange > 0 ? 'text-text-accent' : 'text-text-success'
-                  "
+                  :class="trendColor"
                 />
               </div>
-              <span
-                class="text-sm mt-1"
-                :class="
-                  percentChange > 0 ? 'text-text-accent' : 'text-text-success'
-                "
-              >
+              <span class="text-sm mt-1" :class="trendColor">
                 {{ percentChange > 0 ? "+" : "" }}{{ percentChange }}%
               </span>
             </div>
+            <span v-else class="text-xs text-text-secondary mt-2 font-medium">
+              Нет данных
+            </span>
           </div>
         </GlassCard>
 
-        <!-- Цель на месяц -->
-        <CategoryGoalCard :category-id="categoryId" :month-spent="monthSpent" />
+        <!-- Цель на месяц (только во вкладке Месяц) -->
+        <CategoryGoalCard
+          v-if="localPeriod === '1M'"
+          :category-id="categoryId"
+          :month-spent="totalSpent"
+        />
 
         <!-- График -->
-        <GlassCard class="p-5 flex flex-col gap-4">
-          <h2
-            class="text-text-secondary font-bold text-sm uppercase tracking-wider"
+        <GlassCard class="flex flex-col gap-3">
+          <div class="flex items-center justify-between">
+            <h2
+              class="text-text-secondary font-bold text-sm uppercase tracking-wider"
+            >
+              Динамика расходов по категории
+            </h2>
+            <span
+              v-if="isPrevPeriodChart"
+              class="text-[10px] text-center font-medium px-2.5 py-0.5 rounded-full bg-accent-start/10 text-text-accent tracking-wide transition-all w-fit"
+            >
+              {{ prevPeriodName }}
+            </span>
+          </div>
+
+          <AnalyticsBarChart
+            :key="isPrevPeriodChart ? 'prev' : 'current'"
+            :data="isPrevPeriodChart ? prevChartData : chartData"
+          />
+
+          <button
+            type="button"
+            class="self-center flex items-center justify-center gap-1.5 py-1.5 px-3.5 rounded-full glass-pill text-text-accent hover:text-text-primary text-xs font-semibold tracking-wide transition-all active:scale-95 cursor-pointer a11y-focus"
+            @click="isPrevPeriodChart = !isPrevPeriodChart"
           >
-            Динамика по категории
-          </h2>
-          <AnalyticsBarChart :data="chartData" />
+            <component
+              :is="isPrevPeriodChart ? RotateCcw : CalendarClock"
+              class="w-3.5 h-3.5"
+            />
+            <span>
+              {{
+                isPrevPeriodChart
+                  ? "Вернуться обратно"
+                  : `Посмотреть ${prevPeriodButtonName}`
+              }}
+            </span>
+          </button>
         </GlassCard>
 
-        <!-- Операции за текущий месяц -->
+        <!-- Операции за текущий или прошлый период -->
         <GlassCard class="p-4 flex flex-col gap-px pb-1">
           <div class="flex justify-between items-center px-1">
             <h3
               class="text-text-secondary font-bold text-xs uppercase tracking-wider"
             >
-              Операции за месяц
+              {{ operationsTitle }}
             </h3>
             <span class="text-text-secondary text-xs font-semibold">
-              {{ filteredTransactions.length }}
+              {{ activeTransactions.length }}
             </span>
           </div>
 
-          <!-- Скелетоны транзакций (загрузка) -->
-          <div v-if="pendingTransactions" class="flex flex-col">
+          <!-- Скелетоны транзакций (загрузка данных или ленивая подгрузка при переключении) -->
+          <div v-if="pending || isOperationsLoading" class="flex flex-col">
             <TransactionSkeletonList
               :count="3"
               mode="list"
@@ -211,11 +425,11 @@ const close = () => emit("close");
 
           <!-- Список транзакций -->
           <div
-            v-else-if="filteredTransactions.length > 0"
+            v-else-if="displayedTransactions.length > 0"
             class="flex flex-col"
           >
             <TransactionItem
-              v-for="tx in filteredTransactions"
+              v-for="tx in displayedTransactions"
               :key="tx.id"
               v-memo="[
                 tx.id,
@@ -237,17 +451,27 @@ const close = () => emit("close");
               @click="handleEdit(tx.id)"
               @delete="handleDelete(tx.id)"
             />
+
+            <!-- Ленивая подгрузка (триггер скролла / кнопка) -->
+            <div
+              v-if="hasMoreTransactions"
+              ref="loadMoreTriggerRef"
+              class="flex flex-col items-center justify-center pt-2.5 pb-1"
+            >
+              <button
+                type="button"
+                class="text-xs font-semibold text-text-accent hover:text-text-primary active:scale-95 transition-all py-1.5 px-4 rounded-full glass-pill cursor-pointer flex items-center gap-1.5 a11y-focus"
+                @click="loadMore"
+              >
+                <span>Показать ещё (ещё {{ remainingCount }})</span>
+              </button>
+            </div>
           </div>
 
           <!-- Пустое состояние при отсутствии трат -->
-          <div
-            v-else
-            class="flex flex-col items-center justify-start text-start pb-5"
-          >
-            <p class="text-text-secondary text-md font-medium">
-              В этом месяце операций по категории ещё не было
-            </p>
-          </div>
+          <p v-else class="text-text-secondary text-xs text-center py-2 px-5">
+            {{ emptyTransactionsText }}
+          </p>
         </GlassCard>
       </div>
     </div>

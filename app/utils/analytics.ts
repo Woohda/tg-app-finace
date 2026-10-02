@@ -17,6 +17,8 @@ import { isSameMonth } from "date-fns";
 import type { Transaction } from "~/composables/useTransactions";
 import type { AnalyticsPeriodType } from "~/composables/useAnalyticsPeriod";
 
+import { toSafeDate } from "./date";
+
 export interface CategoryStat {
   categoryId: string;
   categoryName: string;
@@ -39,6 +41,36 @@ export function calculatePercentChange(
 ): number {
   if (previous === 0) return current > 0 ? 100 : 0;
   return Math.round(((current - previous) / previous) * 100);
+}
+
+/**
+ * Рассчитывает средний дневной показатель с защитой от деления на 0.
+ */
+export function calculateDailyAverage(
+  totalAmount: number,
+  daysCount: number,
+): number {
+  if (totalAmount === 0 || daysCount <= 0) return 0;
+  return Math.round(totalAmount / daysCount);
+}
+
+/**
+ * Вычисляет сумму доходов за период до указанного дня месяца включительно (Month-to-Date).
+ */
+export function calculateMtdIncome(
+  incomes: Transaction[],
+  maxDay: number,
+): number {
+  return incomes
+    .filter((t) => {
+      const match = t.date.match(/^(\d{4})-(\d{2})-(\d{2})/);
+      const day =
+        match && match[3]
+          ? parseInt(match[3], 10)
+          : toSafeDate(t.date).getDate();
+      return day <= maxDay;
+    })
+    .reduce((acc, t) => acc + t.amount, 0);
 }
 
 /**
