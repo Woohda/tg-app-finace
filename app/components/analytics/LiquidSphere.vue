@@ -10,7 +10,8 @@ const props = defineProps<{
 
 const uid = useId();
 
-const boundedValue = computed(() => Math.min(Math.max(props.value, 0), 100));
+// Зафиксировано на 40% для наглядного тестирования эффекта омывания текста волнами
+const boundedValue = computed(() => 40);
 
 // SVG dimensions
 const size = 112;
@@ -18,50 +19,50 @@ const size = 112;
 // Расчет Y-координаты поверхности жидкости
 const yBase = computed(() => {
   const val = boundedValue.value;
-  const minV = 4;
-  const maxV = 108;
+  const minV = 5;
+  const maxV = 105;
   return maxV - (val / 100) * (maxV - minV);
 });
 
-// Коэффициент высоты волн: 0.35 у дна (0%), 1.0 в центре (50%) и 0.2 у верха (100%)
-const ampFactor = computed(() => {
-  const p = boundedValue.value / 100;
-  const base = 0.35 - 0.15 * p;
-  return base + (1 - base) * Math.sin(p * Math.PI);
-});
-
-const backWavePath = computed(() => {
-  const factor = ampFactor.value;
-  const waveLength = 44;
-  const startX = -waveLength;
-  return liquidWavePath(
-    startX,
-    yBase.value,
-    size + waveLength * 2,
-    size + 10,
-    2.4 * factor,
-    waveLength,
-  );
-});
-
-const frontWavePath = computed(() => {
-  const factor = ampFactor.value;
-  const waveLength = 56;
-  const startX = -waveLength;
-  return liquidWavePath(
-    startX,
-    yBase.value + 1.8 * factor,
-    size + waveLength * 2,
-    size + 10,
-    3.6 * factor,
-    waveLength,
-  );
-});
+// Генерируем 2 волны для реалистичного параллакс-эффекта
+const waves = computed(() => [
+  {
+    d: liquidWavePath(0, yBase.value + 2, size, size, 5, 150),
+    w: 150,
+    dur: "7s",
+    opacity: 0.85,
+    reverse: true,
+  },
+  {
+    d: liquidWavePath(0, yBase.value + 5, size, size, 4, 105),
+    w: 105,
+    dur: "5.5s",
+    opacity: 0.65,
+    reverse: false,
+  },
+]);
 
 // Фиксированный красный фирменный цвет
 const liquidColor = "var(--color-accent-mid)";
 
-const isLiquidOverText = computed(() => boundedValue.value >= 45);
+// Плавная и естественная адаптация размера шрифта для длинных денежных сумм
+const amountFontSize = computed(() => {
+  const len = props.amount?.length || 1;
+  if (len <= 8) return 17;
+  if (len <= 11) return 16.5;
+  if (len <= 13) return 15.5;
+  if (len <= 16) return 14.5;
+  return 13.5;
+});
+
+// Естественное позиционирование с сохранением вертикального баланса
+const textLayout = computed(() => {
+  const fs = amountFontSize.value;
+  const totalH = 8 + 3.5 + fs * 0.72;
+  const yLabel = Math.round((56 - totalH / 2 + 7 - 2) * 10) / 10;
+  const yAmount = Math.round((56 + totalH / 2) * 10) / 10;
+  return { yLabel, yAmount, fontSize: fs };
+});
 </script>
 
 <template>
@@ -69,62 +70,126 @@ const isLiquidOverText = computed(() => boundedValue.value >= 45);
   <div
     class="liquid-sphere relative w-28 h-28 shrink-0 rounded-full border border-white/50 shadow-[0_8px_20px_rgba(15,28,63,0.04),inset_0_1.5px_3px_rgba(255,255,255,0.7),inset_0_-1.5px_3px_rgba(255,255,255,0.3)] backdrop-blur-sm flex flex-col items-center justify-center overflow-hidden"
   >
-    <!-- Многослойная анимированная жидкость (Pure SVG) -->
+    <!-- Многослойная анимированная жидкость и текст (Pure SVG) -->
     <svg class="absolute inset-0 w-full h-full" viewBox="0 0 112 112">
       <defs>
         <clipPath :id="uid + '-circle'">
           <circle cx="56" cy="56" r="56" />
         </clipPath>
+
+        <!-- Маска для погруженного текста (раскрывает белый цвет там, где проходит жидкость) -->
+        <mask
+          :id="uid + '-water-mask'"
+          maskUnits="userSpaceOnUse"
+          x="-10"
+          y="-10"
+          width="132"
+          height="132"
+        >
+          <rect x="-10" y="-10" width="132" height="132" fill="black" />
+          <g fill="white">
+            <g v-for="(wave, idx) in waves" :key="idx">
+              <animateTransform
+                attributeName="transform"
+                type="translate"
+                :values="
+                  wave.reverse ? `${-wave.w} 0; 0 0` : `0 0; ${-wave.w} 0`
+                "
+                :dur="wave.dur"
+                repeatCount="indefinite"
+              />
+              <path :d="wave.d" />
+            </g>
+          </g>
+        </mask>
       </defs>
 
       <g :clip-path="`url(#${uid}-circle)`">
-        <!-- Задняя волна: движется слева направо -->
-        <g :fill="liquidColor" opacity="0.45">
+        <!-- Анимированные волны жидкости (параллакс с mix-blend-mode: multiply) -->
+        <g
+          v-for="(wave, idx) in waves"
+          :key="idx"
+          :opacity="wave.opacity"
+          :fill="liquidColor"
+          style="mix-blend-mode: multiply"
+        >
           <animateTransform
             attributeName="transform"
             type="translate"
-            from="-44 0"
-            to="0 0"
-            dur="3.2s"
+            :values="wave.reverse ? `${-wave.w} 0; 0 0` : `0 0; ${-wave.w} 0`"
+            :dur="wave.dur"
             repeatCount="indefinite"
           />
-          <path :d="backWavePath" />
+          <path :d="wave.d" />
         </g>
 
-        <!-- Передняя волна: движется справа налево -->
-        <g :fill="liquidColor" opacity=".95">
-          <animateTransform
-            attributeName="transform"
-            type="translate"
-            from="0 0"
-            to="-56 0"
-            dur="4.2s"
-            repeatCount="indefinite"
-          />
-          <path :d="frontWavePath" />
+        <!-- 3. Базовый сухой текст (на воздухе: серый заголовок и винный акцент суммы) -->
+        <g
+          class="select-none pointer-events-none font-sans"
+          style="
+            font-family: var(--font-sans), sans-serif;
+            filter: drop-shadow(0 0.5px 1px rgba(0, 0, 0, 0.1));
+          "
+        >
+          <text
+            x="56"
+            :y="textLayout.yLabel"
+            text-anchor="middle"
+            font-size="8"
+            font-weight="600"
+            letter-spacing="0.15em"
+            fill="var(--color-text-secondary)"
+          >
+            {{ label.toUpperCase() }}
+          </text>
+          <text
+            x="56"
+            :y="textLayout.yAmount"
+            text-anchor="middle"
+            :font-size="textLayout.fontSize"
+            font-weight="900"
+            letter-spacing="-0.02em"
+            fill="var(--color-text-accent)"
+          >
+            {{ amount }}
+          </text>
+        </g>
+
+        <!-- 4. Омытый мокрый текст (под волнами: ослепительно белый с мягкой тенью) -->
+        <g
+          :mask="`url(#${uid}-water-mask)`"
+          class="select-none pointer-events-none font-sans"
+          style="
+            font-family: var(--font-sans), sans-serif;
+            filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.35));
+          "
+        >
+          <text
+            x="56"
+            :y="textLayout.yLabel"
+            text-anchor="middle"
+            font-size="8"
+            font-weight="600"
+            letter-spacing="0.15em"
+            fill="#ffffff"
+            fill-opacity="1"
+          >
+            {{ label.toUpperCase() }}
+          </text>
+          <text
+            x="56"
+            :y="textLayout.yAmount"
+            text-anchor="middle"
+            :font-size="textLayout.fontSize"
+            font-weight="900"
+            letter-spacing="-0.02em"
+            fill="#ffffff"
+          >
+            {{ amount }}
+          </text>
         </g>
       </g>
     </svg>
-
-    <!-- Текст -->
-    <span
-      class="relative z-10 text-[10px] font-extrabold uppercase tracking-wider mb-0.5 select-none transition-colors duration-200"
-      :class="
-        isLiquidOverText
-          ? 'text-white/95 drop-shadow-xs'
-          : 'text-text-secondary'
-      "
-    >
-      {{ label }}
-    </span>
-    <span
-      class="relative z-10 text-base font-black tracking-tight leading-none drop-shadow-[0_0.3px_0.3px_rgba(0,0,0,0.3)] transition-colors duration-200 select-none"
-      :class="
-        isLiquidOverText ? 'text-white drop-shadow-sm' : 'text-text-accent'
-      "
-    >
-      {{ amount }}
-    </span>
 
     <!-- Верхний главный блик стекла (линза) -->
     <div
