@@ -139,7 +139,6 @@ const closeCategoryAnalytics = () => {
           :value="spendPercent"
           label="Прогноз"
           :amount="formatAmount(forecast)"
-          :color="isOverspending ? 'accent' : 'green'"
         />
 
         <!-- Текст справа -->
