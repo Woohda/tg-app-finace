@@ -285,6 +285,17 @@ export function formatMonthYear(
   return formatted.charAt(0).toUpperCase() + formatted.slice(1);
 }
 
+/**
+ * Возвращает название предыдущего месяца в формате "MMMM" (например, "сентябрь").
+ */
+export function formatPreviousMonth(
+  dateInput?: Date | string | number | null,
+): string {
+  const date = toSafeDate(dateInput);
+  const prevMonth = subMonths(date, 1);
+  return format(prevMonth, "LLLL", { locale: ru });
+}
+
 const RUSSIAN_MONTHS_DATIVE = [
   "к январю",
   "к февралю",

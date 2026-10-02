@@ -37,18 +37,18 @@ const {
   totalSpent,
   prevTotalSpent,
   totalIncome,
+  prevTotalIncome,
   incomePercentChange,
   percentChange,
   forecast,
   avgDaily,
+  prevAvgDaily,
   upcomingSubscriptionsTotal,
   categoryStats,
   chartData,
 } = useAnalyticsData(period, startDate, endDate, prevStartDate, prevEndDate);
 
 // --- Индикатор темпа (Pacing Indicator) ---
-const daysInMonth = computed(() => getDaysInMonthCount());
-
 // В качестве ориентира (бюджета) теперь берем прогноз (как в изначальном range)
 const baseline = computed(() => forecast.value || 1);
 
@@ -58,12 +58,7 @@ const rawSpendPercent = computed(() =>
 
 const spendPercent = computed(() => Math.min(rawSpendPercent.value, 100));
 
-const prevAvgDaily = computed(() => {
-  if (prevTotalSpent.value === 0) return 0;
-  return prevTotalSpent.value / daysInMonth.value;
-});
-
-// Для статуса "Траты выше нормы" все равно полезно сравнивать текущие траты с прошлым месяцем
+// Для статуса "Траты выше нормы" сравниваем текущий среднедневной расход со среднедневным расходом прошлого месяца
 const isOverspending = computed(() => {
   if (prevAvgDaily.value === 0) return false;
   return avgDaily.value > prevAvgDaily.value;
@@ -121,7 +116,7 @@ const closeCategoryAnalytics = () => {
         <AnalyticsSummaryCard
           title="Расходы"
           :amount="totalSpent"
-          :percent-change="percentChange"
+          :percent-change="prevTotalSpent > 0 ? percentChange : null"
           :prev-period-label="prevPeriodLabel"
           trend-type="expense"
         />
@@ -129,7 +124,7 @@ const closeCategoryAnalytics = () => {
         <AnalyticsSummaryCard
           title="Доходы"
           :amount="totalIncome"
-          :percent-change="incomePercentChange"
+          :percent-change="prevTotalIncome > 0 ? incomePercentChange : null"
           :prev-period-label="prevPeriodLabel"
           trend-type="income"
         />
