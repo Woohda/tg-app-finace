@@ -8,12 +8,11 @@
  * ---
  * ### Логика работы:
  * 1. Получает массив статистики по категориям через пропс `stats`.
- * 2. Вычисляет максимальную сумму для относительного масштабирования.
- * 3. Отрисовывает список элементов `AnalyticsCategoryItem`.
+ * 2. Извлекает максимальную сумму за O(1) из первого элемента отсортированного массива `stats[0]`.
+ * 3. Централизованно запрашивает цели категорий через `useCategoryGoals` и передает их в `AnalyticsCategoryItem`.
  */
 import { computed } from "vue";
 import type { CategoryStat } from "~/utils/analytics";
-import AnalyticsCategoryItem from "./AnalyticsCategoryItem.vue";
 
 const props = defineProps<{
   stats: CategoryStat[];
@@ -23,10 +22,10 @@ const emit = defineEmits<{
   (e: "click-category", id: string): void;
 }>();
 
-const maxAmount = computed(() => {
-  if (!props.stats.length) return 0;
-  return Math.max(...props.stats.map((s) => s.amount));
-});
+const { getGoal } = useCategoryGoals();
+
+// Массив stats уже отсортирован по убыванию суммы в aggregateCategoryStats
+const maxAmount = computed(() => props.stats[0]?.amount ?? 0);
 </script>
 
 <template>
@@ -36,6 +35,7 @@ const maxAmount = computed(() => {
       :key="stat.categoryId"
       :stat="stat"
       :max-amount="maxAmount"
+      :goal="getGoal(stat.categoryId)"
       @click="emit('click-category', stat.categoryId)"
     />
 
