@@ -1,18 +1,19 @@
 <script setup lang="ts">
 /**
  * @module app/components/analytics/CategoryAnalyticsModal
- * @fileoverview Детальная аналитика по одной категории
+ * @fileoverview Детальная аналитика по отдельной категории
  * @description
- * Модальное окно, показывающее сводку расходов, управление лимитом трат (только для месяца),
- * динамику расходов на графике и список операций по выбранной категории за выбранный период.
+ * Модальное окно, отображающее сводку расходов, управление месячным лимитом трат,
+ * динамику расходов на графике и список операций по выбранной категории.
+ * Поддерживает режим просмотра архивных месяцев с автоматической адаптацией UI.
  * ---
  * ### Логика работы:
- * 1. Получает `categoryId` и `period` из пропсов.
- * 2. Синхронизирует даты интервала через `useAnalyticsPeriod(localPeriod)`.
- * 3. Запрашивает агрегированные данные категории через `useAnalyticsData`.
- * 4. Отображает операции категории за выбранный период (`currentExpenses`).
- * 5. Отображает цель на месяц `CategoryGoalCard` только во вкладке «Месяц» (`1M`).
- * 6. Отрисовывает график динамики трат `AnalyticsBarChart` строго за выбранный период.
+ * 1. Получает `categoryId`, `period` и опциональную дату `selectedDate` из пропсов.
+ * 2. Синхронизирует интервалы дат и статус выбранного месяца через `useAnalyticsPeriod`.
+ * 3. Запрашивает агрегированные данные категории через `useAnalyticsData`, рассчитывая честную разницу расходов.
+ * 4. Для текущего месяца отображает виджет цели `CategoryGoalCard` и переключатель на предыдущий период.
+ * 5. Для архивных месяцев скрывает виджет цели и кнопку прошлого периода, сопоставляя траты напрямую с текущим месяцем.
+ * 6. Отрисовывает график динамики трат `AnalyticsBarChart` и пагинированный список операций.
  */
 import { toRef, computed, ref, watch, onMounted, onUnmounted } from "vue";
 import {
@@ -37,14 +38,22 @@ const props = defineProps<{
   isOpen: boolean;
   categoryId: string | null;
   period: AnalyticsPeriodType;
+  selectedDate?: Date;
 }>();
 
 const emit = defineEmits(["close"]);
 
 const localPeriod = toRef(props, "period");
+const modalAnchorDate = computed(() => props.selectedDate ? new Date(props.selectedDate) : getNow());
 
-const { startDate, endDate, prevStartDate, prevEndDate, prevPeriodLabel } =
-  useAnalyticsPeriod(localPeriod);
+const {
+  startDate,
+  endDate,
+  prevStartDate,
+  prevEndDate,
+  prevPeriodLabel,
+  isCurrentMonthSelected,
+} = useAnalyticsPeriod(localPeriod, modalAnchorDate);
 
 const { deleteTransaction } = useTransactions();
 const { openModal } = useTransactionModal();
@@ -74,11 +83,14 @@ const isOperationsLoading = ref(false);
 const INITIAL_PAGE_SIZE = 10;
 const displayedLimit = ref(INITIAL_PAGE_SIZE);
 
-watch([() => props.isOpen, () => props.categoryId, localPeriod], () => {
-  isPrevPeriodChart.value = false;
-  displayedLimit.value = INITIAL_PAGE_SIZE;
-  isOperationsLoading.value = false;
-});
+watch(
+  [() => props.isOpen, () => props.categoryId, () => props.selectedDate, localPeriod],
+  () => {
+    isPrevPeriodChart.value = false;
+    displayedLimit.value = INITIAL_PAGE_SIZE;
+    isOperationsLoading.value = false;
+  },
+);
 
 watch(isPrevPeriodChart, () => {
   isOperationsLoading.value = true;
@@ -273,6 +285,9 @@ const emptyTransactionsText = computed(() => {
     case "1Y":
       return "За год операций по категории ещё не было";
     default:
+      if (!isCurrentMonthSelected.value) {
+        return `В ${formatMonthPrepositional(startDate.value)} операций по категории не было`;
+      }
       return "В этом месяце операций по категории ещё не было";
   }
 });
@@ -354,9 +369,9 @@ const close = () => emit("close");
           </div>
         </GlassCard>
 
-        <!-- Цель на месяц (только во вкладке Месяц) -->
+        <!-- Цель на месяц (только во вкладке Месяц для текущего месяца) -->
         <CategoryGoalCard
-          v-if="localPeriod === '1M'"
+          v-if="localPeriod === '1M' && isCurrentMonthSelected"
           :category-id="categoryId"
           :month-spent="totalSpent"
         />
@@ -383,6 +398,7 @@ const close = () => emit("close");
           />
 
           <button
+            v-if="isCurrentMonthSelected"
             type="button"
             class="self-center flex items-center justify-center gap-1.5 py-1.5 px-3.5 rounded-full glass-pill text-text-accent hover:text-text-primary text-xs font-semibold tracking-wide transition-all active:scale-95 cursor-pointer a11y-focus"
             @click="isPrevPeriodChart = !isPrevPeriodChart"
