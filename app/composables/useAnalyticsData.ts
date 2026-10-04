@@ -5,7 +5,13 @@
  * Объединяет загрузку транзакций и делегирует расчеты в специализированные composable:
  * - `useExpenseAnalytics`: расчет сумм, среднедневного темпа трат, динамики расходов и прогноза;
  * - `useIncomeAnalytics`: расчет сумм, поступлений день-в-день (MTD) и динамики доходов;
- * - `~/utils/analytics`: построение точек графика и долей расходов по категориям.
+ * - `~/utils/analytics`: построение точек графика, распределение долей категорий и прогнозирование.
+ * ---
+ * ### Логика работы:
+ * 1. Загружает транзакции текущего и предыдущего периодов через `useTransactions`.
+ * 2. Фильтрует транзакции по типу (расходы/доходы) и выбранной категории.
+ * 3. Делегирует расчет аналитики расходов в `useExpenseAnalytics` и доходов в `useIncomeAnalytics`.
+ * 4. Генерирует распределение категорий `aggregateCategoryStats` и точки для графиков.
  */
 import { computed, type Ref } from "vue";
 import type { AnalyticsPeriodType } from "./useAnalyticsPeriod";
@@ -80,6 +86,7 @@ export const useAnalyticsData = (
     prevAvgDaily,
     percentChange,
     forecast,
+    categoryForecast,
     upcomingSubscriptions,
     upcomingSubscriptionsTotal,
   } = useExpenseAnalytics({
@@ -143,6 +150,7 @@ export const useAnalyticsData = (
     incomePercentChange,
     percentChange,
     forecast,
+    categoryForecast,
     avgDaily,
     prevAvgDaily,
     upcomingSubscriptionsTotal,

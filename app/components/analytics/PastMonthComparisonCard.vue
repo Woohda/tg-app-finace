@@ -10,7 +10,7 @@
  * ### Логика работы:
  * 1. Верхний блок: рассчитывает и отображает средний чек трат на день выбранного месяца и сопоставляет его со среднедневным темпом текущего месяца.
  * 2. Фоновая плашка: отрисовывает анимацию AuroraBudget с процентом изменения динамики трат к текущему месяцу.
- * 3. Нижний блок: выводит список 3-х крупнейших категорий с суммами, динамикой и кликом для перехода в детальную модалку категории.
+ * 3. Нижний блок: выводит список 3-х крупнейших категорий месяца с сопоставлением к прогнозу текущего месяца (`isForecast`), умной нормализацией по дням для регулярных категорий и процентным изменением.
  */
 import { formatAmount } from "~/utils/format";
 
@@ -20,6 +20,7 @@ export interface TopCategoryComparisonItem {
   categoryIcon: string;
   selectedAmount: number;
   currentAmount: number;
+  isForecast?: boolean;
   percentChange: number | null;
 }
 
@@ -98,7 +99,12 @@ const emit = defineEmits<{
                 {{ cat.categoryName }}
               </span>
               <span class="text-[11px] text-text-secondary truncate">
-                В тек. месяце: {{ formatAmount(cat.currentAmount) }}
+                {{
+                  cat.isForecast
+                    ? `Прогноз в ${currentMonthLabel}:`
+                    : `В ${currentMonthLabel}:`
+                }}
+                {{ formatAmount(cat.currentAmount) }}
               </span>
             </div>
           </div>
@@ -112,14 +118,16 @@ const emit = defineEmits<{
               v-if="cat.percentChange !== null"
               class="text-[10px] font-semibold"
               :class="
-                cat.percentChange > 0 ? 'text-text-accent' : 'text-text-success'
+                cat.percentChange === 0
+                  ? 'text-text-secondary'
+                  : cat.percentChange > 0
+                    ? 'text-text-accent'
+                    : 'text-text-success'
               "
             >
               {{ cat.percentChange > 0 ? "+" : "" }}{{ cat.percentChange }}%
             </span>
-            <span v-else class="text-[10px] text-text-secondary">
-              нов. трата
-            </span>
+            <span v-else class="text-[10px] text-text-secondary"> - </span>
           </div>
         </div>
       </div>
