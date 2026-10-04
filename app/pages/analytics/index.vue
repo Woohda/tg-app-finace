@@ -1,20 +1,41 @@
 <script setup lang="ts">
 /**
  * @module app/pages/analytics
- * @fileoverview Экран подробной аналитики и отчетов
+ * @fileoverview Экран подробной аналитики и отчетов по финансам
  * @description
  * Отображает графики динамики, прогноз расходов, сводку доходов и расходов,
- * а также список категорий с прогрессом выполнения лимитов трат.
+ * распределение трат по категориям, а также детальное сопоставление с прошлыми периодами.
+ * Поддерживает селектор архивных месяцев для ретроспективного анализа.
  * ---
  * ### Логика работы:
- * 1. Выбор периода анализа (Неделя, Месяц, 3 Месяца).
- * 2. Загрузка установленных лимитов трат по категориям (`useCategoryGoals`).
- * 3. Расчет агрегированных данных, прогноза и распределения трат (`useAnalyticsData`).
- * 4. Предоставление детального модального окна для выбранной категории (`CategoryAnalyticsModal`).
+ * 1. Выбор периода анализа: Неделя, Месяц, 3 Месяца.
+ * 2. При выборе вкладки «Месяц» отображает селектор месяцев `MonthSelector` с блокировкой перехода в будущее.
+ * 3. Для текущего месяца отображает сферу прогноза `LiquidSphere` и индикатор темпа расходов.
+ * 4. Для архивных месяцев отображает карточку `PastMonthComparisonCard` со среднедневным чеком и топ-3 категориями.
+ * 5. Расчет агрегированных данных, прогноза и распределения трат через `useAnalyticsData`.
+ * 6. Детальный просмотр и управление лимитами через модальное окно `CategoryAnalyticsModal`.
  */
-import { ref, onMounted } from "vue";
+import { ref, computed, watch, onMounted } from "vue";
 import { TrendingUp, TrendingDown } from "@lucide/vue";
 import { formatAmount } from "~/utils/format";
+import { calculatePercentChange } from "~/utils/analytics";
+import {
+  getNow,
+  getNextMonth,
+  getPrevMonth,
+  isCurrentMonth,
+} from "~/utils/date";
+
+const selectedMonthDate = ref(getNow());
+
+const nextMonth = () => {
+  if (isCurrentMonth(selectedMonthDate.value)) return;
+  selectedMonthDate.value = getNextMonth(selectedMonthDate.value);
+};
+
+const prevMonth = () => {
+  selectedMonthDate.value = getPrevMonth(selectedMonthDate.value);
+};
 
 const {
   period,
@@ -24,7 +45,14 @@ const {
   prevEndDate,
   prevPeriodLabel,
   monthsLabel,
-} = useAnalyticsPeriod();
+  isCurrentMonthSelected,
+} = useAnalyticsPeriod(undefined, selectedMonthDate);
+
+watch(period, (newPeriod) => {
+  if (newPeriod !== "1M") {
+    selectedMonthDate.value = getNow();
+  }
+});
 
 const { fetchGoals } = useCategoryGoals();
 
@@ -46,7 +74,38 @@ const {
   upcomingSubscriptionsTotal,
   categoryStats,
   chartData,
+  prevExpenses,
 } = useAnalyticsData(period, startDate, endDate, prevStartDate, prevEndDate);
+
+// Сравнение трех наибольших трат в категориях выбранного месяца с текущим
+const topCategoriesComparison = computed(() => {
+  const top3 = categoryStats.value.slice(0, 3);
+  if (top3.length === 0) return [];
+
+  return top3.map((cat) => {
+    const currentCatExpenses = prevExpenses.value.filter(
+      (t) => t.categoryId === cat.categoryId,
+    );
+    const currentAmount = currentCatExpenses.reduce(
+      (sum, t) => sum + t.amount,
+      0,
+    );
+
+    let change: number | null = null;
+    if (currentAmount > 0) {
+      change = calculatePercentChange(cat.amount, currentAmount);
+    }
+
+    return {
+      categoryId: cat.categoryId,
+      categoryName: cat.categoryName,
+      categoryIcon: cat.categoryIcon,
+      selectedAmount: cat.amount,
+      currentAmount,
+      percentChange: change,
+    };
+  });
+});
 
 // --- Индикатор темпа (Pacing Indicator) ---
 // В качестве ориентира (бюджета) теперь берем прогноз (как в изначальном range)
@@ -99,6 +158,15 @@ const closeCategoryAnalytics = () => {
       class="w-full"
     />
 
+    <!-- Селектор месяца (только во вкладке Месяц) -->
+    <MonthSelector
+      v-if="period === '1M'"
+      :date="selectedMonthDate"
+      :disable-next="isCurrentMonthSelected"
+      @prev="prevMonth"
+      @next="nextMonth"
+    />
+
     <!-- Лоадер -->
     <div v-if="pending" class="flex flex-col gap-4">
       <div class="flex gap-5">
@@ -129,9 +197,13 @@ const closeCategoryAnalytics = () => {
           trend-type="income"
         />
       </div>
-      <!-- Прогноз (только для месяца) -->
+      <!-- Прогноз (только для текущего месяца во вкладке Месяц) -->
       <GlassCard
-        v-if="forecast !== null && (avgDaily > 0 || forecast > 0)"
+        v-if="
+          isCurrentMonthSelected &&
+          forecast !== null &&
+          (avgDaily > 0 || forecast > 0)
+        "
         class="flex-1 p-5 flex items-center gap-5"
       >
         <!-- Объемный сферический стеклянный шар (Liquid Sphere Component) -->
@@ -147,7 +219,7 @@ const closeCategoryAnalytics = () => {
             <span
               class="text-text-secondary text-[11px] font-bold uppercase tracking-wider"
             >
-              Средний чек
+              Средний чек трат
             </span>
             <span
               class="text-text-primary text-base font-extrabold tracking-tight"
@@ -196,6 +268,17 @@ const closeCategoryAnalytics = () => {
         </div>
       </GlassCard>
 
+      <!-- Вместо сферы: Карточка среднего чека и топ-3 категорий для прошлого месяца -->
+      <PastMonthComparisonCard
+        v-else-if="period === '1M' && !isCurrentMonthSelected"
+        :avg-daily="avgDaily"
+        :current-month-avg-daily="prevAvgDaily"
+        :percent-change="percentChange"
+        :current-month-label="monthsLabel"
+        :top-categories="topCategoriesComparison"
+        @click-category="openCategoryAnalytics"
+      />
+
       <!-- График -->
       <GlassCard class="p-5 flex flex-col gap-1">
         <div class="flex justify-between items-center">
@@ -227,6 +310,7 @@ const closeCategoryAnalytics = () => {
       :is-open="selectedCategoryId !== null"
       :category-id="selectedCategoryId"
       :period="period"
+      :selected-date="selectedMonthDate"
       @close="closeCategoryAnalytics"
     />
   </div>

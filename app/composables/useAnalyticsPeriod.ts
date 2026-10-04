@@ -1,15 +1,18 @@
 /**
  * @module app/composables/useAnalyticsPeriod
- * @fileoverview Управление выбором периодов для аналитики
+ * @fileoverview Управление выбором периодов и интервалами дат для аналитики
  * @description
- * Предоставляет текущий период, даты начала и конца для текущего и предыдущего периодов (для сравнения).
- * Расчет дат унифицирован с помощью библиотеки `date-fns`.
+ * Предоставляет текущий период, даты начала и конца для текущего и сравнительного интервалов.
+ * Поддерживает кастомную опорную дату (`customAnchorDate`) для навигации по архивным месяцам.
+ * При выборе архивного месяца сравнительный период автоматически переключается на текущий календарный месяц.
  * ---
  * ### Логика работы:
- * 1. Выбор периода: 1 Неделя, 1 Месяц, 3 Месяца, 6 Месяцев, 1 Год.
- * 2. Расчет `startDate` и `endDate` от базовой даты (`anchorDate = getNow()`).
- * 3. Расчет `prevStartDate` и `prevEndDate` для сравнения с предыдущим аналогичным периодом.
- * 4. Формирование локализованных подписей сравнения с падежами через `formatMonthDative` и `formatMonthPrepositional`.
+ * 1. Выбор периода: 1 Неделя (`1W`), 1 Месяц (`1M`), 3 Месяца (`3M`), 6 Месяцев (`6M`), 1 Год (`1Y`).
+ * 2. Определение базовой даты: `customAnchorDate` (если передан) или системное текущее время.
+ * 3. Расчет `startDate` и `endDate` от базовой даты с помощью функций `date-fns`.
+ * 4. Расчет `prevStartDate` и `prevEndDate`: для текущего месяца берется предшествующий месяц, а для архивного месяца — текущий календарный месяц.
+ * 5. Формирование локализованных меток сравнения (`prevPeriodLabel`, `monthsLabel`) в дательном и предложном падежах.
+ * 6. Определение флага `isCurrentMonthSelected` для условного рендеринга виджетов.
  */
 import { ref, computed } from "vue";
 import type { Ref } from "vue";
@@ -23,6 +26,7 @@ import {
   startOfYear,
   endOfYear,
 } from "date-fns";
+import { isCurrentMonth } from "~/utils/date";
 
 export type AnalyticsPeriodType = "1W" | "1M" | "3M" | "6M" | "1Y";
 
@@ -47,9 +51,14 @@ function calculatePeriodStart(anchor: Date, period: AnalyticsPeriodType): Date {
 
 export const useAnalyticsPeriod = (
   initialPeriod?: Ref<AnalyticsPeriodType>,
+  customAnchorDate?: Ref<Date>,
 ) => {
   const period = initialPeriod || ref<AnalyticsPeriodType>("1M");
-  const anchorDate = ref(getNow());
+  const anchorDate = customAnchorDate || ref(getNow());
+
+  const isCurrentMonthSelected = computed(() => {
+    return isCurrentMonth(anchorDate.value);
+  });
 
   const endDate = computed(() => {
     const anchor = anchorDate.value;
@@ -66,14 +75,25 @@ export const useAnalyticsPeriod = (
     calculatePeriodStart(anchorDate.value, period.value),
   );
 
-  const prevEndDate = computed(() => endOfDay(subDays(startDate.value, 1)));
+  const prevEndDate = computed(() => {
+    if (period.value === "1M" && !isCurrentMonthSelected.value) {
+      return endOfMonth(getNow());
+    }
+    return endOfDay(subDays(startDate.value, 1));
+  });
 
-  const prevStartDate = computed(() =>
-    calculatePeriodStart(prevEndDate.value, period.value),
-  );
+  const prevStartDate = computed(() => {
+    if (period.value === "1M" && !isCurrentMonthSelected.value) {
+      return startOfMonth(getNow());
+    }
+    return calculatePeriodStart(prevEndDate.value, period.value);
+  });
 
   const prevPeriodLabel = computed(() => {
     if (period.value === "1M") {
+      if (!isCurrentMonthSelected.value) {
+        return formatMonthDative(getNow());
+      }
       return formatMonthDative(prevStartDate.value);
     }
     switch (period.value) {
@@ -91,6 +111,9 @@ export const useAnalyticsPeriod = (
   });
 
   const monthsLabel = computed(() => {
+    if (period.value === "1M" && !isCurrentMonthSelected.value) {
+      return formatMonthPrepositional(getNow());
+    }
     return formatMonthPrepositional(prevStartDate.value);
   });
 
@@ -103,5 +126,6 @@ export const useAnalyticsPeriod = (
     prevEndDate,
     prevPeriodLabel,
     monthsLabel,
+    isCurrentMonthSelected,
   };
 };

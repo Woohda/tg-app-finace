@@ -147,8 +147,14 @@ watch(type, () => {
   }
 });
 
-const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
-  useReceiptScanner();
+const {
+  fileInput,
+  isScanning,
+  scanStatus,
+  scanError,
+  triggerScan,
+  handleFileUpload,
+} = useReceiptScanner();
 </script>
 
 <template>
@@ -254,9 +260,25 @@ const { fileInput, isScanning, scanError, triggerScan, handleFileUpload } =
     position="center"
     :show-close="false"
     :z-index="Z_INDEX.LOADER"
+    backdrop-class="bg-black/15 backdrop-blur-[2px]"
   >
-    <p class="text-text-primary font-medium text-center animate-pulse">
-      Распознаю скриншот... <br />Магия нейросетей работает ✨
-    </p>
+    <div
+      class="flex flex-col items-center justify-center py-1 px-2 gap-px text-center"
+    >
+      <h4 class="text-[15px] font-semibold text-text-primary tracking-wide">
+        {{
+          scanStatus === "navigating"
+            ? "Чек распознан!"
+            : "Распознаю скриншот..."
+        }}
+      </h4>
+      <p class="text-xs text-text-secondary leading-relaxed tracking-wide">
+        {{
+          scanStatus === "navigating"
+            ? "Открываем список позиций ✨"
+            : "Магия нейросетей обрабатывает чек ✨"
+        }}
+      </p>
+    </div>
   </GlassModal>
 </template>

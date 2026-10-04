@@ -1,10 +1,18 @@
 <script setup lang="ts">
 /**
  * @module app/components/analytics/AuroraBudget
- * @fileoverview Фоновое "дышащее" пятно для отображения состояния бюджета.
+ * @fileoverview Фоновое «дышащее» пятно Aurora с эффектом вдавленного текста процента
  * @description
- * Отображает анимированный радиальный градиент. Меняет цвет от сине-фиолетового
- * (бюджет в норме) к оранжево-красному (бюджет превышен) в зависимости от процента трат.
+ * Отображает анимированный радиальный градиент с динамическим цветом и прозрачным текстом процента
+ * в стиле вдавленного в стекло контента (Glassmorphism).
+ * Поддерживает два режима работы:
+ * - `budget`: мониторинг освоения бюджета с 3 градациями цвета (мятный, персиковый, винный);
+ * - `delta`: динамика изменения расходов с 2 цветами (винный красный при росте трат, мятный при снижении).
+ * ---
+ * ### Логика работы:
+ * 1. В зависимости от режима `mode` вычисляет цвет светового пятна `blobColor`.
+ * 2. Регулирует скорость пульсации (`animationDuration`) и масштаб пятна (`baseScale`) на основе значения `percent`.
+ * 3. Отрисовывает аккуратный водяной знак процента в правом верхнем углу контейнера с учетом выбранного режима.
  */
 import { computed } from "vue";
 
@@ -12,15 +20,24 @@ interface Props {
   percent: number;
   budget?: number;
   spent?: number;
+  mode?: "budget" | "delta";
 }
 
 const props = withDefaults(defineProps<Props>(), {
   budget: 0,
   spent: 0,
+  mode: "budget",
 });
 
 // Цвет зависит от процента
 const blobColor = computed(() => {
+  if (props.mode === "delta") {
+    // Два цвета: красный винный и мятный
+    return props.percent > 0
+      ? "rgba(225, 29, 72, 0.55)" // Винный
+      : "rgba(46, 213, 115, 0.45)"; // Мятный
+  }
+
   const p = props.percent;
   if (p < 50) return "rgba(46, 213, 115, 0.45)"; // Мятный (Спокойно)
   if (p < 85) return "rgba(255, 165, 2, 0.45)"; // Персиковый/Оранжевый (Внимание)
@@ -37,10 +54,19 @@ const animationDuration = computed(() => {
 
 // Размер пятна увеличивается при приближении к 100%
 const baseScale = computed(() => {
+  if (props.mode === "delta") return 0.65;
   const p = props.percent;
   if (p < 50) return 0.9;
   if (p < 85) return 1.05;
   return 1.25;
+});
+
+const displayPercent = computed(() => {
+  const rounded = Math.round(props.percent);
+  if (props.mode === "delta" && rounded > 0) {
+    return `+${rounded}`;
+  }
+  return String(rounded);
 });
 </script>
 
@@ -59,15 +85,24 @@ const baseScale = computed(() => {
     />
 
     <!-- Текст процента в верхнем правом углу (эффект вдавленного стекла) -->
-    <div class="absolute top-2 right-4 flex items-start pointer-events-none">
+    <div
+      class="absolute right-4 flex items-start pointer-events-none select-none"
+      :class="mode === 'delta' ? 'top-4' : 'top-2'"
+    >
       <span
-        class="text-[80px] font-extrabold tracking-tight leading-none glass-text"
+        :class="[
+          'font-extrabold tracking-tight leading-none glass-text',
+          mode === 'delta' ? 'text-[48px]' : 'text-[80px]',
+        ]"
         style="font-family: var(--font-sans)"
       >
-        {{ Math.round(percent) }}
+        {{ displayPercent }}
       </span>
       <span
-        class="text-3xl font-bold mt-2 ml-1 glass-text"
+        :class="[
+          'font-bold glass-text',
+          mode === 'delta' ? 'text-2xl ml-px' : 'text-3xl ml-1',
+        ]"
         style="font-family: var(--font-sans)"
         >%</span
       >
@@ -99,7 +134,7 @@ const baseScale = computed(() => {
   background-clip: text;
   color: transparent;
 
-  filter: drop-shadow(1px 2px 4px rgba(0, 0, 0, 0.05)) blur(1px);
+  filter: drop-shadow(1px 2px 4px rgba(0, 0, 0, 0.05)) blur(1.1px);
 }
 
 @keyframes blob-float {

@@ -1,4 +1,17 @@
 <script setup lang="ts">
+/**
+ * @module app/components/analytics/LiquidSphere
+ * @fileoverview Стеклянная сфера с анимированной жидкостью и двухуровневым текстом
+ * @description
+ * Отображает круглую сферу (Glass Orb) с многослойными SVG-волнами, имитирующими
+ * заполнение бюджета жидкостью внутри прозрачной колбы.
+ * ---
+ * ### Логика работы:
+ * 1. Ограничивает входящее значение `value` в диапазоне от 0% до 100% (`boundedValue`).
+ * 2. Вычисляет вертикальный уровень поверхности жидкости `yBase`.
+ * 3. Генерирует два слоя волн с разной длиной, амплитудой (3px и 2px) и скоростью для эффекта параллакса.
+ * 4. Использует SVG-маску для отображения двухцветного текста: темный/акцентный на воздухе и белый внутри жидкости.
+ */
 import { computed } from "vue";
 import { liquidWavePath } from "~/utils/svgPaths";
 
@@ -10,8 +23,7 @@ const props = defineProps<{
 
 const uid = useId();
 
-// Зафиксировано на 40% для наглядного тестирования эффекта омывания текста волнами
-const boundedValue = computed(() => 40);
+const boundedValue = computed(() => Math.min(Math.max(props.value, 0), 100));
 
 // SVG dimensions
 const size = 112;
@@ -25,19 +37,20 @@ const yBase = computed(() => {
 });
 
 // Генерируем 2 волны для реалистичного параллакс-эффекта
+// Единый период (6s) синхронизирует угловую скорость слоев, создавая эффект непрерывного кружения жидкости в сфере
 const waves = computed(() => [
   {
-    d: liquidWavePath(0, yBase.value + 2, size, size, 5, 150),
+    d: liquidWavePath(0, yBase.value + 2, size, size, 3, 150),
     w: 150,
-    dur: "7s",
+    dur: "6s",
     opacity: 0.85,
     reverse: true,
   },
   {
-    d: liquidWavePath(0, yBase.value + 5, size, size, 4, 105),
+    d: liquidWavePath(0, yBase.value + 5, size, size, 2, 105),
     w: 105,
-    dur: "5.5s",
-    opacity: 0.65,
+    dur: "6s",
+    opacity: 0.5,
     reverse: false,
   },
 ]);

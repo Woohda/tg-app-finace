@@ -24,6 +24,7 @@
  * - `position`: Расположение окна — `"center"` по центру экрана или `"bottom"` в виде нижней шторки (по умолчанию `"center"`).
  * - `showClose`: Отображать ли кнопку закрытия с иконкой крестика (по умолчанию `true`).
  * - `zIndex`: Уровень z-index контейнера оверлея (по умолчанию `Z_INDEX.MODAL_BASE`).
+ * - `backdropClass`: Дополнительные CSS-классы для подложки (оверлея).
  *
  * ### События (Emits):
  * - `close`: Вызывается при нажатии на кнопку закрытия, клике по затемненному оверлею или свайпе.
@@ -43,6 +44,7 @@ interface Props {
   position?: "center" | "bottom";
   showClose?: boolean;
   zIndex?: number;
+  backdropClass?: string;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -51,6 +53,7 @@ const props = withDefaults(defineProps<Props>(), {
   position: "center",
   showClose: true,
   zIndex: Z_INDEX.MODAL_BASE,
+  backdropClass: undefined,
 });
 
 const emit = defineEmits<{
@@ -123,6 +126,7 @@ onUnmounted(() => {
             position === 'bottom'
               ? 'items-end justify-center sm:items-center'
               : 'items-center justify-center',
+            props.backdropClass,
           )
         "
         :style="containerStyle"

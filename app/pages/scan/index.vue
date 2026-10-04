@@ -38,33 +38,24 @@ const { addBulkTransactions } = useTransactions();
 // Категории для маппинга
 const { categories, fetchCategories } = useCategories();
 
-// Обогащаем результаты ID категорий на основе suggestedCategory
-const editableItems = ref<ScannedTransaction[]>([]);
-
-onMounted(async () => {
-  await fetchCategories();
-
-  if (!scanResults.value || scanResults.value.length === 0) {
-    router.push("/");
-    return;
-  }
-
+const mapScanTransactions = (
+  items: ScannedTransaction[],
+  cats: typeof categories.value,
+): ScannedTransaction[] => {
   const today = formatDateISO();
-
-  // Для каждой транзакции пытаемся найти категорию по имени
-  editableItems.value = scanResults.value.map((tx) => {
+  return items.map((tx) => {
     // Простой поиск по имени (без учета регистра) и типу
-    const matchedCategory = categories.value.find(
+    const matchedCategory = cats.find(
       (c) =>
         c.name.toLowerCase() === tx.suggestedCategory?.toLowerCase() &&
         c.type === tx.type,
     );
 
     // Фолбек на первую категорию подходящего типа
-    const defaultCategory = categories.value.find((c) => c.type === tx.type);
+    const defaultCategory = cats.find((c) => c.type === tx.type);
 
     return {
-      id: Math.random().toString(36).substring(7), // локальный ID
+      id: tx.id || Math.random().toString(36).substring(7), // локальный ID
       type: tx.type || "expense",
       amount: Number(tx.amount),
       name: tx.name ? capitalizeFirstLetter(tx.name) : tx.name,
@@ -74,6 +65,33 @@ onMounted(async () => {
       date: tx.date || today,
     };
   });
+};
+
+// Обогащаем результаты ID категорий сразу при инициализации для исключения мигания пустого экрана
+const editableItems = ref<ScannedTransaction[]>(
+  mapScanTransactions(scanResults.value, categories.value),
+);
+
+onMounted(async () => {
+  if (categories.value.length === 0) {
+    await fetchCategories();
+  }
+
+  if (!scanResults.value || scanResults.value.length === 0) {
+    router.push("/");
+    return;
+  }
+
+  // Если категории были подгружены только в хуке или у позиций еще нет категории
+  if (
+    editableItems.value.length === 0 ||
+    editableItems.value.some((i) => !i.categoryId)
+  ) {
+    editableItems.value = mapScanTransactions(
+      scanResults.value,
+      categories.value,
+    );
+  }
 });
 
 // -- Группировка транзакций по категориям --
