@@ -14,8 +14,8 @@
  * 2. Вычисляет среднедневной темп `avgDaily`: для текущего месяца использует прогнозный темп переменных трат, для архивного — делит сумму на общее число дней месяца.
  * 3. Вычисляет сравнительный среднедневной темп `prevAvgDaily`: для неполного текущего месяца делит на число фактически прошедших дней.
  * 4. Рассчитывает процентное изменение `percentChange`:
- *    - для конкретной категории (`isCategoryView`) сравнивает фактические итоговые суммы;
- *    - для общих расходов за период 1M сравнивает среднедневной темп трат;
+ *    - для конкретной категории (`isCategoryView`) сопоставляет прогноз и расходы: для регулярных категорий (> 3 операций) применяет нормализацию по дням месяца, для разовых/редких (<= 3 операций) сопоставляет суммы напрямую;
+ *    - для общих расходов за период 1M сравнивает среднедневной темп трат (`avgDaily` vs `prevAvgDaily`);
  *    - для фиксированных периодов (1W, 3M, 6M, 1Y) сравнивает абсолютные суммы.
  */
 import { computed, type Ref, type ComputedRef } from "vue";
@@ -25,6 +25,8 @@ import { differenceInCalendarDays } from "date-fns";
 import {
   calculateDailyAverage,
   calculatePercentChange,
+  calculateCategoryForecast,
+  normalizeMonthlyAmount,
 } from "~/utils/analytics";
 import {
   getDaysInMonthCount,
@@ -109,18 +111,89 @@ export const useExpenseAnalytics = (options: ExpenseAnalyticsOptions) => {
     return calculateDailyAverage(prevTotalSpent.value, prevDaysCount.value);
   });
 
+  const { subscriptions } = useSubscriptions();
+  const isCategoryView = computed(() => Boolean(categoryId?.value));
+
+  const currentCategoryForecast = computed(() => {
+    if (!isCategoryView.value) return null;
+    if (isCurrentMonthPeriod.value) {
+      return calculateCategoryForecast({
+        currentExpenses: currentExpenses.value,
+        prevExpenses: prevExpenses.value,
+        subscriptions: subscriptions.value,
+        categoryId: categoryId?.value,
+        daysPassed: getDaysPassedInMonth(),
+        daysInMonth: getDaysInMonthCount(),
+      });
+    }
+    if (isSelectedPastMonth.value) {
+      return calculateCategoryForecast({
+        currentExpenses: prevExpenses.value,
+        prevExpenses: currentExpenses.value,
+        subscriptions: subscriptions.value,
+        categoryId: categoryId?.value,
+        daysPassed: getDaysPassedInMonth(),
+        daysInMonth: getDaysInMonthCount(),
+      });
+    }
+    return null;
+  });
+
   // Процент изменения расходов:
-  // - Для конкретной категории (в модалке категории) сравниваем общие траты по категории (totalSpent vs prevTotalSpent).
+  // - Для конкретной категории сравниваем через прогноз суммы категории:
+  //   для регулярных категорий (> 3 операций) применяем нормализацию по дням месяца,
+  //   для редких/разовых трат (<= 3 операций) сопоставляем суммы напрямую без искажения.
   // - Для общих расходов за период "1M" (средний чек на день) сравниваем среднедневной темп трат (avgDaily vs prevAvgDaily).
   // - Для фиксированных периодов (неделя, 3 месяца) — итоговые суммы за период.
   const percentChange = computed(() => {
-    const isCategoryView = Boolean(categoryId?.value);
+    if (period.value === "1M") {
+      if (isCategoryView.value) {
+        const isFrequent =
+          currentExpenses.value.length > 3 || prevExpenses.value.length > 3;
 
-    if (period.value === "1M" && !isCategoryView) {
-      if (prevAvgDaily.value === 0) return 0;
-      return calculatePercentChange(avgDaily.value, prevAvgDaily.value);
+        if (isCurrentMonthPeriod.value) {
+          const currentBaseline =
+            currentCategoryForecast.value ?? totalSpent.value;
+          if (prevTotalSpent.value === 0) return 0;
+          const currentDays = getDaysInMonthCount(endDate.value);
+          const prevDays = getDaysInMonthCount(prevStartDate.value);
+          const comparisonPrev = isFrequent
+            ? normalizeMonthlyAmount(
+                prevTotalSpent.value,
+                prevDays,
+                currentDays,
+              )
+            : prevTotalSpent.value;
+          return calculatePercentChange(currentBaseline, comparisonPrev);
+        }
+        if (isSelectedPastMonth.value) {
+          const targetBaseline =
+            currentCategoryForecast.value ?? prevTotalSpent.value;
+          if (targetBaseline === 0) return 0;
+          const selectedDays = getDaysInMonthCount(endDate.value);
+          const targetDays = getDaysInMonthCount(prevStartDate.value);
+          const comparisonSelected = isFrequent
+            ? normalizeMonthlyAmount(
+                totalSpent.value,
+                selectedDays,
+                targetDays,
+              )
+            : totalSpent.value;
+          return calculatePercentChange(comparisonSelected, targetBaseline);
+        }
+      } else {
+        if (prevAvgDaily.value === 0) return 0;
+        return calculatePercentChange(avgDaily.value, prevAvgDaily.value);
+      }
     }
     return calculatePercentChange(totalSpent.value, prevTotalSpent.value);
+  });
+
+  const effectiveForecast = computed(() => {
+    if (isCategoryView.value) {
+      return currentCategoryForecast.value;
+    }
+    return forecast.value;
   });
 
   return {
@@ -129,7 +202,8 @@ export const useExpenseAnalytics = (options: ExpenseAnalyticsOptions) => {
     avgDaily,
     prevAvgDaily,
     percentChange,
-    forecast,
+    forecast: effectiveForecast,
+    categoryForecast: currentCategoryForecast,
     upcomingSubscriptions,
     upcomingSubscriptionsTotal,
     isCurrentMonthPeriod,

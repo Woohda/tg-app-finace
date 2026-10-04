@@ -10,15 +10,14 @@
  * ### Логика работы:
  * 1. Загрузка списка подписок пользователя через `useSubscriptions`.
  * 2. Определение прошедших и оставшихся дней месяца через чистые функции `getDaysPassedInMonth()` и `getDaysInMonthCount()`.
- * 3. Фильтрация предстоящих подписок:
- *    - день списания больше сегодняшнего числа (`getEffectiveDayOfMonth`);
- *    - день списания сегодня, но транзакция еще не внесена в базу.
+ * 3. Сопоставление фактических трат и предстоящих подписок через `matchSubscriptionsWithExpenses` (по категории, сумме и названию).
  * 4. Вычисление средних ежедневных переменных трат (`avgDailyVariable = (totalSpent - pastSubscriptionsTotal) / daysPassed`).
  * 5. Расчет итогового прогноза: `totalSpent + avgDailyVariable * remainingDays + upcomingSubscriptionsTotal`.
  */
 import { computed, onMounted } from "vue";
 import type { Ref, ComputedRef } from "vue";
 import type { Transaction } from "./useTransactions";
+import { matchSubscriptionsWithExpenses } from "~/utils/analytics";
 
 export interface SpendingForecastOptions {
   isCurrentMonthPeriod: ComputedRef<boolean> | Ref<boolean>;
@@ -50,67 +49,34 @@ export const useSpendingForecast = (options: SpendingForecastOptions) => {
     return Math.max(0, daysInMonth.value - daysPassed.value);
   });
 
-  // Определяем, какие регулярные платежи уже фактически зафиксированы в расходах текущего месяца
-  const recordedSubscriptionIds = computed<Set<string>>(() => {
-    const recordedIds = new Set<string>();
-    if (!isCurrentMonthPeriod.value) return recordedIds;
-
-    const availableExpenses = [...currentExpenses.value];
-
-    for (const sub of subscriptions.value) {
-      if (!sub.is_active) continue;
-      if (categoryId?.value && sub.category_id !== categoryId.value) continue;
-
-      const txIndex = availableExpenses.findIndex((tx) => {
-        const isSameAmount = Math.abs(tx.amount - sub.amount) < 0.01;
-        if (!isSameAmount) return false;
-
-        const isSameCategory =
-          !sub.category_id || tx.categoryId === sub.category_id;
-        const isSameName =
-          Boolean(tx.name) &&
-          Boolean(sub.name) &&
-          (tx.name!.toLowerCase().includes(sub.name.toLowerCase()) ||
-            sub.name.toLowerCase().includes(tx.name!.toLowerCase()));
-
-        return isSameCategory || isSameName;
-      });
-
-      if (txIndex !== -1) {
-        recordedIds.add(sub.id);
-        availableExpenses.splice(txIndex, 1);
-      }
+  // Сопоставление регулярных платежей с фактическими расходами текущего месяца
+  const matchResult = computed(() => {
+    if (!isCurrentMonthPeriod.value) {
+      return {
+        recordedIds: new Set<string>(),
+        upcomingSubscriptions: [],
+        upcomingTotal: 0,
+        pastTotal: 0,
+      };
     }
-
-    return recordedIds;
+    return matchSubscriptionsWithExpenses(
+      currentExpenses.value,
+      subscriptions.value,
+      categoryId?.value,
+    );
   });
 
   // Плановые регулярные платежи текущего месяца, которые ещё предстоит списать
-  const upcomingSubscriptions = computed(() => {
-    if (!isCurrentMonthPeriod.value) return [];
+  const upcomingSubscriptions = computed(
+    () => matchResult.value.upcomingSubscriptions,
+  );
 
-    return subscriptions.value.filter((sub) => {
-      if (!sub.is_active) return false;
-      if (categoryId?.value && sub.category_id !== categoryId.value)
-        return false;
-
-      // Если платеж еще не внесен в расходы — он считается предстоящим к списанию
-      return !recordedSubscriptionIds.value.has(sub.id);
-    });
-  });
-
-  const upcomingSubscriptionsTotal = computed(() => {
-    return upcomingSubscriptions.value.reduce((sum, s) => sum + s.amount, 0);
-  });
+  const upcomingSubscriptionsTotal = computed(
+    () => matchResult.value.upcomingTotal,
+  );
 
   // Регулярные платежи, которые уже фактически вошли в расходы месяца
-  const pastSubscriptionsTotal = computed(() => {
-    if (!isCurrentMonthPeriod.value) return 0;
-
-    return subscriptions.value
-      .filter((sub) => recordedSubscriptionIds.value.has(sub.id))
-      .reduce((sum, s) => sum + s.amount, 0);
-  });
+  const pastSubscriptionsTotal = computed(() => matchResult.value.pastTotal);
 
   // Средний дневной расход (исторический за прошедшие дни)
   const avgDaily = computed(() => {

@@ -11,19 +11,25 @@
  * 1. Выбор периода анализа: Неделя, Месяц, 3 Месяца.
  * 2. При выборе вкладки «Месяц» отображает селектор месяцев `MonthSelector` с блокировкой перехода в будущее.
  * 3. Для текущего месяца отображает сферу прогноза `LiquidSphere` и индикатор темпа расходов.
- * 4. Для архивных месяцев отображает карточку `PastMonthComparisonCard` со среднедневным чеком и топ-3 категориями.
+ * 4. Для архивных месяцев отображает карточку `PastMonthComparisonCard` со среднедневным чеком и топ-3 категориями с сопоставлением к прогнозу (с умной нормализацией по дням для регулярных категорий).
  * 5. Расчет агрегированных данных, прогноза и распределения трат через `useAnalyticsData`.
  * 6. Детальный просмотр и управление лимитами через модальное окно `CategoryAnalyticsModal`.
  */
 import { ref, computed, watch, onMounted } from "vue";
 import { TrendingUp, TrendingDown } from "@lucide/vue";
 import { formatAmount } from "~/utils/format";
-import { calculatePercentChange } from "~/utils/analytics";
+import {
+  calculatePercentChange,
+  calculateCategoryForecast,
+  normalizeMonthlyAmount,
+} from "~/utils/analytics";
 import {
   getNow,
   getNextMonth,
   getPrevMonth,
   isCurrentMonth,
+  getDaysPassedInMonth,
+  getDaysInMonthCount,
 } from "~/utils/date";
 
 const selectedMonthDate = ref(getNow());
@@ -60,6 +66,8 @@ onMounted(() => {
   fetchGoals();
 });
 
+const { subscriptions } = useSubscriptions();
+
 const {
   pending,
   totalSpent,
@@ -74,26 +82,55 @@ const {
   upcomingSubscriptionsTotal,
   categoryStats,
   chartData,
+  currentExpenses,
   prevExpenses,
 } = useAnalyticsData(period, startDate, endDate, prevStartDate, prevEndDate);
 
-// Сравнение трех наибольших трат в категориях выбранного месяца с текущим
+// Сравнение трех наибольших трат в категориях выбранного месяца с текущим (по прогнозу)
 const topCategoriesComparison = computed(() => {
   const top3 = categoryStats.value.slice(0, 3);
   if (top3.length === 0) return [];
 
+  const daysPassed = getDaysPassedInMonth();
+  const daysInMonth = getDaysInMonthCount();
+
   return top3.map((cat) => {
+    const selectedCatExpenses = currentExpenses.value.filter(
+      (t) => t.categoryId === cat.categoryId,
+    );
     const currentCatExpenses = prevExpenses.value.filter(
       (t) => t.categoryId === cat.categoryId,
     );
-    const currentAmount = currentCatExpenses.reduce(
+    const currentTotal = currentCatExpenses.reduce(
       (sum, t) => sum + t.amount,
       0,
     );
 
+    const currentForecast = calculateCategoryForecast({
+      currentExpenses: currentCatExpenses,
+      prevExpenses: selectedCatExpenses,
+      subscriptions: subscriptions.value,
+      categoryId: cat.categoryId,
+      daysPassed,
+      daysInMonth,
+    });
+
+    const targetAmount =
+      currentForecast !== null && currentForecast > 0
+        ? currentForecast
+        : currentTotal;
+
+    const isFrequent =
+      selectedCatExpenses.length > 3 || currentCatExpenses.length > 3;
+
+    const selectedDays = getDaysInMonthCount(selectedMonthDate.value);
+    const comparisonSelectedAmount = isFrequent
+      ? normalizeMonthlyAmount(cat.amount, selectedDays, daysInMonth)
+      : cat.amount;
+
     let change: number | null = null;
-    if (currentAmount > 0) {
-      change = calculatePercentChange(cat.amount, currentAmount);
+    if (targetAmount > 0) {
+      change = calculatePercentChange(comparisonSelectedAmount, targetAmount);
     }
 
     return {
@@ -101,7 +138,8 @@ const topCategoriesComparison = computed(() => {
       categoryName: cat.categoryName,
       categoryIcon: cat.categoryIcon,
       selectedAmount: cat.amount,
-      currentAmount,
+      currentAmount: targetAmount,
+      isForecast: Boolean(currentForecast !== null && currentForecast > 0),
       percentChange: change,
     };
   });
