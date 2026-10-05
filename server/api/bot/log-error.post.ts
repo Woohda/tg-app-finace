@@ -1,7 +1,30 @@
+/**
+ * @module server/api/bot/log-error.post
+ * @fileoverview Серверный обработчик логирования фронтенд-ошибок в Telegram администратора.
+ * @description
+ * Принимает ошибки от клиентского обработчика `onErrorCaptured` / `window.onerror`.
+ * Содержит защиту от флуда и спама:
+ * 1. Ограничение частоты (Throttling): не более 5 сообщений в минуту на инстанс.
+ * 2. Фильтрация пустых браузерных ошибок Script error.
+ * 3. Санитизация и экранирование HTML-тегов для предотвращения падений Telegram парсера.
+ */
 import { getBot } from "~~/server/utils/bot";
+import { escapeHtml } from "~~/server/utils/format";
 
-const escapeHtml = (str: string): string =>
-  str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+const MAX_ERRORS_PER_MINUTE = 5;
+const errorTimestamps: number[] = [];
+
+function isRateLimited(): boolean {
+  const now = Date.now();
+  while (errorTimestamps.length > 0 && now - errorTimestamps[0]! > 60_000) {
+    errorTimestamps.shift();
+  }
+  if (errorTimestamps.length >= MAX_ERRORS_PER_MINUTE) {
+    return true;
+  }
+  errorTimestamps.push(now);
+  return false;
+}
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
@@ -25,6 +48,14 @@ export default defineEventHandler(async (event) => {
     // Игнорируем неинформативные анонимные браузерные ошибки Script error
     if (message && String(message).includes("Script error") && !stack) {
       return { success: true, ignored: true };
+    }
+
+    // Защита от спама и DoS-атак на бота Telegram
+    if (isRateLimited()) {
+      console.warn(
+        "[Error Logger Throttled] Превышен лимит отправки ошибок в Telegram (максимум 5 в минуту)",
+      );
+      return { success: true, throttled: true };
     }
 
     // Экранируем и ограничиваем длину полей во избежание сбоев парсинга Telegram HTML и DoS

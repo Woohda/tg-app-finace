@@ -13,6 +13,7 @@
 import type { Context } from "grammy";
 import { getBotSupabase } from "./db";
 import { parseBotMessage } from "./botParser";
+import { escapeHtml } from "./format";
 
 /**
  * Обрабатывает все callback-запросы от инлайн-кнопок бота.
@@ -35,6 +36,23 @@ export async function handleBotCallbackQuery(ctx: Context): Promise<void> {
     if (!sub) {
       await ctx.answerCallbackQuery({
         text: "Регулярный платёж не найден или был удалён",
+        show_alert: true,
+      });
+      return;
+    }
+
+    const telegramId = ctx.from?.id;
+    if (!telegramId) return;
+
+    const { data: user } = await supabase
+      .from("users")
+      .select("id")
+      .eq("telegram_id", telegramId)
+      .maybeSingle();
+
+    if (!user || user.id !== sub.user_id) {
+      await ctx.answerCallbackQuery({
+        text: "Вы не можете подтвердить чужой регулярный платёж",
         show_alert: true,
       });
       return;
@@ -177,11 +195,13 @@ export async function handleBotCallbackQuery(ctx: Context): Promise<void> {
   }
 
   const typeLabel = category.type === "income" ? "доход" : "расход";
+  const safeName = escapeHtml(formattedName);
+  const safeCatName = escapeHtml(category.name);
 
   await ctx.editMessageText(
-    `✅ Сохранен ${typeLabel}:\n${formattedName} (${category.name}) — ${formatBotAmount(amount)}\n\n_Я запомнил эту категорию на будущее!_`,
+    `✅ Сохранен ${typeLabel}:\n<b>${safeName}</b> (${safeCatName}) — <b>${formatBotAmount(amount)}</b>\n\n<i>Я запомнил эту категорию на будущее!</i>`,
     {
-      parse_mode: "Markdown",
+      parse_mode: "HTML",
     },
   );
 
