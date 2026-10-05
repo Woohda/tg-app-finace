@@ -394,7 +394,7 @@ watch(
         >
           <div class="flex items-center gap-1">
             <ShieldCheck class="w-3.5 h-3.5 text-text-success shrink-0" />
-            <span class="whitespace-nowrap">
+            <span class="whitespace-nowrap shrink-0">
               {{
                 goalPacing.remainingChecksByMedian !== null
                   ? "Запас по покупкам:"
@@ -403,7 +403,7 @@ watch(
             </span>
           </div>
           <span
-            class="w-28 text-[10px] font-bold text-text-primary text-right whitespace-wrap"
+            class="text-[10px] font-bold text-text-primary text-right whitespace-wrap"
           >
             {{ goalPacing.paceText }}
           </span>
