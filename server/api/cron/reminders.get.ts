@@ -135,6 +135,62 @@ export default defineEventHandler(async (event) => {
   let skippedIdempotent = 0;
   let skippedAlreadyPaid = 0;
 
+  // Пакетная оптимизация: собираем подписки дня списания для однократной проверки существующих транзакций
+  const dueTodayCandidates: Array<{
+    userId: string;
+    dateISO: string;
+  }> = [];
+
+  for (const sub of subscriptions || []) {
+    const rawUser = Array.isArray(sub.users) ? sub.users[0] : sub.users;
+    if (!rawUser?.telegram_id) continue;
+
+    const userTz = rawUser?.timezone || "Europe/Moscow";
+    const userLocalNow = getUserLocalDate(userTz);
+    const userLocalHour = userLocalNow.getHours();
+    const userTodayISO = getUserLocalDateISO(userTz, userLocalNow);
+
+    if (!isForce && (userLocalHour < 11 || userLocalHour >= 14)) continue;
+    if (!isForce && sub.last_reminded_at) {
+      const lastRemindedDateISO = getUserLocalDateISO(
+        userTz,
+        new Date(sub.last_reminded_at),
+      );
+      if (lastRemindedDateISO === userTodayISO) continue;
+    }
+
+    if (isSubscriptionDueOnDate(sub.day_of_month, userLocalNow)) {
+      dueTodayCandidates.push({ userId: sub.user_id, dateISO: userTodayISO });
+    }
+  }
+
+  const candidateUserIds = Array.from(
+    new Set(dueTodayCandidates.map((c) => c.userId)),
+  );
+  const candidateDates = Array.from(
+    new Set(dueTodayCandidates.map((c) => c.dateISO)),
+  );
+
+  let todayTransactions: Array<{
+    id: string;
+    user_id: string;
+    date: string;
+    name: string | null;
+    category_id: string | null;
+  }> = [];
+
+  if (candidateUserIds.length > 0 && candidateDates.length > 0) {
+    const { data: batchTxs } = await supabase
+      .from("transactions")
+      .select("id, user_id, date, name, category_id")
+      .in("user_id", candidateUserIds)
+      .in("date", candidateDates);
+
+    if (batchTxs) {
+      todayTransactions = batchTxs;
+    }
+  }
+
   for (const sub of subscriptions || []) {
     const rawUser = Array.isArray(sub.users) ? sub.users[0] : sub.users;
     const telegramId = rawUser?.telegram_id;
@@ -183,16 +239,19 @@ export default defineEventHandler(async (event) => {
 
     // 1. Проверка на сегодня (день списания)
     if (isSubscriptionDueOnDate(subDay, userLocalNow)) {
-      // Проверяем, не внесен ли уже этот платёж сегодня пользователем
-      const { data: existingTx } = await supabase
-        .from("transactions")
-        .select("id")
-        .eq("user_id", sub.user_id)
-        .eq("date", userTodayISO)
-        .or(`name.ilike.%${sub.name}%,category_id.eq.${sub.category_id || ""}`)
-        .limit(1);
+      // Проверяем, не внесен ли уже этот платёж сегодня пользователем (проверка в памяти по пакетной выборке)
+      const subNameLower = sub.name.trim().toLowerCase();
+      const hasPaid = todayTransactions.some((tx) => {
+        if (tx.user_id !== sub.user_id || tx.date !== userTodayISO) return false;
+        const nameMatch =
+          tx.name && tx.name.toLowerCase().includes(subNameLower);
+        const categoryMatch = Boolean(
+          sub.category_id && tx.category_id === sub.category_id,
+        );
+        return Boolean(nameMatch || categoryMatch);
+      });
 
-      if (existingTx && existingTx.length > 0) {
+      if (hasPaid) {
         skippedAlreadyPaid++;
         await markReminded();
         continue;

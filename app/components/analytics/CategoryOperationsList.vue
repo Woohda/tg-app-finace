@@ -109,8 +109,8 @@ async function handleDelete(id: string) {
   }
 }
 
-function handleEdit(id: string) {
-  openModal(id);
+function handleEdit(tx: Transaction) {
+  openModal(tx);
 }
 
 const filteredExpense = computed(() =>
@@ -191,7 +191,7 @@ const summaryBadgeText = computed(() => {
         :class="{
           'opacity-50 pointer-events-none': deletingId === tx.id,
         }"
-        @click="handleEdit(tx.id)"
+        @click="handleEdit(tx)"
         @delete="handleDelete(tx.id)"
       />
 

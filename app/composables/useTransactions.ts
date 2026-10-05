@@ -28,6 +28,8 @@ export interface Transaction {
   date: string;
 }
 
+let isTxNotificationObserverAttached = false;
+
 export const useTransactions = (options?: {
   startDate?: Ref<Date>;
   endDate?: Ref<Date>;
@@ -90,11 +92,18 @@ export const useTransactions = (options?: {
     return txCache.value[cacheKey.value] || [];
   });
 
-  // Реактивный слушатель: реагирует на изменение дат (периода) и глобальной версии (CRUD)
+  const hasFilter = computed(
+    () => Boolean(options?.startDate?.value || options?.endDate?.value),
+  );
+
+  // Реактивный слушатель: реагирует на изменение дат (периода) и глобальной версии (CRUD).
+  // Автоматический запрос выполняется ТОЛЬКО при наличии фильтра дат, предотвращая загрузку all_all на старте.
   watch(
     [cacheKey, txVersion],
     () => {
-      fetchTransactions();
+      if (hasFilter.value) {
+        fetchTransactions();
+      }
     },
     { immediate: true },
   );
@@ -103,33 +112,39 @@ export const useTransactions = (options?: {
     await fetchTransactions(true);
   };
 
-  const knownTxIds = useLocalStorage<string[]>("app-known-tx-ids", []);
+  const getKnownTxIds = () => useLocalStorage<string[]>("app-known-tx-ids", []);
 
-  watch(
-    transactions,
-    (newVal) => {
-      if (!newVal || newVal.length === 0) return;
+  // Синглтон-наблюдатель за новыми транзакциями для показа уведомлений (регистрируется единожды на клиенте)
+  if (import.meta.client && hasFilter.value && !isTxNotificationObserverAttached) {
+    isTxNotificationObserverAttached = true;
+    const knownTxIds = getKnownTxIds();
 
-      if (knownTxIds.value.length === 0) {
-        // Первый запуск на устройстве: просто запоминаем IDs
-        knownTxIds.value = newVal.map((t) => t.id).slice(0, 150);
-        return;
-      }
+    watch(
+      transactions,
+      (newVal) => {
+        if (!newVal || newVal.length === 0) return;
 
-      const unseen = newVal.filter((t) => !knownTxIds.value.includes(t.id));
-      if (unseen.length > 0) {
-        unseen.forEach((t) => {
-          notifications.add(`🤖 Бот: ${t.categoryName}`, {
-            message: t.name ? `${t.name}: ${t.amount} ₽` : `${t.amount} ₽`,
-            type: t.type,
+        if (knownTxIds.value.length === 0) {
+          // Первый запуск на устройстве: просто запоминаем IDs
+          knownTxIds.value = newVal.map((t) => t.id).slice(0, 150);
+          return;
+        }
+
+        const unseen = newVal.filter((t) => !knownTxIds.value.includes(t.id));
+        if (unseen.length > 0) {
+          unseen.forEach((t) => {
+            notifications.add(`🤖 Бот: ${t.categoryName}`, {
+              message: t.name ? `${t.name}: ${t.amount} ₽` : `${t.amount} ₽`,
+              type: t.type,
+            });
           });
-        });
-        const updated = [...unseen.map((t) => t.id), ...knownTxIds.value];
-        knownTxIds.value = updated.slice(0, 150);
-      }
-    },
-    { immediate: true },
-  );
+          const updated = [...unseen.map((t) => t.id), ...knownTxIds.value];
+          knownTxIds.value = updated.slice(0, 150);
+        }
+      },
+      { immediate: true },
+    );
+  }
 
   const invalidateAll = () => {
     txCache.value = {};
@@ -163,7 +178,7 @@ export const useTransactions = (options?: {
         body: payload,
       });
 
-      knownTxIds.value.unshift(newTx.id);
+      getKnownTxIds().value.unshift(newTx.id);
 
       invalidateAll();
 
@@ -291,6 +306,7 @@ export const useTransactions = (options?: {
       );
 
       const newIds = newTransactions.map((t) => t.id);
+      const knownTxIds = getKnownTxIds();
       knownTxIds.value = [...newIds, ...knownTxIds.value].slice(0, 150);
 
       invalidateAll();

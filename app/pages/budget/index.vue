@@ -40,7 +40,8 @@ const {
   isLoaded: isGoalsLoaded,
   error: goalsError,
 } = useCategoryGoals();
-const { transactions } = useTransactions();
+const { startDate, endDate } = useDateFilter();
+const { transactions } = useTransactions({ startDate, endDate });
 
 const isGoalsLoading = computed(() => {
   return (

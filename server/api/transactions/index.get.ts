@@ -42,7 +42,8 @@ export default defineEventHandler(async (event) => {
     .gte("date", startDateStr)
     .lte("date", endDateStr)
     .order("date", { ascending: false })
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .limit(500);
 
   if (error) {
     console.error("Ошибка получения транзакций:", error);
