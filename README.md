@@ -119,7 +119,7 @@
 | **Фреймворк**        | [Nuxt 4](https://nuxt.com/) (Vue 3, Vite)                             | SSR/SPA с пресетом `cloudflare-pages`, высокая скорость отклика    |
 | **Стилизация**       | [Tailwind CSS v4](https://tailwindcss.com/)                           | Glassmorphism-дизайн, плавная адаптация тем оформления             |
 | **UI-компоненты**    | [Reka UI](https://reka-ui.com/) + [Lucide Icons](https://lucide.dev/) | Доступные примитивы, жесты свайпа (`SwipeableRow`), модальные окна |
-| **Графика**          | [Chart.js](https://www.chartjs.org/) + `vue-chartjs`                  | Интерактивные диаграммы расходов и динамика трат                   |
+| **Графика**          | Нативный SVG (Vue 3)                                                  | Высокопроизводительные 3D Donut и Bar диаграммы без тяжелых библиотек |
 | **База данных**      | [Supabase](https://supabase.com/) (PostgreSQL)                        | REST-доступ через `@supabase/supabase-js`, строгая изоляция данных |
 | **Telegram Bot**     | [Grammy](https://grammy.dev/)                                         | Вебхук-архитектура, обработка команд, сообщений и callback-кнопок  |
 | **AI OCR**           | [@google/genai](https://www.npmjs.com/package/@google/genai)          | Мультимодальное распознавание чеков через Gemini 2.5 Flash         |
