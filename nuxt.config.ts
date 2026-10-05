@@ -8,6 +8,23 @@ export default defineNuxtConfig({
   nitro: {
     preset: "cloudflare-pages",
     routeRules: {
+      "/favicon.png": {
+        headers: {
+          "Cache-Control":
+            "public, max-age=86400, stale-while-revalidate=604800",
+        },
+      },
+      "/apple-touch-icon.png": {
+        headers: {
+          "Cache-Control":
+            "public, max-age=86400, stale-while-revalidate=604800",
+        },
+      },
+      "/fonts/**": {
+        headers: {
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
+      },
       "/**": {
         headers: {
           "X-Content-Type-Options": "nosniff",
