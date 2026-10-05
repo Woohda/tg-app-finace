@@ -76,7 +76,10 @@ export const budgetSchema = z.object({
 
 // --- AI ---
 export const parseReceiptSchema = z.object({
-  image: z.string().min(1, "Изображение не предоставлено"), // base64
+  image: z
+    .string()
+    .min(1, "Изображение не предоставлено")
+    .max(10_000_000, "Размер изображения превышает лимит (до 7 МБ)"),
   currentDate: z.string().optional(),
 });
 

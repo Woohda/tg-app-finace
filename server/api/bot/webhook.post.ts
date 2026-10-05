@@ -29,35 +29,21 @@ export default defineEventHandler(async (event) => {
       return { ok: false, error: "Missing token" };
     }
 
-    // Проверка подлинности вебхука Telegram через secret_token
+    // Обязательная проверка подлинности вебхука Telegram через secret_token
     const configuredSecret = (
       config.telegramWebhookSecret as string | undefined
     )?.trim();
     const incomingSecret = getHeader(event, "x-telegram-bot-api-secret-token");
+    const expectedSecret = await getWebhookSecretToken(token, configuredSecret);
 
-    // Если секретный токен задан в настройках окружения — проверяем его строго
-    if (configuredSecret) {
-      if (!incomingSecret || incomingSecret !== configuredSecret) {
-        console.warn(
-          "[Telegram Webhook Security] Отклонён неавторизованный запрос к вебхуку (неверный secret_token)",
-        );
-        throw createError({
-          statusCode: 401,
-          statusMessage: "Unauthorized: Invalid or missing webhook secret token",
-        });
-      }
-    } else if (incomingSecret) {
-      // Если Telegram передал secret_token, сверяем его с вычисленным хешем токена
-      const generatedSecret = await getWebhookSecretToken(token);
-      if (incomingSecret !== generatedSecret) {
-        console.warn(
-          "[Telegram Webhook Security] Отклонён неавторизованный запрос к вебхуку (хеш токена не совпал)",
-        );
-        throw createError({
-          statusCode: 401,
-          statusMessage: "Unauthorized: Invalid webhook secret token",
-        });
-      }
+    if (!incomingSecret || incomingSecret !== expectedSecret) {
+      console.warn(
+        "[Telegram Webhook Security] Отклонён неавторизованный запрос к вебхуку (неверный или отсутствующий secret_token)",
+      );
+      throw createError({
+        statusCode: 401,
+        statusMessage: "Unauthorized: Invalid or missing webhook secret token",
+      });
     }
 
     const update = await readBody(event);

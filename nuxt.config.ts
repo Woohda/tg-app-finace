@@ -13,6 +13,8 @@ export default defineNuxtConfig({
           "X-Content-Type-Options": "nosniff",
           "Referrer-Policy": "strict-origin-when-cross-origin",
           "X-XSS-Protection": "1; mode=block",
+          "Content-Security-Policy":
+            "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org;",
         },
       },
     },

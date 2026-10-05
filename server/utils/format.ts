@@ -43,3 +43,10 @@ export function formatBotAmount(amount: number): string {
     }).format(amount) + " ₽"
   );
 }
+
+/**
+ * Экранирует спецсимволы HTML для безопасной отправки сообщений в Telegram Bot API.
+ */
+export function escapeHtml(str: string): string {
+  return str.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+}
