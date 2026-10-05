@@ -246,6 +246,19 @@ export function isCurrentDay(
 }
 
 /**
+ * Форматирует число и название месяца в родительном падеже на русском языке.
+ *
+ * @example
+ * formatDayMonth(new Date(2026, 9, 18)) // "18 октября"
+ */
+export function formatDayMonth(
+  dateInput?: Date | string | number | null,
+): string {
+  const date = toSafeDate(dateInput);
+  return format(date, "d MMMM", { locale: ru });
+}
+
+/**
  * Форматирует последний день месяца в читаемый текст на русском языке.
  *
  * @example

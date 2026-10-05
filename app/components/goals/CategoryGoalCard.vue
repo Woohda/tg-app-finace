@@ -4,24 +4,43 @@
  * @fileoverview Карточка управления месячной целью расходов по категории
  * @description
  * Отображает текущий лимит расходов, статус выполнения, сумму остатка или перерасхода,
- * динамический прогресс-бар и предоставляет инлайн-форму для создания, изменения и удаления цели.
+ * динамический прогресс-бар, темп расходования лимита (день исчерпания и безопасный темп покупок/дней)
+ * и предоставляет инлайн-форму для создания, изменения и удаления цели.
  * Используется в модальном окне аналитики категории.
  * ---
  * ### Логика работы:
- * 1. Получает `categoryId` и `monthSpent` из пропсов.
+ * 1. Получает `categoryId`, `monthSpent`, прогноз расходов `forecast` и медианный чек `medianCheck` из пропсов.
  * 2. Синхронизирует значение цели через `useCategoryGoals`.
  * 3. Рассчитывает процент выполнения лимита, сумму остатка или перерасхода.
- * 4. Предоставляет инлайн-редактирование суммы цели с валидацией и тактильным откликом.
- * 5. Позволяет сбросить цель при нажатии на кнопку удаления.
+ * 4. Вычисляет темп расходования лимита (Goal Pacing) через `calculateCategoryGoalPacing`:
+ *    - при риске перерасхода вычисляет день исчерпания («При текущем темпе лимит закончится 18 октября»);
+ *    - рассчитывает запас лимита в количестве покупок по медианному чеку («Чтобы уложиться в лимит: не более 8 покупок (медианный чек 500,00 ₽)»);
+ *    - при отсутствии медианы переключается на суточный лимит («не более 350,00 ₽/день»).
+ * 5. Предоставляет инлайн-редактирование суммы цели с валидацией и тактильным откликом.
+ * 6. Позволяет сбросить цель при нажатии на кнопку удаления.
  */
 import { computed, ref, watch } from "vue";
-import { Target, Pencil, RussianRuble, Trash2, Plus, X } from "@lucide/vue";
+import {
+  Target,
+  Pencil,
+  RussianRuble,
+  Trash2,
+  Plus,
+  X,
+  CalendarClock,
+  ShieldCheck,
+  AlertCircle,
+} from "@lucide/vue";
 import { formatAmount } from "~/utils/format";
+import { formatDayMonth } from "~/utils/date";
 import { getHapticFeedback } from "~/utils/haptics";
+import { calculateCategoryGoalPacing } from "~/utils/analytics";
 
 interface Props {
   categoryId: string | null;
   monthSpent: number;
+  forecast?: number | null;
+  medianCheck?: number | null;
 }
 
 const props = defineProps<Props>();
@@ -56,6 +75,22 @@ const goalProgress = computed(() => {
     overspent,
     barWidth,
   };
+});
+
+const goalPacing = computed(() => {
+  const goal = currentGoalAmount.value;
+  if (!goal || goal <= 0) return null;
+  return calculateCategoryGoalPacing({
+    goal,
+    monthSpent: props.monthSpent,
+    forecast: props.forecast,
+    medianCheck: props.medianCheck,
+  });
+});
+
+const formattedExhaustionDate = computed(() => {
+  if (!goalPacing.value?.exhaustionDate) return null;
+  return formatDayMonth(goalPacing.value.exhaustionDate);
 });
 
 const isEditingGoal = ref(false);
@@ -322,6 +357,67 @@ watch(
                 ? formatAmount(goalProgress.overspent)
                 : formatAmount(goalProgress.remaining)
             }}
+          </span>
+        </div>
+      </div>
+
+      <!-- Умный темп расходования лимита (Goal Pacing) -->
+      <div v-if="goalPacing" class="flex flex-col gap-1.5">
+        <!-- Предупреждение о дне исчерпания лимита при прогнозном перерасходе -->
+        <div
+          v-if="goalPacing.isOverspendProjected && formattedExhaustionDate"
+          class="flex items-center gap-2 p-2 rounded-xl glass-pill bg-text-accent/10 border border-text-accent/20 text-[10px]"
+        >
+          <CalendarClock class="w-4 h-4 text-text-accent shrink-0 mt-0.5" />
+          <div class="flex flex-col gap-0.5 min-w-0">
+            <span class="font-bold text-text-primary leading-tight">
+              При текущем темпе лимит закончится
+              <span
+                class="text-text-accent font-extrabold underline underline-offset-2"
+              >
+                {{ formattedExhaustionDate }}
+              </span>
+            </span>
+            <span class="text-text-secondary leading-tight">
+              Чтобы уложиться в лимит:
+              <span class="font-bold text-text-primary">
+                {{ goalPacing.paceText }}
+              </span>
+            </span>
+          </div>
+        </div>
+
+        <!-- Позитивное состояние: темп в норме или безопасный остаток -->
+        <div
+          v-else-if="!goalPacing.isAlreadyOverspent"
+          class="flex items-start justify-between gap-px text-xs text-text-secondary px-0.5"
+        >
+          <div class="flex items-center gap-1">
+            <ShieldCheck class="w-3.5 h-3.5 text-text-success shrink-0" />
+            <span class="whitespace-nowrap">
+              {{
+                goalPacing.remainingChecksByMedian !== null
+                  ? "Запас по покупкам:"
+                  : "Безопасный суточный темп:"
+              }}
+            </span>
+          </div>
+          <span
+            class="w-28 text-[10px] font-bold text-text-primary text-right whitespace-wrap"
+          >
+            {{ goalPacing.paceText }}
+          </span>
+        </div>
+
+        <!-- Лимит уже фактически исчерпан прямо сейчас -->
+        <div
+          v-else
+          class="flex items-center gap-1 text-[11px] text-text-accent px-0.5"
+        >
+          <AlertCircle class="w-3.5 h-3.5 shrink-0" />
+          <span class="leading-tight">
+            Лимит исчерпан. До конца месяца еще
+            {{ goalPacing.remainingDays }} дн.
           </span>
         </div>
       </div>
