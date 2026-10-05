@@ -15,8 +15,6 @@
  */
 import type { ChartDataPoint } from "~/utils/analytics";
 import { RotateCcw, CalendarClock } from "@lucide/vue";
-import GlassCard from "~/components/shared/GlassCard.vue";
-import AnalyticsBarChart from "./AnalyticsBarChart.vue";
 
 interface Props {
   chartData: ChartDataPoint[];

@@ -72,7 +72,7 @@ const maxTransactionDate = computed(() => {
           Метрики покупок
         </span>
       </div>
-      <span class="text-[10px] text-text-muted font-medium">
+      <span class="text-xs text-text-secondary font-medium">
         {{ periodLabel }}
       </span>
     </div>
