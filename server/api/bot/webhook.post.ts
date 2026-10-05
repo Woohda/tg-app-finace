@@ -29,12 +29,9 @@ export default defineEventHandler(async (event) => {
       return { ok: false, error: "Missing token" };
     }
 
-    // Обязательная проверка подлинности вебхука Telegram через secret_token
-    const configuredSecret = (
-      config.telegramWebhookSecret as string | undefined
-    )?.trim();
+    // Обязательная проверка подлинности вебхука Telegram через криптографический secret_token
     const incomingSecret = getHeader(event, "x-telegram-bot-api-secret-token");
-    const expectedSecret = await getWebhookSecretToken(token, configuredSecret);
+    const expectedSecret = await getWebhookSecretToken(token);
 
     if (!incomingSecret || incomingSecret !== expectedSecret) {
       console.warn(

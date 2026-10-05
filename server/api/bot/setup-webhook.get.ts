@@ -35,7 +35,12 @@ export default defineEventHandler(async (event) => {
   const providedSecret =
     authHeader?.replace(/^Bearer\s+/i, "").trim() || querySecret;
 
-  if (providedSecret !== token) {
+  const expectedSecret = await getWebhookSecretToken(token);
+
+  const isAuthorized =
+    providedSecret === token || providedSecret === expectedSecret;
+
+  if (!isAuthorized) {
     throw createError({
       statusCode: 401,
       statusMessage: "Unauthorized: Неверный или отсутствующий токен бота",
@@ -63,10 +68,7 @@ export default defineEventHandler(async (event) => {
       );
     } else {
       // Устанавливаем защищенный вебхук с секретным токеном для продакшена (Cloudflare)
-      const secretToken = await getWebhookSecretToken(
-        token,
-        config.telegramWebhookSecret as string | undefined,
-      );
+      const secretToken = await getWebhookSecretToken(token);
       telegramResponse = await $fetch(
         `https://api.telegram.org/bot${token}/setWebhook`,
         {
