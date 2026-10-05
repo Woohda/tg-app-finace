@@ -28,7 +28,10 @@ import {
   getNow,
 } from "~/utils/date";
 import { differenceInCalendarDays } from "date-fns";
-import { calculateCategoryDetailedMetrics } from "~/utils/analytics";
+import {
+  calculateCategoryDetailedMetrics,
+  calculateMedian,
+} from "~/utils/analytics";
 import { Z_INDEX } from "~/utils/zIndex";
 import GlassModal from "~/components/shared/GlassModal.vue";
 import GlassCard from "~/components/shared/GlassCard.vue";
@@ -169,6 +172,16 @@ const categoryDetailedMetrics = computed(() => {
     comparisonSource,
     comparisonPeriodDays.value,
   );
+});
+
+const effectiveMedianCheck = computed(() => {
+  if (categoryDetailedMetrics.value.medianCheck > 0) {
+    return categoryDetailedMetrics.value.medianCheck;
+  }
+  if (prevExpenses.value.length > 0) {
+    return calculateMedian(prevExpenses.value.map((t) => t.amount));
+  }
+  return null;
 });
 
 const metricsPeriodLabel = computed(() => {
@@ -325,11 +338,11 @@ const close = () => emit("close");
       <div v-else class="flex flex-col gap-5">
         <!-- Сводка -->
         <GlassCard class="flex justify-between items-start">
-          <div class="flex flex-col gap-1">
+          <div class="flex flex-col gap-1 shrink-0">
             <div class="flex items-center gap-1.5">
               <Coins class="w-4 h-4 text-text-accent" stroke-width="2" />
               <span
-                class="text-xs uppercase font-bold tracking-wide text-text-secondary"
+                class="text-[10px] uppercase font-bold tracking-wide text-text-secondary"
               >
                 Расходы за период
               </span>
@@ -353,7 +366,7 @@ const close = () => emit("close");
             </span>
           </div>
 
-          <div class="flex flex-col items-end gap-1.5">
+          <div class="mt-px flex flex-col items-end gap-1 text-right">
             <p
               class="text-text-secondary text-[10px] uppercase font-bold tracking-wide"
             >
@@ -382,6 +395,8 @@ const close = () => emit("close");
           v-if="localPeriod === '1M' && isCurrentMonthSelected"
           :category-id="categoryId"
           :month-spent="totalSpent"
+          :forecast="forecast"
+          :median-check="effectiveMedianCheck"
         />
 
         <!-- Микро-метрики покупок по категории -->

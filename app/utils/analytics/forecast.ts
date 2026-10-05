@@ -12,9 +12,17 @@
  * 2. Выделяет статистические выбросы (> 3 медианных чеков), учитывая их в факте, но не экстраполируя в будущее.
  * 3. Для разовых платежей (<= 3 операций в прошлом месяце) берет сумму прошлого месяца до оплаты и фиксирует факт после оплаты.
  * 4. Для переменных трат экстраполирует среднедневной регулярный темп на оставшиеся дни месяца.
+ * 5. Рассчитывает темп расходования лимита категории (Goal Pacing): день исчерпания и безопасный суточный остаток.
  */
 import type { Transaction } from "~/composables/useTransactions";
 import type { Subscription } from "~/composables/useSubscriptions";
+import {
+  getDaysPassedInMonth,
+  getDaysInMonthCount,
+  getNow,
+  toSafeDate,
+} from "~/utils/date";
+import { formatAmount } from "~/utils/format";
 import { calculateMedian } from "./math";
 
 /**
@@ -236,4 +244,158 @@ export function calculateCategoryForecast(
   const expectedFuture = Math.round(avgDaily * remainingDays);
 
   return currentTotal + expectedFuture;
+}
+
+export interface CategoryGoalPacingParams {
+  /** Сумма установленного лимита (цели) на месяц в рублях */
+  goal: number;
+  /** Фактически потраченная сумма в категории за текущий месяц */
+  monthSpent: number;
+  /** Прогнозируемая сумма трат категории на конец месяца (или null, если нет прогноза) */
+  forecast?: number | null;
+  /** Медианный чек категории в рублях (если есть исторические операции) */
+  medianCheck?: number | null;
+  /** Количество прошедших дней в месяце (1..31). По умолчанию getDaysPassedInMonth() */
+  daysPassed?: number;
+  /** Общее количество дней в месяце (28..31). По умолчанию getDaysInMonthCount() */
+  daysInMonth?: number;
+  /** Базовая дата месяца для построения даты исчерпания. По умолчанию getNow() */
+  referenceDate?: Date;
+}
+
+export interface CategoryGoalPacingResult {
+  /** Безопасный суточный остаток трат (₽/день), чтобы уложиться в лимит */
+  safeDailyAllowance: number;
+  /** Количество оставшихся покупок по медианному чеку (если медиана доступна) */
+  remainingChecksByMedian: number | null;
+  /** Текстовая формулировка темпа (например, "не более 8 покупок (медиана 500,00 ₽)") */
+  paceText: string;
+  /** Предполагаемая дата исчерпания лимита при текущем темпе трат (если прогнозируется превышение) */
+  exhaustionDate: Date | null;
+  /** День месяца исчерпания лимита (число 1..31) */
+  exhaustionDay: number | null;
+  /** Флаг риска перерасхода (прогноз превышает лимит) */
+  isOverspendProjected: boolean;
+  /** Флаг, что лимит уже фактически превышен прямо сейчас */
+  isAlreadyOverspent: boolean;
+  /** Оставшиеся дни до конца месяца */
+  remainingDays: number;
+}
+
+/**
+ * Склоняет слово «покупка» для натуральных чисел в русском языке.
+ */
+function pluralizePurchases(count: number): string {
+  const mod10 = count % 10;
+  const mod100 = count % 100;
+  if (mod100 >= 11 && mod100 <= 19) return `${count} покупок`;
+  if (mod10 === 1) return `${count} покупка`;
+  if (mod10 >= 2 && mod10 <= 4) return `${count} покупки`;
+  return `${count} покупок`;
+}
+
+/**
+ * Рассчитывает темп расходования лимита категории (Category Goal Pacing):
+ * 1. Безопасный суточный остаток трат: сколько можно тратить в день до конца месяца, чтобы уложиться в лимит.
+ * 2. Оценка в количестве покупок по медианному чеку (дискретный лимит трат).
+ * 3. День исчерпания лимита: при текущем прогнозном темпе расходов определяет календарную дату,
+ *    когда остаток лимита будет полностью израсходован.
+ */
+export function calculateCategoryGoalPacing(
+  params: CategoryGoalPacingParams,
+): CategoryGoalPacingResult | null {
+  const {
+    goal,
+    monthSpent,
+    forecast,
+    medianCheck,
+    daysPassed = getDaysPassedInMonth(),
+    daysInMonth = getDaysInMonthCount(),
+    referenceDate = getNow(),
+  } = params;
+
+  if (goal <= 0) return null;
+
+  const passed = Math.max(1, daysPassed);
+  const totalDays = Math.max(1, daysInMonth);
+  const remainingDays = Math.max(0, totalDays - passed);
+
+  const isAlreadyOverspent = monthSpent >= goal;
+  const isOverspendProjected =
+    forecast !== null &&
+    forecast !== undefined &&
+    forecast > goal &&
+    !isAlreadyOverspent;
+
+  const remainingLimit = Math.max(0, goal - monthSpent);
+
+  // Безопасный суточный остаток (₽/день)
+  let safeDailyAllowance = 0;
+  if (!isAlreadyOverspent) {
+    safeDailyAllowance =
+      remainingDays > 0
+        ? Math.max(0, Math.floor(remainingLimit / remainingDays))
+        : Math.max(0, remainingLimit);
+  }
+
+  // Оценка в количестве покупок по медианному чеку
+  let remainingChecksByMedian: number | null = null;
+  let paceText: string;
+
+  if (isAlreadyOverspent) {
+    paceText = "0 покупок";
+  } else if (
+    medianCheck !== undefined &&
+    medianCheck !== null &&
+    medianCheck > 0
+  ) {
+    const checks = Math.floor(remainingLimit / medianCheck);
+    remainingChecksByMedian = checks;
+
+    if (checks >= 1) {
+      paceText = `не более ${pluralizePurchases(checks)} (медианный чек ${formatAmount(medianCheck)})`;
+    } else if (remainingLimit > 0) {
+      paceText = `менее 1 покупки (остаток ${formatAmount(remainingLimit)})`;
+    } else {
+      paceText = "0 покупок";
+    }
+  } else {
+    paceText = `не более ${formatAmount(safeDailyAllowance)}/день`;
+  }
+
+  // Расчет дня исчерпания лимита
+  let exhaustionDate: Date | null = null;
+  let exhaustionDay: number | null = null;
+
+  if (isOverspendProjected && remainingDays > 0) {
+    const expectedRemaining = Math.max(1, forecast! - monthSpent);
+    const progressFraction = Math.min(
+      1,
+      Math.max(0, remainingLimit / expectedRemaining),
+    );
+
+    const daysUntilExhaustion = Math.max(
+      1,
+      Math.round(remainingDays * progressFraction),
+    );
+    exhaustionDay = Math.min(totalDays, passed + daysUntilExhaustion);
+
+    const base = toSafeDate(referenceDate);
+    exhaustionDate = new Date(
+      base.getFullYear(),
+      base.getMonth(),
+      exhaustionDay,
+    );
+  }
+
+  return {
+    safeDailyAllowance,
+    remainingChecksByMedian,
+    paceText,
+    exhaustionDate,
+    exhaustionDay,
+    isOverspendProjected,
+    isAlreadyOverspent,
+    remainingDays,
+  };
 }

@@ -17,12 +17,7 @@
  */
 import { ref, computed, watch, onMounted, onUnmounted } from "vue";
 import type { Transaction } from "~/composables/useTransactions";
-import { useTransactions } from "~/composables/useTransactions";
-import { useTransactionModal } from "~/composables/useTransactionModal";
 import { formatAmount } from "~/utils/format";
-import GlassCard from "~/components/shared/GlassCard.vue";
-import TransactionItem from "~/components/transactions/TransactionItem.vue";
-import TransactionSkeletonList from "~/components/transactions/TransactionSkeletonList.vue";
 
 interface Props {
   transactions: Transaction[];
@@ -171,7 +166,7 @@ const summaryBadgeText = computed(() => {
 
     <!-- Скелетоны транзакций при загрузке -->
     <div v-if="pending || loading" class="flex flex-col">
-      <TransactionSkeletonList :count="3" mode="list" :show-icon="false" />
+      <TransactionsSkeletonList :count="3" mode="list" :show-icon="false" />
     </div>
 
     <!-- Список транзакций -->

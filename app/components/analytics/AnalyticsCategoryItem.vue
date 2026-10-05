@@ -15,7 +15,6 @@ import { computed } from "vue";
 import type { CategoryStat } from "~/utils/analytics";
 import { formatAmount } from "~/utils/format";
 import { ChevronRight } from "@lucide/vue";
-import { useCategoryGoals } from "~/composables/useCategoryGoals";
 
 interface Props {
   stat: CategoryStat;
