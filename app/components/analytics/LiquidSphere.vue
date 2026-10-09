@@ -42,14 +42,14 @@ const waves = computed(() => [
   {
     d: liquidWavePath(0, yBase.value + 2, size, size, 3, 150),
     w: 150,
-    dur: "6s",
+    dur: "5s",
     opacity: 0.85,
     reverse: true,
   },
   {
     d: liquidWavePath(0, yBase.value + 5, size, size, 2, 105),
     w: 105,
-    dur: "6s",
+    dur: "5s",
     opacity: 0.5,
     reverse: false,
   },

@@ -342,7 +342,7 @@ const close = () => emit("close");
             <div class="flex items-center gap-1.5">
               <Coins class="w-4 h-4 text-text-accent" stroke-width="2" />
               <span
-                class="text-[10px] uppercase font-bold tracking-wide text-text-secondary"
+                class="w-1/2 text-xs uppercase font-bold tracking-wide text-text-secondary"
               >
                 Расходы за период
               </span>
@@ -366,9 +366,9 @@ const close = () => emit("close");
             </span>
           </div>
 
-          <div class="mt-px flex flex-col items-end gap-1 text-right">
+          <div class="flex flex-col items-end gap-1 text-right">
             <p
-              class="text-text-secondary text-[10px] uppercase font-bold tracking-wide"
+              class="text-text-secondary text-xs uppercase font-bold tracking-wide"
             >
               {{ comparisonPeriodLabel }}
             </p>
