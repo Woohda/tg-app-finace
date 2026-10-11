@@ -14,7 +14,7 @@
  * 4. Управление целями по категориям через компонент `CategoryGoalList` и модалку `CategoryGoalModal`.
  */
 import { ref, watch, computed, onMounted } from "vue";
-import { ChevronLeft, RussianRuble } from "@lucide/vue";
+import { RussianRuble } from "@lucide/vue";
 import { budgetSchema } from "~/types/validate";
 import { parseAmount } from "~/utils/format";
 import { formatZodError } from "~/utils/zod";
@@ -191,21 +191,12 @@ const handleDeleteGoal = async (categoryId: string) => {
 <template>
   <div class="flex flex-col gap-5">
     <!-- Header -->
-    <div class="flex items-center justify-center gap-3 relative">
-      <NuxtLink
-        class="w-12 h-12 absolute left-0 top-1/2 -translate-y-1/2 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 active:scale-95 transition-transform a11y-focus"
-        to="/settings"
-        aria-label="Назад к настройкам"
-      >
-        <ChevronLeft class="text-text-primary -ml-px" :stroke-width="1.5" />
-      </NuxtLink>
-      <div class="flex flex-col text-center">
-        <h1 class="text-text-primary text-xl font-bold tracking-wide">
-          Бюджет и цели
-        </h1>
-        <p class="text-text-secondary text-xs">Планирование финансов</p>
-      </div>
-    </div>
+    <PageHeader
+      title="Бюджет и цели"
+      subtitle="Планирование финансов"
+      back-to="/settings"
+      back-aria-label="Назад к настройкам"
+    />
 
     <!-- Monthly Budget -->
     <GlassCard class="flex flex-col gap-3">

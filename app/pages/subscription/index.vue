@@ -7,7 +7,7 @@
  * позволяет создавать, редактировать и удалять платежи со свайпом.
  */
 import { ref, onMounted } from "vue";
-import { ChevronLeft, Plus, CalendarClock, Flame } from "@lucide/vue";
+import { Plus, CalendarClock, Flame } from "@lucide/vue";
 import { formatAmount, getPluralSub } from "~/utils/format";
 import type { Subscription } from "~/composables/useSubscriptions";
 
@@ -74,33 +74,15 @@ const handleDelete = async () => {
 <template>
   <div class="flex flex-col gap-5">
     <!-- Header -->
-    <div class="flex items-end justify-center gap-3 relative">
-      <NuxtLink
-        class="w-12 h-12 absolute left-0 top-1/2 -translate-y-1/2 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 active:scale-95 transition-transform a11y-focus"
-        to="/settings"
-        aria-label="Назад к настройкам"
-      >
-        <ChevronLeft class="text-text-primary -ml-px" :stroke-width="1.5" />
-      </NuxtLink>
-
-      <GlassButton
-        v-if="subscriptions.length"
-        variant="soft"
-        size="icon"
-        class="px-2 absolute right-0 top-1/2 -translate-y-1/2"
-        aria-label="Добавить регулярный платёж"
-        @click="openCreateForm"
-      >
-        <Plus class="text-text-primary" :stroke-width="1.5" />
-      </GlassButton>
-
-      <div class="flex flex-col text-center w-74">
-        <h1 class="text-text-primary text-xl font-bold tracking-wide">
-          Регулярные платежи
-        </h1>
-        <p class="text-text-secondary text-xs">Ежемесячные подписки и счета</p>
-      </div>
-    </div>
+    <PageHeader
+      title="Регулярные платежи"
+      subtitle="Ежемесячные подписки и счета"
+      back-to="/settings"
+      back-aria-label="Назад к настройкам"
+      :show-action="Boolean(subscriptions.length)"
+      action-aria-label="Добавить регулярный платёж"
+      @action="openCreateForm"
+    />
 
     <!-- Сводная карточка -->
     <GlassCard class="flex flex-col gap-1">

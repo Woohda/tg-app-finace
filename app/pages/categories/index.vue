@@ -12,7 +12,6 @@
  * 3. Открытие модальных окон для создания, редактирования и удаления категорий.
  */
 import { ref, computed, onMounted } from "vue";
-import { ChevronLeft, Plus } from "@lucide/vue";
 
 const { categories, fetchCategories, isLoading } = useCategories();
 
@@ -88,31 +87,15 @@ const cancelDelete = () => {
 <template>
   <div class="flex flex-col gap-5 relative">
     <!-- Header -->
-    <div class="flex items-center justify-center gap-3 relative">
-      <NuxtLink
-        class="w-12 h-12 absolute left-0 top-1/2 -translate-y-1/2 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 active:scale-95 transition-transform a11y-focus"
-        to="/settings"
-        aria-label="Назад к настройкам"
-      >
-        <ChevronLeft class="text-text-primary -ml-px" :stroke-width="1.5" />
-      </NuxtLink>
-      <GlassButton
-        variant="soft"
-        size="icon"
-        class="px-2 absolute right-0 top-1/2 -translate-y-1/2"
-        aria-label="Добавить категорию"
-        @click="openCreateForm('expense')"
-      >
-        <Plus class="text-text-primary" :stroke-width="1.5" />
-      </GlassButton>
-
-      <div class="flex flex-col text-center">
-        <h1 class="text-text-primary text-xl font-bold tracking-wide">
-          Мои категории
-        </h1>
-        <p class="text-text-secondary text-xs">Управление списком категорий</p>
-      </div>
-    </div>
+    <PageHeader
+      title="Мои категории"
+      subtitle="Управление списком категорий"
+      back-to="/settings"
+      back-aria-label="Назад к настройкам"
+      show-action
+      action-aria-label="Добавить категорию"
+      @action="openCreateForm('expense')"
+    />
 
     <!-- Списки категорий -->
     <div

@@ -12,7 +12,6 @@
  * 3. Группировка и стилизация иконок в зависимости от типа события (`expense`, `income`, `error`, `system`).
  */
 import {
-  ChevronLeft,
   Bell,
   Trash2,
   ShieldAlert,
@@ -46,18 +45,14 @@ const getColor = (type: string) => {
 <template>
   <div class="flex flex-col gap-5">
     <!-- Header -->
-    <div class="flex items-center justify-center gap-3 relative shrink-0">
-      <NuxtLink
-        class="w-12 h-12 absolute left-0 top-1/2 -translate-y-1/2 rounded-full glass-milky flex items-center justify-center shrink-0 border-[0.5px] border-white/50 active:scale-95 transition-transform"
-        to="/"
-        aria-label="Назад на главную"
-      >
-        <ChevronLeft class="text-text-primary -ml-px" :stroke-width="1.5" />
-      </NuxtLink>
-
-      <div
-        class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1"
-      >
+    <PageHeader
+      title="Уведомления"
+      subtitle="История действий"
+      back-to="/"
+      back-aria-label="Назад на главную"
+      wide-actions
+    >
+      <template #action>
         <ClientOnly>
           <GlassButton
             v-if="hasUnread"
@@ -80,15 +75,8 @@ const getColor = (type: string) => {
             <Trash2 class="text-text-accent" :stroke-width="1.5" />
           </GlassButton>
         </ClientOnly>
-      </div>
-
-      <div class="flex flex-col text-center">
-        <h1 class="text-text-primary text-xl font-bold tracking-wide">
-          Уведомления
-        </h1>
-        <p class="text-text-secondary text-xs">История действий</p>
-      </div>
-    </div>
+      </template>
+    </PageHeader>
 
     <!-- Content -->
     <div class="flex flex-col pb-safe">
