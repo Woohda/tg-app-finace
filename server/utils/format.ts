@@ -11,7 +11,7 @@
  * 2. `formatBotAmount`: форматирует сумму в рубли с поддержкой копеек (две цифры после запятой).
  */
 
-export { capitalizeFirstLetter } from "../../app/utils/format";
+export { capitalizeFirstLetter } from "~/utils/format";
 
 /**
  * Форматирует денежную сумму для сообщений Telegram-бота.
