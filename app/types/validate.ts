@@ -121,8 +121,6 @@ export const categoryGoalSchema = z.object({
     .max(100_000_000, "Слишком большая сумма"),
 });
 
-export type CategoryGoalInput = z.infer<typeof categoryGoalSchema>;
-
 // --- Split ---
 export const createSplitGroupSchema = z.object({
   name: z
@@ -130,8 +128,15 @@ export const createSplitGroupSchema = z.object({
     .min(1, "Введите название группы")
     .max(80, "Название слишком длинное"),
   initialMembers: z
-    .array(z.string().min(1, "Имя участника не может быть пустым").max(50))
-    .min(1, "Добавьте хотя бы одного участника")
+    .array(
+      z.union([
+        z.string().min(1, "Имя участника не может быть пустым").max(50),
+        z.object({
+          name: z.string().min(1, "Имя участника не может быть пустым").max(50),
+          user_id: z.string().uuid().optional().nullable(),
+        }),
+      ]),
+    )
     .optional(),
 });
 
@@ -141,6 +146,7 @@ export const addSplitMemberSchema = z.object({
     .min(1, "Введите имя участника")
     .max(50, "Имя слишком длинное"),
   telegram_username: z.string().optional().nullable(),
+  user_id: z.string().uuid("Некорректный ID пользователя").optional().nullable(),
 });
 
 export const expenseShareInputSchema = z.object({

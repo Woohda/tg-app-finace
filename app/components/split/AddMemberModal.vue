@@ -3,19 +3,21 @@
  * @module app/components/split/AddMemberModal
  * @fileoverview Модальное окно добавления нового участника в существующую группу
  * @description
- * Предоставляет форму ввода имени участника и опционального Telegram username.
- * При вводе username система связывает участника с аккаунтом FINO для Telegram-уведомлений.
- * ---
- * ### Логика работы:
- * 1. Получение имени и Telegram username от пользователя.
- * 2. Вызов `addMember` из `useSplit` для сохранения в базе данных.
- * 3. Очистка полей ввода, отправка события `added` и закрытие модалки.
+ * Предоставляет 3 способа добавления участников:
+ * 1. Инвайт-ссылка в Telegram (автоматическое вступление + добавление в друзья).
+ * 2. Быстрый выбор из списка существующих друзей в 1 тап.
+ * 3. Ручной ввод имени и опционального Telegram username.
  */
-import { ref, watch } from "vue";
+import { ref, computed, watch } from "vue";
+import { Plus, Users, Share2 } from "@lucide/vue";
+import type { SplitMember } from "~/types/split";
+import type { UserFriend } from "~/types/friends";
 
 const props = defineProps<{
   isOpen: boolean;
   groupId: string;
+  groupName?: string;
+  existingMembers?: SplitMember[];
 }>();
 
 const emit = defineEmits<{
@@ -23,19 +25,58 @@ const emit = defineEmits<{
 }>();
 
 const { addMember } = useSplit();
+const { friends, fetchFriends, shareInvite } = useFriends();
 
 const name = ref("");
 const telegramUsername = ref("");
 const buttonState = ref<"idle" | "loading" | "success">("idle");
+const addingFriendId = ref<string | null>(null);
 
 watch(
   () => props.isOpen,
   (open) => {
     if (open) {
       buttonState.value = "idle";
+      addingFriendId.value = null;
+      fetchFriends();
     }
   },
 );
+
+// Друзья, которых еще нет в этой группе
+const availableFriends = computed<UserFriend[]>(() => {
+  const existingUserIds = new Set(
+    (props.existingMembers || []).map((m) => m.user_id).filter(Boolean),
+  );
+  const existingNames = new Set(
+    (props.existingMembers || []).map((m) => m.name.trim().toLowerCase()),
+  );
+  return friends.value.filter(
+    (f) =>
+      !existingUserIds.has(f.user_id) &&
+      !existingNames.has(f.first_name.trim().toLowerCase()),
+  );
+});
+
+// Добавление друга в 1 тап
+const handleAddFriend = async (friend: UserFriend) => {
+  if (addingFriendId.value) return;
+  addingFriendId.value = friend.id;
+  try {
+    const result = await addMember(
+      props.groupId,
+      friend.first_name,
+      undefined,
+      friend.user_id,
+    );
+    if (result) {
+      emit("added");
+      emit("close");
+    }
+  } finally {
+    addingFriendId.value = null;
+  }
+};
 
 const handleSubmit = async () => {
   if (!name.value.trim() || buttonState.value === "loading") return;
@@ -72,46 +113,106 @@ const handleSubmit = async () => {
     position="bottom"
     @close="emit('close')"
   >
-    <form class="flex flex-col gap-3" @submit.prevent="handleSubmit">
-      <div class="flex flex-col gap-3">
-        <GlassInput
-          v-model="name"
-          label="Имя участника"
-          placeholder="Например: Саша"
-          required
-          autofocus
-        />
-
-        <GlassInput
-          v-model="telegramUsername"
-          label="Telegram username (опционально)"
-          placeholder="@username"
-        />
-        <p class="text-[11px] text-text-secondary -mt-1">
-          Если указать username, бот сможет отправлять участнику уведомления о
-          расчете долгов.
-        </p>
-      </div>
-
-      <div class="flex items-center justify-end gap-2">
+    <div class="flex flex-col gap-4">
+      <!-- 1. Приглашение по ссылке -->
+      <div
+        class="flex items-center justify-between p-3 rounded-2xl bg-accent-start/8 border border-accent-start/20"
+      >
+        <div class="flex flex-col gap-0.5">
+          <span class="text-xs font-bold text-text-primary">
+            Пригласить по ссылке
+          </span>
+          <span class="text-[11px] text-text-secondary">
+            Участник вступит сам и добавится в друзья
+          </span>
+        </div>
         <GlassButton
-          size="sm"
           type="button"
-          variant="soft"
-          class="px-6.5"
-          @click="emit('close')"
-        >
-          Отмена
-        </GlassButton>
-        <GlassMorphButton
-          type="submit"
           size="sm"
-          :state="buttonState"
-          :disabled="!name.trim()"
+          variant="soft"
+          class="h-auto px-3 py-1.5 gap-1.5 text-xs text-text-accent shrink-0"
+          @click="shareInvite({ groupId: props.groupId, groupName: props.groupName })"
         >
-          <span class="text-base">Добавить</span>
-        </GlassMorphButton>
+          <Share2 class="size-3.5" />
+          <span>Ссылка</span>
+        </GlassButton>
       </div>
-    </form>
+
+      <!-- 2. Выбор из списка друзей -->
+      <div v-if="availableFriends.length > 0" class="flex flex-col gap-2">
+        <label class="text-xs font-medium text-text-secondary">
+          Добавить из друзей:
+        </label>
+        <div class="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto pr-1">
+          <button
+            v-for="friend in availableFriends"
+            :key="friend.id"
+            type="button"
+            class="glass-pill inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium rounded-full cursor-pointer transition-all hover:bg-black/5 a11y-focus border border-white/10"
+            :disabled="addingFriendId === friend.id"
+            @click="handleAddFriend(friend)"
+          >
+            <Users class="size-3 text-text-accent" />
+            <span>{{ friend.first_name }}</span>
+            <span
+              v-if="addingFriendId === friend.id"
+              class="text-[10px] opacity-70"
+            >...</span>
+            <Plus v-else class="size-3 text-text-secondary" />
+          </button>
+        </div>
+      </div>
+
+      <!-- Разделитель -->
+      <div class="flex items-center gap-2">
+        <hr class="flex-1 border-white/10" />
+        <span class="text-[10px] text-text-secondary uppercase tracking-wider">
+          Или вручную
+        </span>
+        <hr class="flex-1 border-white/10" />
+      </div>
+
+      <!-- 3. Форма ручного ввода -->
+      <form class="flex flex-col gap-3" @submit.prevent="handleSubmit">
+        <div class="flex flex-col gap-3">
+          <GlassInput
+            v-model="name"
+            label="Имя участника"
+            placeholder="Например: Саша"
+            required
+          />
+
+          <GlassInput
+            v-model="telegramUsername"
+            label="Telegram username (опционально)"
+            placeholder="@username"
+          />
+          <p class="text-[11px] text-text-secondary -mt-1">
+            Если указать username, бот сможет отправлять участнику уведомления о
+            расчете долгов.
+          </p>
+        </div>
+
+        <div class="flex items-center justify-end gap-2 pt-1">
+          <GlassButton
+            size="sm"
+            type="button"
+            variant="soft"
+            class="px-6.5"
+            @click="emit('close')"
+          >
+            Отмена
+          </GlassButton>
+          <GlassMorphButton
+            type="submit"
+            size="sm"
+            :state="buttonState"
+            :disabled="!name.trim()"
+          >
+            <span class="text-base">Добавить</span>
+          </GlassMorphButton>
+        </div>
+      </form>
+    </div>
   </GlassModal>
 </template>

@@ -77,7 +77,7 @@ export default defineEventHandler(async (event) => {
   );
 
   // 1. Создаем расход
-  const expenseDate = date || new Date().toISOString().slice(0, 10);
+  const expenseDate = date || formatDateISO();
 
   const { data: expense, error: expenseError } = await supabase
     .from("split_expenses")

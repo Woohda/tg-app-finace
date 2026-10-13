@@ -7,7 +7,7 @@
  * позволяет создавать, редактировать и удалять платежи со свайпом.
  */
 import { ref, onMounted } from "vue";
-import { Plus, CalendarClock, Flame } from "@lucide/vue";
+import { CalendarClock, Flame } from "@lucide/vue";
 import { formatAmount, getPluralSub } from "~/utils/format";
 import type { Subscription } from "~/composables/useSubscriptions";
 
@@ -140,12 +140,12 @@ const handleDelete = async () => {
           </span>
         </div>
         <GlassButton
-          variant="primary"
-          class="mt-1 gap-0.5"
+          variant="soft"
+          size="sm"
+          class="mt-2 text-xs px-5"
           @click="openCreateForm"
         >
-          <Plus class="w-5 h-5" :stroke-width="2" />
-          <span>Добавить первый платёж</span>
+          Добавить первый платёж
         </GlassButton>
       </div>
 

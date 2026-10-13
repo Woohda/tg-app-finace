@@ -55,7 +55,7 @@ export default defineEventHandler(async (event) => {
     icon: string | null;
     user_id: string;
   } = {
-    name: capitalizeFirstLetter(name.trim()),
+    name,
     type,
     icon: icon ?? null,
     user_id: userId,

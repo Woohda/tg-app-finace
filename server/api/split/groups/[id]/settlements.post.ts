@@ -66,7 +66,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const settlementDate = date || new Date().toISOString().slice(0, 10);
+  const settlementDate = date || formatDateISO();
 
   const { data: settlement, error } = await supabase
     .from("split_settlements")

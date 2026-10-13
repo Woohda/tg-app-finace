@@ -44,6 +44,42 @@ export default defineNuxtPlugin(async () => {
     }
   }
 
+  // Обработка инвайт-ссылок совместных трат и друзей (join_groupId или friend_userId)
+  const rawStartParam =
+    tg.initDataUnsafe?.start_param ||
+    (typeof route.query.startapp === "string" ? route.query.startapp : undefined) ||
+    (typeof route.query.tgWebAppStartParam === "string" ? route.query.tgWebAppStartParam : undefined);
+
+  if (rawStartParam && (rawStartParam.startsWith("join_") || rawStartParam.startsWith("friend_"))) {
+    const sessionKey = `fino_processed_invite_${rawStartParam}`;
+    if (typeof sessionStorage !== "undefined" && !sessionStorage.getItem(sessionKey)) {
+      sessionStorage.setItem(sessionKey, "1");
+      const api = useApi();
+      const toast = useAppToast();
+      try {
+        const result = await api<import("~/types/friends").JoinInviteResult>("/api/friends/join", {
+          method: "POST",
+          body: { startParam: rawStartParam },
+        });
+
+        if (result.success) {
+          if (result.groupId) {
+            toast.success("Вы добавлены в группу!", result.groupName ? `«${result.groupName}»` : undefined);
+            if (route.path !== `/split/${result.groupId}`) {
+              router.push(`/split/${result.groupId}`);
+            }
+          } else if (result.friendName) {
+            toast.success("Новый друг!", `Вы добавили ${result.friendName} в список друзей`);
+          }
+        } else if (result.message) {
+          toast.info("Приглашение", result.message);
+        }
+      } catch (err) {
+        console.warn("[Telegram Plugin] Ошибка обработки инвайт-ссылки:", err);
+      }
+    }
+  }
+
   // При возврате приложения из фона (пользователь свернул Telegram и вернулся)
   if (typeof document !== "undefined") {
     let lastWarmup = Date.now();

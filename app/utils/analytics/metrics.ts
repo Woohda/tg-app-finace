@@ -5,7 +5,6 @@
  * Набор чистых функций для агрегации и аналитики трат:
  * - группировка расходов по категориям и сортировка по убыванию суммы;
  * - генерация временных рядов (ChartDataPoint) с заполнением пустых промежутков;
- * - фильтрация транзакций заданной категории за месяц;
  * - вычисление детальных микро-метрик трат (средний/медианный чек, частота, динамика).
  * ---
  * ### Логика работы:
@@ -13,7 +12,6 @@
  * 2. Генерирует непрерывную временную сетку (дни или месяцы) с нулевыми значениями для пустых интервалов.
  * 3. Рассчитывает средний чек, медиану, максимальную операцию и частоту трат на основе транзакций периода.
  */
-import { isSameMonth } from "date-fns";
 import type { Transaction } from "~/composables/useTransactions";
 import type { AnalyticsPeriodType } from "~/composables/useAnalyticsPeriod";
 import {
@@ -23,7 +21,6 @@ import {
   addDaysSafe,
   startOfMonthSafe,
   getNextMonth,
-  getNow,
 } from "../date";
 import { calculateMedian, calculatePercentChange } from "./math";
 
@@ -136,31 +133,7 @@ export function buildAnalyticsChartData(
   return Object.entries(data).map(([label, value]) => ({ label, value }));
 }
 
-/**
- * Фильтрует список транзакций по категории за текущий (или заданный) месяц.
- * Возвращает новый массив транзакций, отсортированный по дате от более новых к старым.
- */
-export function filterCurrentMonthCategoryTransactions(
-  transactions: Transaction[],
-  categoryId: string | null | undefined,
-  referenceDate: Date = getNow(),
-): Transaction[] {
-  if (!categoryId || !transactions?.length) {
-    return [];
-  }
 
-  const targetDate = toSafeDate(referenceDate);
-
-  return transactions
-    .filter(
-      (t) =>
-        t.categoryId === categoryId &&
-        isSameMonth(toSafeDate(t.date), targetDate),
-    )
-    .sort(
-      (a, b) => toSafeDate(b.date).getTime() - toSafeDate(a.date).getTime(),
-    );
-}
 
 /**
  * Рассчитывает подробные микро-метрики по операциям категории за период:

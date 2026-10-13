@@ -95,7 +95,7 @@ export default defineEventHandler(async (event) => {
   );
 
   // 3. Обновляем запись расхода
-  const expenseDate = date || new Date().toISOString().slice(0, 10);
+  const expenseDate = date || formatDateISO();
 
   const { data: updatedExpense, error: updateError } = await supabase
     .from("split_expenses")

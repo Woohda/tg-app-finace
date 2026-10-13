@@ -11,23 +11,7 @@
  * 2. `formatBotAmount`: форматирует сумму в рубли с поддержкой копеек (две цифры после запятой).
  */
 
-/**
- * Преобразует первый символ строки в верхний регистр (с заглавной буквы).
- * Безопасно обрабатывает пустые значения, пробелы и юникод (кириллицу, латиницу).
- */
-export function capitalizeFirstLetter(str: string): string;
-export function capitalizeFirstLetter(str: null): null;
-export function capitalizeFirstLetter(str: undefined): undefined;
-export function capitalizeFirstLetter(str?: string | null): string | null | undefined;
-export function capitalizeFirstLetter(str?: string | null): string | null | undefined {
-  if (str === null) return null;
-  if (str === undefined) return undefined;
-  const trimmed = str.trim();
-  if (!trimmed) return "";
-  const chars = Array.from(trimmed);
-  chars[0] = chars[0]!.toUpperCase();
-  return chars.join("");
-}
+export { capitalizeFirstLetter } from "~/utils/format";
 
 /**
  * Форматирует денежную сумму для сообщений Telegram-бота.

@@ -86,12 +86,11 @@ export async function handleBotTextMessage(ctx: Context): Promise<void> {
   if (matchedCategory) {
     const type = matchedCategory.type;
     const date = formatDateISO();
-    const formattedName = capitalizeFirstLetter(name);
 
     const { error } = await supabase.from("transactions").insert({
       user_id: user.id,
       amount,
-      name: formattedName,
+      name,
       category_id: matchedCategory.id,
       type,
       date,
@@ -105,7 +104,7 @@ export async function handleBotTextMessage(ctx: Context): Promise<void> {
 
     const typeLabel = type === "income" ? "доход" : "расход";
     await ctx.reply(
-      `✅ Сохранен ${typeLabel}:\n${formattedName} (${matchedCategory.name}) — ${formatBotAmount(amount)}`,
+      `✅ Сохранен ${typeLabel}:\n${name} (${matchedCategory.name}) — ${formatBotAmount(amount)}`,
     );
     return;
   }

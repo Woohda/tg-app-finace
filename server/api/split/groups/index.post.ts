@@ -27,7 +27,8 @@
  * - Автоматически гарантирует, что создатель группы всегда присутствует в списке участников под своим именем из Telegram.
  */
 import { createSplitGroupSchema } from "~/types/validate";
-import { getUserSupabase } from "~~/server/utils/db";
+import { getUserSupabase, getBotSupabase } from "~~/server/utils/db";
+import { addMutualFriendship } from "~~/server/utils/friends";
 
 export default defineEventHandler(async (event) => {
   const { userId, token } = await requireAuth(event);
@@ -47,15 +48,15 @@ export default defineEventHandler(async (event) => {
 
   const { name, initialMembers } = body.data;
 
-  // 1. Получаем имя текущего пользователя из таблицы users
-  const { data: userProfile } = await supabase
+  // 1. Получаем реальное имя (first_name) текущего пользователя через сервисный клиент (в обход RLS)
+  const botSupabase = getBotSupabase();
+  const { data: userProfile } = await botSupabase
     .from("users")
-    .select("first_name, username")
+    .select("first_name")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
-  const currentUserName =
-    userProfile?.first_name?.trim() || userProfile?.username?.trim() || "Я";
+  const currentUserName = userProfile?.first_name?.trim() || "Я";
 
   // 2. Создаем группу
   const { data: group, error: groupError } = await supabase
@@ -92,15 +93,23 @@ export default defineEventHandler(async (event) => {
   ];
 
   if (Array.isArray(initialMembers)) {
-    for (const memberName of initialMembers) {
+    for (const member of initialMembers) {
+      const memberName = typeof member === "string" ? member : member.name;
+      const memberUserId =
+        typeof member === "object" && member.user_id ? member.user_id : null;
       const trimmed = memberName.trim();
       if (trimmed && trimmed.toLowerCase() !== currentUserName.toLowerCase()) {
         membersToInsert.push({
           group_id: group.id,
           name: trimmed,
-          user_id: null,
+          user_id: memberUserId,
           is_current_user: false,
         });
+
+        // Если участник привязан к пользователю FINO, гарантируем взаимную связь в друзьях
+        if (memberUserId && memberUserId !== userId) {
+          addMutualFriendship(userId, memberUserId).catch(() => {});
+        }
       }
     }
   }

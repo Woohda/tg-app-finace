@@ -31,7 +31,7 @@ export const useSplit = () => {
 
   const groups = useGlobalSplitGroups();
   const currentGroup = useGlobalSplitCurrentGroup();
-  const isLoaded = useGlobalSplitIsLoaded();
+  const isLoaded = useState<boolean>("split:isLoaded", () => false);
   const pending = ref(false);
   const error = ref<string | null>(null);
 
@@ -103,7 +103,10 @@ export const useSplit = () => {
   /**
    * Создание новой группы совместных трат
    */
-  const createGroup = async (name: string, initialMembers?: string[]) => {
+  const createGroup = async (
+    name: string,
+    initialMembers?: (string | { name: string; user_id?: string })[],
+  ) => {
     error.value = null;
     try {
       const newGroup = await api<{ id: string; name: string }>(
@@ -159,13 +162,18 @@ export const useSplit = () => {
     groupId: string,
     name: string,
     telegramUsername?: string,
+    userId?: string,
   ) => {
     try {
       const member = await api<SplitMember>(
         `/api/split/groups/${groupId}/members`,
         {
           method: "POST",
-          body: { name, telegram_username: telegramUsername },
+          body: {
+            name,
+            telegram_username: telegramUsername || undefined,
+            user_id: userId || undefined,
+          },
         },
       );
       toast.success("Участник добавлен", member.name);

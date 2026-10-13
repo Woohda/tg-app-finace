@@ -48,15 +48,7 @@ export default defineEventHandler(async (event) => {
   }
 
   const action = query.action || "set";
-  const rawAppUrl =
-    config.webAppUrl ||
-    process.env.WEB_APP_URL ||
-    "https://tg-app-finace.pages.dev";
-
-  const appUrl = rawAppUrl.startsWith("http")
-    ? rawAppUrl
-    : `https://${rawAppUrl}`;
-  const webhookUrl = `${appUrl.replace(/\/$/, "")}/api/bot/webhook`;
+  const webhookUrl = `${getWebAppUrl()}/api/bot/webhook`;
 
   try {
     let telegramResponse: unknown = null;
