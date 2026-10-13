@@ -33,7 +33,7 @@ import { getUserSupabase } from "~~/server/utils/db";
 import { roundCurrency } from "~/utils/splitAlgorithm";
 
 export default defineEventHandler(async (event) => {
-  const { token } = await requireAuth(event);
+  const { userId, token } = await requireAuth(event);
   const groupId = getRouterParam(event, "id");
 
   if (!groupId) {
@@ -44,6 +44,20 @@ export default defineEventHandler(async (event) => {
   }
 
   const supabase = getUserSupabase(token);
+
+  // 1. Проверяем существование группы и права доступа
+  const { data: group } = await supabase
+    .from("split_groups")
+    .select("id, user_id")
+    .eq("id", groupId)
+    .single();
+
+  if (!group) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: "Группа не найдена",
+    });
+  }
 
   const body = await readValidatedBody(event, (data) =>
     addSplitSettlementSchema.safeParse(data),
@@ -64,6 +78,39 @@ export default defineEventHandler(async (event) => {
       statusCode: 400,
       statusMessage: "Отправитель и получатель не могут совпадать",
     });
+  }
+
+  // 2. Проверяем, что оба участника состоят именно в этой группе (защита от IDOR)
+  const { data: validMembers, error: membersError } = await supabase
+    .from("split_members")
+    .select("id, user_id")
+    .eq("group_id", groupId)
+    .in("id", [from_member_id, to_member_id]);
+
+  if (membersError || !validMembers || validMembers.length !== 2) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Один или оба участника не состоят в этой группе",
+    });
+  }
+
+  // 3. Проверяем, что инициатор является владельцем или участником группы
+  const isOwner = group.user_id === userId;
+  const isMember = validMembers.some((m) => m.user_id === userId);
+  if (!isOwner && !isMember) {
+    const { data: callerMember } = await supabase
+      .from("split_members")
+      .select("id")
+      .eq("group_id", groupId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!callerMember) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "У вас нет доступа к этой группе",
+      });
+    }
   }
 
   const settlementDate = date || formatDateISO();

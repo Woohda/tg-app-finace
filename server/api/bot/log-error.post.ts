@@ -38,6 +38,11 @@ export default defineEventHandler(async (event) => {
   }
 
   try {
+    const secFetchSite = getHeader(event, "sec-fetch-site");
+    if (secFetchSite && secFetchSite === "cross-site") {
+      return { success: false, reason: "Cross-site request blocked" };
+    }
+
     const body = await readBody(event);
     if (!body || typeof body !== "object") {
       return { success: false, reason: "Invalid body" };

@@ -23,12 +23,16 @@ export const useApi = () => {
       headers.Authorization = `Bearer ${token.value}`;
     }
 
+    const method = String(options?.method || "GET").toUpperCase();
+    const isIdempotent = ["GET", "HEAD", "OPTIONS"].includes(method);
+    const defaultRetry = isIdempotent ? 2 : 0;
+
     // Детерминированно клонируем options, чтобы внутренности ofetch не мутировали оригинальный объект
     const fetchOptions: NonNullable<Parameters<typeof $fetch>[1]> = {
       ...options,
       headers,
       timeout: options?.timeout ?? 25000, // 25 секунд для холодного старта Supabase и мобильных сетей (LTE)
-      retry: options?.retry ?? 2, // Кастомное значение retry активирует повтор для всех методов (включая POST)
+      retry: options?.retry ?? defaultRetry, // Повторяем только идемпотентные запросы (GET/HEAD), чтобы избежать дублирования транзакций на POST/PUT/DELETE
       retryDelay: options?.retryDelay ?? 150, // Быстрый повтор через 150мс
       retryStatusCodes: [408, 409, 425, 429, 500, 502, 503, 504],
     };

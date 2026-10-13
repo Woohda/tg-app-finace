@@ -26,7 +26,7 @@
 import { getUserSupabase } from "~~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
-  const { token } = await requireAuth(event);
+  const { userId, token } = await requireAuth(event);
   const groupId = getRouterParam(event, "id");
   const expenseId = getRouterParam(event, "expenseId");
 
@@ -38,6 +38,52 @@ export default defineEventHandler(async (event) => {
   }
 
   const supabase = getUserSupabase(token);
+
+  // 1. Проверяем существование группы и права доступа
+  const { data: group } = await supabase
+    .from("split_groups")
+    .select("id, user_id")
+    .eq("id", groupId)
+    .single();
+
+  if (!group) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: "Группа не найдена",
+    });
+  }
+
+  const isOwner = group.user_id === userId;
+  if (!isOwner) {
+    const { data: callerMember } = await supabase
+      .from("split_members")
+      .select("id")
+      .eq("group_id", groupId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!callerMember) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "У вас нет прав на управление этой группой",
+      });
+    }
+  }
+
+  // 2. Проверяем существование расхода
+  const { data: expense } = await supabase
+    .from("split_expenses")
+    .select("id")
+    .eq("id", expenseId)
+    .eq("group_id", groupId)
+    .single();
+
+  if (!expense) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: "Расход не найден",
+    });
+  }
 
   const { error } = await supabase
     .from("split_expenses")

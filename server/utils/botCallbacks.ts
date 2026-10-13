@@ -105,8 +105,9 @@ export async function handleBotCallbackQuery(ctx: Context): Promise<void> {
     await ctx.answerCallbackQuery({ text: "Платёж внесён в расходы! 💸" });
 
     try {
+      const safeSubName = escapeHtml(subName);
       await ctx.editMessageText(
-        `✅ Платёж «<b>${subName}</b>» на сумму <b>${formatBotAmount(Number(sub.amount))}</b> успешно внесён в расходы за ${date}!`,
+        `✅ Платёж «<b>${safeSubName}</b>» на сумму <b>${formatBotAmount(Number(sub.amount))}</b> успешно внесён в расходы за ${date}!`,
         { parse_mode: "HTML" },
       );
     } catch {

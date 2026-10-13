@@ -43,6 +43,20 @@ export default defineEventHandler(async (event) => {
 
   const supabase = getUserSupabase(token);
 
+  // Проверяем, что запрос выполняет создатель (владелец) группы
+  const { data: group } = await supabase
+    .from("split_groups")
+    .select("id, user_id")
+    .eq("id", groupId)
+    .single();
+
+  if (!group || group.user_id !== userId) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: "Только создатель группы может удалять участников",
+    });
+  }
+
   // Проверяем участника
   const { data: member } = await supabase
     .from("split_members")

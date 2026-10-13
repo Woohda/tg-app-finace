@@ -30,6 +30,7 @@
  */
 import { getUserSupabase, getBotSupabase } from "~~/server/utils/db";
 import { getBot } from "~~/server/utils/bot";
+import { escapeHtml } from "~~/server/utils/format";
 import { calculateMemberBalances, simplifyDebts } from "~/utils/splitAlgorithm";
 import type { SplitMember, SplitExpense, SplitSettlement } from "~/types/split";
 
@@ -67,6 +68,14 @@ export default defineEventHandler(async (event) => {
     .eq("group_id", groupId);
 
   const isOwner = group.user_id === userId;
+  const isMember = (rawMembers || []).some((m) => m.user_id === userId);
+
+  if (!isOwner && !isMember) {
+    throw createError({
+      statusCode: 403,
+      statusMessage: "У вас нет доступа к этой группе",
+    });
+  }
 
   const userIds = Array.from(
     new Set([
@@ -206,9 +215,11 @@ export default defineEventHandler(async (event) => {
     for (const t of transfers) {
       if (t.fromTelegramId) {
         try {
+          const safeGroupName = escapeHtml(group.name);
+          const safeToMemberName = escapeHtml(t.toMemberName);
           const messageText =
-            `👋 <b>FINO: Расчет в группе «${group.name}»</b>\n\n` +
-            `Тебе необходимо перевести <b>${t.amount.toLocaleString("ru-RU")} ₽</b> участнику <b>${t.toMemberName}</b>.\n\n` +
+            `👋 <b>FINO: Расчет в группе «${safeGroupName}»</b>\n\n` +
+            `Тебе необходимо перевести <b>${t.amount.toLocaleString("ru-RU")} ₽</b> участнику <b>${safeToMemberName}</b>.\n\n` +
             `<i>Пожалуйста, переведи указанную сумму и подтверди расчет.</i>`;
 
           await bot.api.sendMessage(t.fromTelegramId, messageText, {

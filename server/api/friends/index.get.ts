@@ -52,7 +52,7 @@ export default defineEventHandler(async (event): Promise<UserFriend[]> => {
       id: f.id,
       user_id: f.friend_id,
       first_name: u?.first_name?.trim() || "Друг",
-      telegram_id: u?.telegram_id ?? null,
+      telegram_id: u?.telegram_id ? 1 : null,
       created_at: f.created_at,
     };
   });

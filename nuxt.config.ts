@@ -31,7 +31,7 @@ export default defineNuxtConfig({
           "Referrer-Policy": "strict-origin-when-cross-origin",
           "X-XSS-Protection": "1; mode=block",
           "Content-Security-Policy":
-            "frame-ancestors 'self' https://web.telegram.org https://*.telegram.org;",
+            "default-src 'self' data: blob: https://*.telegram.org https://t.me https://telegram.org; script-src 'self' 'unsafe-inline' 'unsafe-eval' https://telegram.org; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com data:; img-src 'self' data: blob: https://*.telegram.org https://t.me; connect-src 'self' https://*.supabase.co https://api.telegram.org; frame-ancestors 'self' https://web.telegram.org https://*.telegram.org;",
         },
       },
     },

@@ -48,16 +48,40 @@ export async function requireAuth(
   const token = authHeader.slice(7);
   const config = useRuntimeConfig();
 
+  if (!config.jwtSecret) {
+    console.error("requireAuth: JWT secret is not configured in runtimeConfig");
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Ошибка конфигурации сервера",
+    });
+  }
+
   try {
     const secretKey = new TextEncoder().encode(config.jwtSecret);
     const { payload } = await jwtVerify(token, secretKey);
 
-    if (!payload.sub) {
+    if (!payload.sub || typeof payload.sub !== "string") {
       throw new Error("Отсутствует sub в токене");
     }
 
+    if (payload.type === "web_login_ticket") {
+      throw new Error("Неверный тип токена: одноразовый тикет не может использоваться для доступа к API");
+    }
+
+    if (payload.role !== "authenticated" && payload.type !== "access_token") {
+      throw new Error("Неверная роль или тип токена");
+    }
+
     return { userId: payload.sub, token };
-  } catch (err) {
+  } catch (err: unknown) {
+    if (
+      err &&
+      typeof err === "object" &&
+      "statusCode" in err &&
+      (err as { statusCode: number }).statusCode === 500
+    ) {
+      throw err;
+    }
     console.error("requireAuth: JWT verification failed:", err);
     throw createError({
       statusCode: 401,

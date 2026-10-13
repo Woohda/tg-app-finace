@@ -21,7 +21,11 @@
  */
 import { serverSupabaseServiceRole } from "#supabase/server";
 import type { Database } from "~/types/database.types";
-import { verifyLoginTicket, generateJWT } from "~~/server/utils/auth";
+import {
+  verifyLoginTicket,
+  generateJWT,
+  markLoginTicketUsed,
+} from "~~/server/utils/auth";
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -44,20 +48,23 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const userId = await verifyLoginTicket(ticket, jwtSecret);
-  if (!userId) {
+  const ticketData = await verifyLoginTicket(ticket, jwtSecret);
+  if (!ticketData) {
     throw createError({
       statusCode: 401,
       statusMessage: "Ссылка для входа недействительна или устарела. Запросите новую ссылку.",
     });
   }
 
+  // Сразу помечаем тикет использованным, предотвращая повторный вход (Replay attack)
+  markLoginTicketUsed(ticketData.jti);
+
   const supabase = serverSupabaseServiceRole<Database>(event);
 
   const { data: user, error: userError } = await supabase
     .from("users")
     .select("id, telegram_id, username, first_name, photo_url, timezone")
-    .eq("id", userId)
+    .eq("id", ticketData.userId)
     .single();
 
   if (userError || !user) {
