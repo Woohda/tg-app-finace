@@ -46,11 +46,22 @@ defineProps<{
               (Вы)
             </span>
           </div>
-          <div class="text-text-secondary truncate text-[10px] max-w-full">
-            <span v-if="b.totalPaid">
-              Оплатил {{ formatAmount(b.totalPaid) }} •
+          <div
+            class="flex flex-wrap items-center gap-x-1.5 text-text-secondary text-[10px] max-w-full leading-tight"
+          >
+            <span v-if="b.totalPaid > 0" class="whitespace-nowrap">
+              Оплатил {{ formatAmount(b.totalPaid) }}
             </span>
-            <span> Доля {{ formatAmount(b.totalOwed) }} </span>
+            <span
+              v-if="b.totalPaid > 0"
+              class="text-text-secondary/40 select-none"
+              aria-hidden="true"
+            >
+              •
+            </span>
+            <span class="whitespace-nowrap">
+              Доля {{ formatAmount(b.totalOwed) }}
+            </span>
           </div>
         </div>
       </div>
