@@ -92,14 +92,14 @@ watch(
     if (open) {
       searchQuery.value = "";
       isSearchFocused.value = false;
-      window.Telegram?.WebApp?.disableVerticalSwipes?.();
+      setTelegramVerticalSwipes(false);
       if (typeof document !== "undefined") {
         document.body.style.overflow = "hidden";
         document.addEventListener("keydown", onKeydown);
       }
     } else {
       isSearchFocused.value = false;
-      window.Telegram?.WebApp?.enableVerticalSwipes?.();
+      setTelegramVerticalSwipes(true);
       if (typeof document !== "undefined") {
         document.body.style.overflow = "";
         document.removeEventListener("keydown", onKeydown);
@@ -113,7 +113,7 @@ onBeforeUnmount(() => {
   if (typeof document !== "undefined") {
     document.removeEventListener("keydown", onKeydown);
     document.body.style.overflow = "";
-    window.Telegram?.WebApp?.enableVerticalSwipes?.();
+    setTelegramVerticalSwipes(true);
   }
 });
 </script>

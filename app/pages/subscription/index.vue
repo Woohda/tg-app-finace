@@ -91,7 +91,7 @@ const handleDelete = async () => {
         <CalendarClock class="size-5 text-text-secondary" />
       </div>
       <div class="flex items-baseline gap-1">
-        <span class="text-3xl font-black text-text-primary tracking-tight">
+        <span class="text-3xl font-bold text-text-primary tracking-tight">
           {{ formatAmount(totalMonthly) }}
         </span>
         <span class="text-sm text-text-secondary font-medium">
@@ -125,9 +125,9 @@ const handleDelete = async () => {
       </div>
 
       <!-- Пустое состояние -->
-      <GlassCard
+      <div
         v-else-if="subscriptions.length === 0"
-        class="text-center flex flex-col gap-2 items-center"
+        class="mt-1 flex flex-col gap-2 items-center text-center"
       >
         <span class="text-4xl"> 📅 </span>
         <div class="flex flex-col gap-px">
@@ -147,7 +147,7 @@ const handleDelete = async () => {
           <Plus class="w-5 h-5" :stroke-width="2" />
           <span>Добавить первый платёж</span>
         </GlassButton>
-      </GlassCard>
+      </div>
 
       <!-- Список платежей -->
       <div v-else class="flex flex-col gap-2">

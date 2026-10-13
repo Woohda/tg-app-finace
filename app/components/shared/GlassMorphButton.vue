@@ -62,30 +62,37 @@ watch(
         // Размеры и форма
         props.size === 'sm'
           ? state === 'idle'
-            ? 'h-10 w-full max-w-full px-4 rounded-pill'
-            : 'h-10 w-10 max-w-10 rounded-full mx-auto p-0'
+            ? 'h-11 w-full max-w-full px-4 rounded-pill'
+            : 'h-11 w-11 max-w-11 rounded-full mx-auto p-0'
           : state === 'idle'
-            ? 'h-12 w-full max-w-full px-5 rounded-pill'
-            : 'h-12 w-12 max-w-12 rounded-full mx-auto p-0',
+            ? 'h-13 w-full max-w-full px-5 rounded-pill'
+            : 'h-13 w-13 max-w-13 rounded-full mx-auto p-0',
 
         // Цвета (primary)
         variant === 'primary' &&
           state !== 'success' && [
             'glass-glow text-white font-medium border-none',
-            'active:scale-[0.97]',
+            state === 'idle' && !props.disabled && 'active:scale-[0.97]',
           ],
 
         // Цвета (delete)
         variant === 'delete' &&
           state !== 'success' && [
             'glass-glow text-white font-medium',
-            'active:scale-[0.97]',
+            state === 'idle' && !props.disabled && 'active:scale-[0.97]',
           ],
 
         // Состояние Успеха (всегда белое яркое свечение с микро-пружиной)
         state === 'success' && [
           'glass-milky text-text-accent scale-[1.04] shadow-glass',
         ],
+
+        // Состояние Disabled: затемнение только в idle, при загрузке и успехе opacity всегда 1
+        props.disabled && state === 'idle'
+          ? 'opacity-50 cursor-not-allowed pointer-events-none'
+          : 'opacity-100',
+
+        state !== 'idle' && 'cursor-default pointer-events-none',
 
         props.class,
       )
@@ -161,4 +168,3 @@ watch(
   will-change: width, max-width, transform;
 }
 </style>
-
