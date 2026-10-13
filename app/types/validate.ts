@@ -3,8 +3,8 @@
  * @fileoverview Единый реестр Zod-схем для валидации данных во всем приложении
  * @description
  * Этот файл содержит схемы валидации для категорий, транзакций, бюджетов,
- * подписок и целей трат по категориям. Схемы используются как на клиенте
- * (для валидации форм), так и на сервере (для проверки входящих данных API).
+ * подписок, целей трат по категориям и совместных расходов (Splitwise).
+ * Схемы используются как на клиенте (для валидации форм), так и на сервере (для проверки входящих данных API).
  */
 import { z } from "zod";
 import { capitalizeFirstLetter } from "../utils/format";
@@ -122,3 +122,68 @@ export const categoryGoalSchema = z.object({
 });
 
 export type CategoryGoalInput = z.infer<typeof categoryGoalSchema>;
+
+// --- Split ---
+export const createSplitGroupSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Введите название группы")
+    .max(80, "Название слишком длинное"),
+  initialMembers: z
+    .array(z.string().min(1, "Имя участника не может быть пустым").max(50))
+    .min(1, "Добавьте хотя бы одного участника")
+    .optional(),
+});
+
+export const addSplitMemberSchema = z.object({
+  name: z
+    .string()
+    .min(1, "Введите имя участника")
+    .max(50, "Имя слишком длинное"),
+  telegram_username: z.string().optional().nullable(),
+});
+
+export const expenseShareInputSchema = z.object({
+  member_id: z.string().uuid("Некорректный ID участника"),
+  amount: z
+    .number()
+    .nonnegative("Сумма не может быть отрицательной")
+    .optional()
+    .nullable(),
+  share_value: z
+    .number()
+    .positive("Доля должна быть больше 0")
+    .optional()
+    .nullable(),
+  is_fixed: z.boolean().optional(),
+});
+
+export const addSplitExpenseSchema = z.object({
+  title: z
+    .string()
+    .min(1, "Введите название расхода")
+    .max(120, "Название слишком длинное"),
+  amount: z.number().positive("Сумма должна быть больше 0"),
+  payer_id: z.string().uuid("Выберите, кто оплатил"),
+  date: z.string().optional(),
+  split_type: z.enum(["equal", "exact", "shares"]),
+  shares: z
+    .array(expenseShareInputSchema)
+    .min(1, "Выберите участников расхода"),
+});
+
+export const addSplitSettlementSchema = z.object({
+  from_member_id: z.string().uuid("Выберите должника"),
+  to_member_id: z.string().uuid("Выберите получателя"),
+  amount: z.number().positive("Сумма перевода должна быть больше 0"),
+  date: z.string().optional(),
+});
+
+export const exportToTransactionSchema = z.object({
+  category_id: z.string().uuid("Выберите категорию"),
+  title: z
+    .string()
+    .min(1, "Название не может быть пустым")
+    .max(120, "Название слишком длинное")
+    .optional(),
+});

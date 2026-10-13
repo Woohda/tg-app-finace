@@ -258,6 +258,225 @@ export type Database = {
           },
         ];
       };
+      split_groups: {
+        Row: {
+          id: string;
+          user_id: string;
+          name: string;
+          currency: string;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          user_id: string;
+          name: string;
+          currency?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          user_id?: string;
+          name?: string;
+          currency?: string;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "split_groups_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      split_members: {
+        Row: {
+          id: string;
+          group_id: string;
+          name: string;
+          user_id: string | null;
+          is_current_user: boolean;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          name: string;
+          user_id?: string | null;
+          is_current_user?: boolean;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          name?: string;
+          user_id?: string | null;
+          is_current_user?: boolean;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "split_members_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "split_groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "split_members_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "users";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      split_expenses: {
+        Row: {
+          id: string;
+          group_id: string;
+          payer_id: string;
+          amount: number;
+          title: string;
+          date: string;
+          split_type: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          payer_id: string;
+          amount: number;
+          title: string;
+          date?: string;
+          split_type?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          payer_id?: string;
+          amount?: number;
+          title?: string;
+          date?: string;
+          split_type?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "split_expenses_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "split_groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "split_expenses_payer_id_fkey";
+            columns: ["payer_id"];
+            isOneToOne: false;
+            referencedRelation: "split_members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      split_expense_shares: {
+        Row: {
+          id: string;
+          expense_id: string;
+          member_id: string;
+          amount: number;
+          share_value: number | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          expense_id: string;
+          member_id: string;
+          amount: number;
+          share_value?: number | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          expense_id?: string;
+          member_id?: string;
+          amount?: number;
+          share_value?: number | null;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "split_expense_shares_expense_id_fkey";
+            columns: ["expense_id"];
+            isOneToOne: false;
+            referencedRelation: "split_expenses";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "split_expense_shares_member_id_fkey";
+            columns: ["member_id"];
+            isOneToOne: false;
+            referencedRelation: "split_members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      split_settlements: {
+        Row: {
+          id: string;
+          group_id: string;
+          from_member_id: string;
+          to_member_id: string;
+          amount: number;
+          date: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          group_id: string;
+          from_member_id: string;
+          to_member_id: string;
+          amount: number;
+          date?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          group_id?: string;
+          from_member_id?: string;
+          to_member_id?: string;
+          amount?: number;
+          date?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "split_settlements_group_id_fkey";
+            columns: ["group_id"];
+            isOneToOne: false;
+            referencedRelation: "split_groups";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "split_settlements_from_member_id_fkey";
+            columns: ["from_member_id"];
+            isOneToOne: false;
+            referencedRelation: "split_members";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "split_settlements_to_member_id_fkey";
+            columns: ["to_member_id"];
+            isOneToOne: false;
+            referencedRelation: "split_members";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
