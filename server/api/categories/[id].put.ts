@@ -57,7 +57,7 @@ export default defineEventHandler(async (event) => {
   const { data, error } = await supabase
     .from("categories")
     .update({
-      name: capitalizeFirstLetter(name.trim()),
+      name,
       icon: icon ?? null,
     })
     .eq("id", id)

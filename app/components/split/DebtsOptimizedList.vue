@@ -12,7 +12,7 @@
  * 3. Инициация фиксации расчета переводом через событие `settle`.
  * 4. Адаптивное распределение доступной ширины строк (защита коротких имен и "Мне"/"Я" от обрезания).
  */
-import { ArrowRight, HandCoins } from "@lucide/vue";
+import { ArrowRight, TicketCheck } from "@lucide/vue";
 import type { SplitDebtTransfer } from "~/types/split";
 
 const props = defineProps<{
@@ -155,12 +155,12 @@ const getToNameClass = (t: SplitDebtTransfer): string => {
               </span>
               <GlassButton
                 variant="soft"
-                class="h-auto py-1.5 px-2.5 flex items-center justify-center shrink-0 text-xs"
+                class="h-auto py-1.5 px-2 flex items-center justify-center shrink-0 text-xs"
                 title="Зафиксировать расчет"
                 @click="emit('settle', t)"
               >
-                <HandCoins
-                  class="size-3.5 text-text-accent"
+                <TicketCheck
+                  class="size-4 text-text-accent"
                   :stroke-width="1.5"
                 />
               </GlassButton>
