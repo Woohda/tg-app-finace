@@ -4,7 +4,13 @@
  * @fileoverview Экран настроек профиля и приложения
  * @description
  * Отображает профиль Telegram, позволяет выйти из аккаунта и предоставляет
- * навигацию к управлению бюджетом и категориями.
+ * навигацию к управлению бюджетом, категориями, совместными тратами и подписками.
+ * ---
+ * ### Логика работы:
+ * 1. Отображение профиля пользователя Telegram через `useAuth()`.
+ * 2. Навигационные ссылки на разделы: «Бюджет и цели», «Мои категории», «Совместные траты», «Регулярные платежи».
+ * 3. Поддержка установки PWA-приложения на iOS и Android (`usePwaInstall`).
+ * 4. Выход из аккаунта или генерация ссылки для входа в браузере.
  */
 import { ChevronRight } from "@lucide/vue";
 
@@ -27,6 +33,12 @@ const SETTINGS_LINKS: readonly SettingsNavigationItem[] = [
     icon: "📁",
     title: "Мои категории",
     description: "Настроить свои категории",
+  },
+  {
+    to: "/split",
+    icon: "👥",
+    title: "Совместные траты",
+    description: "Сплит расходов и расчет долгов",
   },
   {
     to: "/subscription",
@@ -178,15 +190,13 @@ const handleLogout = async () => {
       </GlassCard>
     </div>
 
-    <GlassCard>
-      <GlassButton
-        variant="soft"
-        class="w-full"
-        :disabled="isLoading"
-        @click="handleLogout"
-      >
-        {{ isLoading ? "Выход..." : "Выйти из аккаунта" }}
-      </GlassButton>
-    </GlassCard>
+    <GlassButton
+      variant="soft"
+      class="w-full"
+      :disabled="isLoading"
+      @click="handleLogout"
+    >
+      {{ isLoading ? "Выход..." : "Выйти из аккаунта" }}
+    </GlassButton>
   </div>
 </template>
