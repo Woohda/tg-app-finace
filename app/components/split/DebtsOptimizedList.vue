@@ -52,43 +52,47 @@ const getToMemberName = (t: SplitDebtTransfer): string => {
 const isShortName = (name: string): boolean => name.trim().length <= 5;
 
 /**
- * Вычисляет адаптивный класс ширины для имени отправителя
+ * Вычисляет адаптивный класс ширины для контейнера имени отправителя
  */
-const getFromNameClass = (t: SplitDebtTransfer): string => {
-  const fromName = getFromMemberName(t);
-  const toName = getToMemberName(t);
-  const fromShort = isShortName(fromName);
-  const toShort = isShortName(toName);
+const getFromNameContainerClass = (t: SplitDebtTransfer): string => {
+  const fromShort = isShortName(getFromMemberName(t));
+  const toShort = isShortName(getToMemberName(t));
 
-  if (fromShort) {
-    return "shrink-0";
+  if (fromShort && toShort) {
+    return "shrink-0 max-w-[calc(50%-8px)]";
   }
-  if (!toShort) {
+  if (!fromShort && !toShort) {
     // Оба длинные: делят доступную ширину поровну
-    return "truncate min-w-0 max-w-[calc(50%-10px)]";
+    return "min-w-0 flex-1 max-w-[calc(50%-8px)]";
   }
-  // Отправитель длинный, получатель короткий: обрезается только при нехватке места без растягивания
-  return "truncate min-w-0";
+  if (!fromShort && toShort) {
+    // Отправитель длинный, получатель короткий
+    return "min-w-0 flex-1 max-w-[calc(100%-2.5rem)]";
+  }
+  // Отправитель короткий, получатель длинный
+  return "shrink-0 max-w-[calc(50%-8px)]";
 };
 
 /**
  * Вычисляет адаптивный класс ширины для имени получателя
  */
 const getToNameClass = (t: SplitDebtTransfer): string => {
-  const fromName = getFromMemberName(t);
-  const toName = getToMemberName(t);
-  const fromShort = isShortName(fromName);
-  const toShort = isShortName(toName);
+  const fromShort = isShortName(getFromMemberName(t));
+  const toShort = isShortName(getToMemberName(t));
 
-  if (toShort) {
-    return "shrink-0";
+  if (fromShort && toShort) {
+    return "shrink-0 max-w-[calc(50%-8px)]";
   }
-  if (!fromShort) {
+  if (!fromShort && !toShort) {
     // Оба длинные: делят доступную ширину поровну
-    return "truncate min-w-0 max-w-[calc(50%-10px)]";
+    return "min-w-0 flex-1 max-w-[calc(50%-8px)]";
   }
-  // Получатель длинный, отправитель короткий
-  return "truncate min-w-0";
+  if (fromShort && !toShort) {
+    // Получатель длинный, отправитель короткий
+    return "min-w-0 flex-1 max-w-[calc(100%-2.5rem)]";
+  }
+  // Получатель короткий, отправитель длинный
+  return "shrink-0 max-w-[calc(50%-8px)]";
 };
 </script>
 
@@ -116,33 +120,38 @@ const getToNameClass = (t: SplitDebtTransfer): string => {
           :key="idx"
           class="flex flex-col px-3.5 py-2.5"
         >
-          <div class="flex items-center justify-between gap-1.5">
+          <div class="flex items-center justify-between gap-2">
             <Avatar :name="t.fromMemberName" size="md" />
             <!-- От кого и Кому -->
             <div
-              class="flex flex-col text-[13px] sm:text-sm font-semibold text-text-primary min-w-0 flex-1"
+              class="flex flex-col gap-0.5 text-[13px] sm:text-sm font-semibold text-text-primary min-w-0 flex-1"
             >
-              <div class="flex items-center gap-1 shrink-0 text-left">
-                <div class="flex items-center gap-0.5">
+              <div
+                class="flex items-center gap-1 min-w-0 w-full overflow-hidden"
+              >
+                <div
+                  class="flex items-center gap-0.5 min-w-0 shrink"
+                  :class="getFromNameContainerClass(t)"
+                >
                   <span
-                    class="text-text-accent"
-                    :class="getFromNameClass(t)"
+                    class="text-text-accent truncate min-w-0"
                     :title="getFromMemberName(t)"
                   >
                     {{ getFromMemberName(t) }}
                   </span>
                   <span
                     v-if="t.fromTelegramId"
-                    class="text-[10px] bg-sky-500/50 text-white font-semibold p-0.75 rounded-full"
+                    class="text-[10px] bg-sky-500/50 text-white font-semibold p-0.75 rounded-full shrink-0"
                     title="Получит уведомление в Telegram"
                   >
                     <Send class="size-2" :stroke-width="1.5" />
                   </span>
                 </div>
 
-                <ArrowRight class="size-3 text-text-secondary/60 shrink-0" />
+                <ArrowRight class="size-4 text-text-secondary/60 shrink-0" />
+
                 <span
-                  class="text-accent-success"
+                  class="text-accent-success truncate min-w-0 shrink"
                   :class="getToNameClass(t)"
                   :title="getToMemberName(t)"
                 >
@@ -160,12 +169,12 @@ const getToNameClass = (t: SplitDebtTransfer): string => {
 
             <GlassButton
               variant="soft"
-              class="h-auto py-1.5 px-2 flex items-center justify-center shrink-0 text-xs"
+              class="h-auto p-2.25 flex items-center justify-center shrink-0 text-xs"
               title="Зафиксировать расчет"
               @click="emit('settle', t)"
             >
               <TicketCheck
-                class="size-4 text-text-accent"
+                class="size-5 text-text-accent"
                 :stroke-width="1.5"
               />
             </GlassButton>
