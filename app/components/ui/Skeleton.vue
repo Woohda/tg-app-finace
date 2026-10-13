@@ -6,10 +6,35 @@
  * Отображает мерцающий блок для индикации процесса загрузки контента.
  * Использует glassmorphism стили.
  */
+import { computed } from "vue";
+
 defineOptions({ inheritAttrs: false });
 
-withDefaults(defineProps<{ rounded?: string }>(), {
-  rounded: "rounded-md",
+export type SkeletonRounded =
+  | "none"
+  | "sm"
+  | "md"
+  | "lg"
+  | "xl"
+  | "2xl"
+  | "3xl"
+  | "full"
+  | (string & {});
+
+const props = withDefaults(
+  defineProps<{
+    rounded?: SkeletonRounded;
+  }>(),
+  {
+    rounded: "md",
+  },
+);
+
+const roundedClass = computed(() => {
+  if (!props.rounded) return "rounded-md";
+  if (props.rounded.startsWith("rounded-")) return props.rounded;
+  if (props.rounded === "none") return "rounded-none";
+  return `rounded-${props.rounded}`;
 });
 </script>
 
@@ -21,7 +46,7 @@ withDefaults(defineProps<{ rounded?: string }>(), {
         inset 0 1px 1px rgba(255, 255, 255, 0.1),
         inset 0 0 0 1px rgba(255, 255, 255, 0.1);
     "
-    :class="[rounded, $attrs.class]"
+    :class="[roundedClass, $attrs.class]"
   >
     <div class="absolute inset-0 shimmer-glare" />
   </div>

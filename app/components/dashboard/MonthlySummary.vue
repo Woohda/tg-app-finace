@@ -56,7 +56,7 @@ const isIncomeBigger = computed(() => {
         <BanknoteArrowUp class="w-6 h-6" stroke-width="1.5" />
         <span class="text-xs font-bold tracking-wide uppercase">Доходы</span>
       </div>
-      <Skeleton v-if="isLoading" class="w-20 h-5 rounded-xl" />
+      <Skeleton v-if="isLoading" class="w-20 h-5" rounded="xl" />
       <span
         v-else
         class="font-extrabold text-sm transition-colors duration-300"
@@ -98,7 +98,7 @@ const isIncomeBigger = computed(() => {
         <BanknoteArrowDown class="w-6 h-6" stroke-width="1.5" />
         <span class="text-xs font-bold tracking-wide uppercase">Расходы</span>
       </div>
-      <Skeleton v-if="isLoading" class="w-20 h-5 rounded-xl" />
+      <Skeleton v-if="isLoading" class="w-20 h-5" rounded="xl" />
       <span
         v-else
         class="font-extrabold text-sm transition-colors duration-300"

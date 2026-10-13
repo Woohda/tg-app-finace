@@ -50,9 +50,10 @@ const {
   deleteGroup,
   deleteExpense,
   notifyDebtors,
-  isLoading,
+  pending,
 } = useSplit();
 
+const isNotifying = ref(false);
 const isCopied = ref(false);
 
 const activeTab = ref<"report" | "expenses" | "transfers">("report");
@@ -176,8 +177,13 @@ const handleCopyReport = async () => {
 };
 
 const handleNotify = async () => {
-  if (!groupId.value) return;
-  await notifyDebtors(groupId.value);
+  if (!groupId.value || isNotifying.value) return;
+  isNotifying.value = true;
+  try {
+    await notifyDebtors(groupId.value);
+  } finally {
+    isNotifying.value = false;
+  }
 };
 </script>
 
@@ -185,8 +191,10 @@ const handleNotify = async () => {
   <div class="flex flex-col gap-4">
     <!-- Шапка группы -->
     <PageHeader
-      :title="currentGroup?.name || 'Загрузка...'"
-      :subtitle="`${currentGroup?.members.length || 0} участников`"
+      :title="currentGroup?.name || (pending ? 'Загрузка...' : 'Группа')"
+      :subtitle="
+        currentGroup ? `${currentGroup.members.length} участников` : undefined
+      "
       back-to="/split"
       back-aria-label="Назад к группам"
     >
@@ -202,39 +210,135 @@ const handleNotify = async () => {
       </template>
     </PageHeader>
 
-    <!-- Загрузка -->
-    <div v-if="isLoading && !currentGroup" class="flex justify-center py-10">
-      <Loader class="text-text-accent" />
+    <!-- Скелетон загрузки -->
+    <div
+      v-if="pending && !currentGroup"
+      class="flex flex-col gap-4 animate-pulse"
+    >
+      <!-- Сводная карточка группы -->
+      <GlassCard class="flex flex-col gap-3 p-4">
+        <div class="flex items-center justify-between">
+          <div class="flex flex-col gap-1.5">
+            <Skeleton class="h-3 w-24" />
+            <Skeleton class="h-7 w-32" rounded="lg" />
+          </div>
+          <div class="flex flex-col items-end gap-1.5">
+            <Skeleton class="h-3 w-20" />
+            <Skeleton class="h-7 w-28" rounded="lg" />
+          </div>
+        </div>
+
+        <!-- Чипсы участников -->
+        <div class="flex items-center gap-1.5 pt-1 overflow-hidden">
+          <Skeleton class="h-6.5 w-20" rounded="full" />
+          <Skeleton class="h-6.5 w-24" rounded="full" />
+          <Skeleton class="h-6.5 w-18" rounded="full" />
+          <Skeleton class="h-6.5 w-22" rounded="full" />
+        </div>
+
+        <!-- Кнопки действий -->
+        <div class="flex items-center gap-1.5 pt-1">
+          <Skeleton class="h-7 flex-1" rounded="xl" />
+          <Skeleton class="h-7 w-20" rounded="xl" />
+        </div>
+      </GlassCard>
+
+      <!-- Переключатель вкладок -->
+      <div class="flex justify-center px-5">
+        <Skeleton class="h-8 w-full" rounded="2xl" />
+      </div>
+
+      <!-- Список элементов -->
+      <div class="flex flex-col gap-2">
+        <GlassCard
+          v-for="i in 3"
+          :key="i"
+          class="p-3.5 flex items-center justify-between"
+        >
+          <div class="flex items-center gap-2">
+            <Skeleton class="size-8 shrink-0" rounded="full" />
+            <div class="flex flex-col gap-1.5">
+              <Skeleton class="h-4 w-28" />
+              <Skeleton class="h-3 w-16" />
+            </div>
+          </div>
+          <Skeleton class="h-5 w-20" rounded="lg" />
+        </GlassCard>
+      </div>
     </div>
 
     <div v-else-if="currentGroup" class="flex flex-col gap-4">
       <!-- Сводная карточка группы -->
       <GlassCard class="flex flex-col gap-2.5">
-        <div class="flex items-center justify-between">
-          <div class="flex flex-col">
-            <span class="text-text-secondary text-xs">Всего потратили:</span>
-            <span class="text-2xl font-bold text-text-primary">
-              {{ formatAmount(currentGroup.totalGroupSpending) }}
-            </span>
+        <div class="flex flex-col gap-1">
+          <!-- Верхний ряд: подписи -->
+          <div
+            class="flex items-center justify-between text-xs text-text-secondary"
+          >
+            <span>Всего потратили:</span>
+            <span>Ваш баланс:</span>
           </div>
 
-          <div class="flex flex-col items-end">
-            <span class="text-text-secondary text-xs">Ваш баланс:</span>
+          <!-- Нижний ряд: суммы на единой базовой линии -->
+          <div class="flex items-baseline justify-between gap-3">
             <span
-              v-if="currentGroup.userNetBalance > 0.01"
-              class="text-base font-extrabold text-emerald-500"
+              class="font-bold text-text-primary tracking-tight whitespace-nowrap tabular-nums leading-none"
+              :class="
+                currentGroup.totalGroupSpending >= 10_000_000 ||
+                Math.abs(currentGroup.userNetBalance) >= 10_000_000
+                  ? 'text-[22px]'
+                  : currentGroup.totalGroupSpending >= 1_000_000 ||
+                      Math.abs(currentGroup.userNetBalance) >= 1_000_000
+                    ? 'text-2xl'
+                    : 'text-[26px] '
+              "
             >
-              +{{ formatAmount(currentGroup.userNetBalance) }}
+              {{ formatAmount(currentGroup.totalGroupSpending) }}
             </span>
-            <span
-              v-else-if="currentGroup.userNetBalance < -0.01"
-              class="text-base font-extrabold text-rose-500"
-            >
-              -{{ formatAmount(Math.abs(currentGroup.userNetBalance)) }}
-            </span>
-            <span v-else class="text-base font-bold text-text-secondary">
-              0 ₽ (в расчете)
-            </span>
+
+            <div class="shrink-0 text-right">
+              <span
+                v-if="currentGroup.userNetBalance > 0.01"
+                class="font-extrabold text-emerald-500 whitespace-nowrap tabular-nums tracking-tight leading-none"
+                :class="
+                  currentGroup.totalGroupSpending >= 10_000_000 ||
+                  Math.abs(currentGroup.userNetBalance) >= 10_000_000
+                    ? 'text-base'
+                    : currentGroup.totalGroupSpending >= 1_000_000 ||
+                        Math.abs(currentGroup.userNetBalance) >= 1_000_000
+                      ? 'text-lg'
+                      : 'text-[20px]'
+                "
+              >
+                +{{ formatAmount(currentGroup.userNetBalance) }}
+              </span>
+              <span
+                v-else-if="currentGroup.userNetBalance < -0.01"
+                class="font-extrabold text-rose-500 whitespace-nowrap tabular-nums tracking-tight leading-none"
+                :class="
+                  currentGroup.totalGroupSpending >= 10_000_000 ||
+                  Math.abs(currentGroup.userNetBalance) >= 10_000_000
+                    ? 'text-base'
+                    : currentGroup.totalGroupSpending >= 1_000_000 ||
+                        Math.abs(currentGroup.userNetBalance) >= 1_000_000
+                      ? 'text-lg'
+                      : 'text-[20px] '
+                "
+              >
+                -{{ formatAmount(Math.abs(currentGroup.userNetBalance)) }}
+              </span>
+              <span
+                v-else
+                class="font-bold text-text-secondary whitespace-nowrap leading-none"
+                :class="
+                  currentGroup.totalGroupSpending >= 10_000_000
+                    ? 'text-base'
+                    : 'text-lg'
+                "
+              >
+                0&nbsp;₽ (в расчете)
+              </span>
+            </div>
           </div>
         </div>
 
@@ -260,7 +364,7 @@ const handleNotify = async () => {
           <GlassButton
             variant="soft"
             class="h-auto flex-1 min-w-0 py-1.25 flex items-center justify-center gap-1 text-[11px]"
-            :disabled="isLoading"
+            :disabled="isNotifying"
             @click="handleNotify"
           >
             <Bell
@@ -268,7 +372,7 @@ const handleNotify = async () => {
               :stroke-width="1.5"
             />
             <span class="truncate">{{
-              isLoading ? "Сообщаю..." : "Напомнить о переводах"
+              isNotifying ? "Сообщаю..." : "Напомнить о переводах"
             }}</span>
           </GlassButton>
           <GlassButton
@@ -290,7 +394,12 @@ const handleNotify = async () => {
       </GlassCard>
 
       <!-- Переключатель вкладок -->
-      <GlassSegmentedControl v-model="activeTab" :options="tabOptions" />
+      <GlassSegmentedControl
+        v-model="activeTab"
+        :options="tabOptions"
+        size="sm"
+        class="px-5"
+      />
 
       <!-- ЗАГЛУШКА: Нет расходов -->
       <div

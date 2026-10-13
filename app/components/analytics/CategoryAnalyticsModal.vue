@@ -331,8 +331,8 @@ const close = () => emit("close");
     <div class="flex flex-col gap-5">
       <!-- Лоадер -->
       <div v-if="pending" class="flex flex-col gap-4">
-        <Skeleton class="w-full h-24 rounded-2xl" />
-        <Skeleton class="w-full h-48 rounded-2xl" />
+        <Skeleton class="w-full h-24" rounded="2xl" />
+        <Skeleton class="w-full h-48" rounded="2xl" />
       </div>
 
       <div v-else class="flex flex-col gap-5">

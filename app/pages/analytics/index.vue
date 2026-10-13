@@ -208,12 +208,12 @@ const closeCategoryAnalytics = () => {
     <!-- Лоадер -->
     <div v-if="pending" class="flex flex-col gap-4">
       <div class="flex gap-5">
-        <Skeleton class="w-full h-25" rounded="rounded-3xl" />
-        <Skeleton class="w-full h-25" rounded="rounded-3xl" />
+        <Skeleton class="w-full h-25" rounded="3xl" />
+        <Skeleton class="w-full h-25" rounded="3xl" />
       </div>
-      <Skeleton class="w-full h-16" rounded="rounded-3xl" />
-      <Skeleton class="w-full h-16" rounded="rounded-3xl" />
-      <Skeleton class="w-full h-50" rounded="rounded-3xl" />
+      <Skeleton class="w-full h-16" rounded="3xl" />
+      <Skeleton class="w-full h-16" rounded="3xl" />
+      <Skeleton class="w-full h-50" rounded="3xl" />
     </div>
 
     <div v-else class="flex flex-col gap-5">

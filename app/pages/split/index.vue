@@ -19,7 +19,7 @@ const { groups, fetchGroups, pending } = useSplit();
 const isAddGroupOpen = ref(false);
 
 onMounted(() => {
-  fetchGroups();
+  fetchGroups(true);
 });
 
 // Суммарный баланс по всем группам
@@ -54,17 +54,21 @@ const onGroupCreated = (groupId: string) => {
       >
       <span
         v-if="totalNetBalance > 0.01"
-        class="text-2xl font-bold text-accent-success"
+        class="font-bold text-accent-success tracking-tight whitespace-nowrap tabular-nums"
+        :class="Math.abs(totalNetBalance) >= 10_000_000 ? 'text-xl sm:text-2xl' : 'text-2xl'"
       >
         +{{ formatAmount(totalNetBalance) }}
       </span>
       <span
         v-else-if="totalNetBalance < -0.01"
-        class="text-2xl font-bold text-text-accent"
+        class="font-bold text-text-accent tracking-tight whitespace-nowrap tabular-nums"
+        :class="Math.abs(totalNetBalance) >= 10_000_000 ? 'text-xl sm:text-2xl' : 'text-2xl'"
       >
         -{{ formatAmount(Math.abs(totalNetBalance)) }}
       </span>
-      <span v-else class="text-2xl font-bold text-text-primary"> 0 ₽ </span>
+      <span v-else class="text-2xl font-bold text-text-primary whitespace-nowrap">
+        0&nbsp;₽
+      </span>
       <span class="text-text-secondary text-[11px]">
         {{
           totalNetBalance > 0.01
@@ -82,7 +86,7 @@ const onGroupCreated = (groupId: string) => {
         class="flex flex-col gap-3 items-center justify-between p-4 animate-pulse"
       >
         <div class="flex items-center gap-3 w-full">
-          <Skeleton class="size-12" rounded="rounded-full" />
+          <Skeleton class="size-12" rounded="full" />
           <div class="flex flex-col gap-1.5 w-1/2">
             <Skeleton class="h-5 w-40" />
             <Skeleton class="h-3 w-30" />

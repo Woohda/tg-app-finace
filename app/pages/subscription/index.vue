@@ -114,7 +114,7 @@ const handleDelete = async () => {
           class="flex items-center justify-between px-4 py-3 animate-pulse"
         >
           <div class="flex items-center gap-3 w-full">
-            <Skeleton class="size-9" rounded="rounded-full" />
+            <Skeleton class="size-9" rounded="full" />
             <div class="flex flex-col gap-1.5 w-1/2">
               <Skeleton class="h-5 w-3/4" />
               <Skeleton class="h-3 w-30" />
