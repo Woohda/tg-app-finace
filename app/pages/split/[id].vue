@@ -44,13 +44,8 @@ const router = useRouter();
 const toast = useAppToast();
 const groupId = computed(() => route.params.id as string);
 
-const {
-  currentGroup,
-  fetchGroup,
-  deleteExpense,
-  notifyDebtors,
-  pending,
-} = useSplit();
+const { currentGroup, fetchGroup, deleteExpense, notifyDebtors, pending } =
+  useSplit();
 
 const isNotifying = ref(false);
 const isCopied = ref(false);
@@ -335,7 +330,7 @@ const handleNotify = async () => {
                     : 'text-lg'
                 "
               >
-                0&nbsp;₽ (в расчете)
+                0&nbsp;₽
               </span>
             </div>
           </div>
@@ -566,6 +561,8 @@ const handleNotify = async () => {
       v-if="currentGroup"
       :is-open="isAddMemberOpen"
       :group-id="currentGroup.id"
+      :group-name="currentGroup.name"
+      :existing-members="currentGroup.members"
       @close="isAddMemberOpen = false"
       @added="fetchGroup(groupId)"
     />

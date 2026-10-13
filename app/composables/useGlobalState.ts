@@ -20,6 +20,7 @@
 import type { Database } from "~/types/database.types";
 import type { Transaction } from "./useTransactions";
 import type { SplitGroupSummary, SplitGroupDetail } from "~/types/split";
+import type { UserFriend } from "~/types/friends";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
 
@@ -46,6 +47,5 @@ export const useGlobalSplitGroups = () =>
 export const useGlobalSplitCurrentGroup = () =>
   useState<SplitGroupDetail | null>("split:currentGroup", () => null);
 
-export const useGlobalSplitIsLoaded = () =>
-  useState<boolean>("split:isLoaded", () => false);
-
+export const useGlobalFriends = () =>
+  useState<UserFriend[]>("global_user_friends", () => []);

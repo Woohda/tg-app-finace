@@ -12,9 +12,11 @@
  * 4. Открытие модального окна `AddGroupModal` для создания новой группы.
  */
 import { ref, computed, onMounted } from "vue";
+import { UserPlus } from "@lucide/vue";
 
 const router = useRouter();
 const { groups, fetchGroups, pending } = useSplit();
+const { shareInvite } = useFriends();
 
 const isAddGroupOpen = ref(false);
 
@@ -133,14 +135,25 @@ const onGroupCreated = (groupId: string) => {
         Создайте группу для поездки, квартиры или встречи с друзьями, чтобы
         записывать расходы и легко делить чеки.
       </p>
-      <GlassButton
-        variant="soft"
-        size="sm"
-        class="mt-2 text-xs py-1 px-5"
-        @click="isAddGroupOpen = true"
-      >
-        Создать первую группу
-      </GlassButton>
+      <div class="flex items-center gap-2 mt-2">
+        <GlassButton
+          variant="soft"
+          size="sm"
+          class="text-xs py-1 px-4"
+          @click="isAddGroupOpen = true"
+        >
+          Создать первую группу
+        </GlassButton>
+        <GlassButton
+          variant="soft"
+          size="sm"
+          class="text-xs py-1 px-3.5 gap-1 text-text-accent"
+          @click="shareInvite()"
+        >
+          <UserPlus class="size-3.5" />
+          <span>Пригласить друга</span>
+        </GlassButton>
+      </div>
     </div>
 
     <!-- Список групп -->
@@ -149,6 +162,15 @@ const onGroupCreated = (groupId: string) => {
         <span class="text-xs font-semibold text-text-secondary">
           Ваши группы ({{ groups.length }})
         </span>
+        <GlassButton
+          variant="soft"
+          size="sm"
+          class="h-auto text-[11px] py-1 px-2.5 gap-1 text-text-accent"
+          @click="shareInvite()"
+        >
+          <UserPlus class="size-3" />
+          <span>Пригласить друга</span>
+        </GlassButton>
       </div>
 
       <GroupCard v-for="group in groups" :key="group.id" :group="group" />
