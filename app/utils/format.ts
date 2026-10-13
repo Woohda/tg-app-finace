@@ -24,8 +24,8 @@ export function formatAmount(
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(Number(roundAmount));
-  if (type) return `${prefix} ${formatted} ₽`;
-  return `${formatted} ₽`;
+  if (type) return `${prefix} ${formatted}\u00A0₽`;
+  return `${formatted}\u00A0₽`;
 }
 
 export function parseAmount(value: string | number | null | undefined): number {

@@ -77,7 +77,7 @@ const budgetPercent = computed(() => {
           </h2>
           <div class="text-xs truncate">
             <template v-if="loading">
-              <Skeleton class="h-3.5 w-32 rounded-md mt-0.5" />
+              <Skeleton class="h-3.5 w-32 mt-0.5" />
             </template>
             <template v-else-if="goals.length > 0">
               <span class="text-text-secondary"
@@ -121,11 +121,11 @@ const budgetPercent = computed(() => {
           <!-- Название категории и потраченная сумма -->
           <div class="flex flex-col gap-1.5 min-w-0 flex-1">
             <Skeleton
-              class="h-4 rounded-md"
+              class="h-4"
               :class="i === 1 ? 'w-28' : i === 2 ? 'w-36' : 'w-24'"
             />
             <Skeleton
-              class="h-3 rounded-md"
+              class="h-3"
               :class="i === 1 ? 'w-20' : i === 2 ? 'w-24' : 'w-16'"
             />
           </div>
@@ -133,18 +133,18 @@ const budgetPercent = computed(() => {
           <!-- Сумма лимита и процент -->
           <div class="flex flex-col items-end gap-1.5 shrink-0">
             <Skeleton
-              class="h-4 rounded-md"
+              class="h-4"
               :class="i === 1 ? 'w-16' : i === 2 ? 'w-20' : 'w-14'"
             />
             <Skeleton
-              class="h-3 rounded-md"
+              class="h-3"
               :class="i === 1 ? 'w-14' : i === 2 ? 'w-16' : 'w-12'"
             />
           </div>
         </div>
 
         <!-- Прогресс-бар цели -->
-        <Skeleton class="w-full h-1.5" rounded="rounded-full" />
+        <Skeleton class="w-full h-1.5" rounded="full" />
       </div>
     </div>
 

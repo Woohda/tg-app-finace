@@ -13,9 +13,13 @@
  * - `useGlobalActiveSwipeId`: ID активного свайпа в списке транзакций.
  * - `useGlobalTransactionsVersion`: Глобальный счетчик версий транзакций для инвалидации.
  * - `useTransactionCache`: Кэш транзакций по ключам диапазонов дат.
+ * - `useGlobalSplitGroups`: Кэшированный список групп совместных трат (Splitwise).
+ * - `useGlobalSplitCurrentGroup`: Данные текущей открытой группы совместных трат.
+ * - `useGlobalSplitIsLoaded`: Флаг первичной загрузки списка групп совместных трат.
  */
 import type { Database } from "~/types/database.types";
 import type { Transaction } from "./useTransactions";
+import type { SplitGroupSummary, SplitGroupDetail } from "~/types/split";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
 
@@ -35,4 +39,13 @@ export const useGlobalTransactionsVersion = () =>
 
 export const useTransactionCache = () =>
   useState<Record<string, Transaction[]>>("tx:queryCache", () => ({}));
+
+export const useGlobalSplitGroups = () =>
+  useState<SplitGroupSummary[]>("split:groups", () => []);
+
+export const useGlobalSplitCurrentGroup = () =>
+  useState<SplitGroupDetail | null>("split:currentGroup", () => null);
+
+export const useGlobalSplitIsLoaded = () =>
+  useState<boolean>("split:isLoaded", () => false);
 

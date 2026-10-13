@@ -89,7 +89,7 @@ defineExpose({ focus });
     <label
       v-if="label"
       :for="inputId"
-      class="text-sm font-bold text-text-primary pl-3 cursor-pointer"
+      class="text-xs text-text-secondary pl-3 cursor-pointer"
     >
       {{ label }}
     </label>
@@ -122,8 +122,8 @@ defineExpose({ focus });
         :autocapitalize="autocapitalize"
         :placeholder="placeholder"
         :class="[
-          'w-full relative z-10 bg-transparent rounded-full px-5 py-2.5 text-text-primary font-medium outline-none border-none transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu a11y-focus',
-          $slots.icon || icon ? 'pl-10' : '',
+          'w-full relative z-10 bg-transparent rounded-full px-5 py-2.25 text-text-primary font-medium outline-none border-none transition-all duration-500 ease-[cubic-bezier(0.2,0.8,0.2,1)] transform-gpu a11y-focus',
+          $slots.icon || icon ? 'pl-9' : '',
           type === 'date'
             ? 'py-0 min-h-10 appearance-none leading-normal pr-2.5'
             : '',

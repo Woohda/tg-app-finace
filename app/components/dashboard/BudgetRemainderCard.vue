@@ -26,7 +26,7 @@ defineProps<{
       <!-- Состояние загрузки: Скелетоны текста -->
       <div v-if="isLoading" class="flex flex-col gap-2 py-1">
         <Skeleton class="w-65 h-4" />
-        <Skeleton class="w-40 h-10" rounded="rounded-lg" />
+        <Skeleton class="w-40 h-10" rounded="lg" />
         <Skeleton class="w-50 h-3" />
       </div>
 

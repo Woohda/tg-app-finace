@@ -28,12 +28,12 @@ withDefaults(
     <Skeleton
       v-if="showIcon"
       class="w-10 h-10 shrink-0"
-      rounded="rounded-xl"
+      rounded="xl"
     />
     <div class="flex-1 flex flex-col gap-2">
       <Skeleton class="w-35 h-4" />
       <Skeleton class="w-15 h-3" />
     </div>
-    <Skeleton class="w-17 h-5" rounded="rounded-xl" />
+    <Skeleton class="w-17 h-5" rounded="xl" />
   </div>
 </template>
