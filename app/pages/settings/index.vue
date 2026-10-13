@@ -37,7 +37,7 @@ const SETTINGS_LINKS: readonly SettingsNavigationItem[] = [
   {
     to: "/split",
     icon: "👥",
-    title: "Совместные траты",
+    title: "Совместные платежи",
     description: "Сплит расходов и расчет долгов",
   },
   {

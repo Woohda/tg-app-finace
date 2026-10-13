@@ -280,7 +280,7 @@ const handleSubmit = async () => {
 <template>
   <GlassModal
     :is-open="isOpen"
-    :title="isEditing ? 'Редактировать расход' : 'Новый совместный расход'"
+    :title="isEditing ? 'Редактировать платеж' : 'Новый совместный платеж'"
     position="bottom"
     @close="emit('close')"
   >
@@ -300,7 +300,7 @@ const handleSubmit = async () => {
           type="number"
           inputmode="decimal"
           step="0.01"
-          label="Сумма (₽)"
+          label="Сумма"
           placeholder="0.00"
           :icon="RussianRuble"
           required

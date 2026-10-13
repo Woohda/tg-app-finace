@@ -36,7 +36,7 @@ const onGroupCreated = (groupId: string) => {
   <div class="flex flex-col gap-5">
     <!-- Шапка страницы -->
     <PageHeader
-      title="Совместные траты"
+      title="Совместные платежи"
       subtitle="Сплит расходов и долгов"
       back-to="/settings"
       back-aria-label="Назад к настройкам"
@@ -55,18 +55,29 @@ const onGroupCreated = (groupId: string) => {
       <span
         v-if="totalNetBalance > 0.01"
         class="font-bold text-accent-success tracking-tight whitespace-nowrap tabular-nums"
-        :class="Math.abs(totalNetBalance) >= 10_000_000 ? 'text-xl sm:text-2xl' : 'text-2xl'"
+        :class="
+          Math.abs(totalNetBalance) >= 10_000_000
+            ? 'text-xl sm:text-2xl'
+            : 'text-2xl'
+        "
       >
         +{{ formatAmount(totalNetBalance) }}
       </span>
       <span
         v-else-if="totalNetBalance < -0.01"
         class="font-bold text-text-accent tracking-tight whitespace-nowrap tabular-nums"
-        :class="Math.abs(totalNetBalance) >= 10_000_000 ? 'text-xl sm:text-2xl' : 'text-2xl'"
+        :class="
+          Math.abs(totalNetBalance) >= 10_000_000
+            ? 'text-xl sm:text-2xl'
+            : 'text-2xl'
+        "
       >
         -{{ formatAmount(Math.abs(totalNetBalance)) }}
       </span>
-      <span v-else class="text-2xl font-bold text-text-primary whitespace-nowrap">
+      <span
+        v-else
+        class="text-2xl font-bold text-text-primary whitespace-nowrap"
+      >
         0&nbsp;₽
       </span>
       <span class="text-text-secondary text-[11px]">
