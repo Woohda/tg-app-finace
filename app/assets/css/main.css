@@ -132,7 +132,9 @@
     outline: 1px solid transparent;
   }
 
-  .a11y-focus:focus-visible {
+  .a11y-focus:focus-visible,
+  .peer:focus-visible ~ .a11y-focus,
+  .peer:focus-visible ~ * .a11y-focus {
     outline: 1px solid var(--color-accent-start) !important;
     outline-offset: 2px !important;
     transition:

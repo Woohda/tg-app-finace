@@ -91,10 +91,10 @@ watch(
     if (typeof document === "undefined") return;
     if (open) {
       document.body.style.overflow = "hidden";
-      window.Telegram?.WebApp?.disableVerticalSwipes?.();
+      setTelegramVerticalSwipes(false);
     } else {
       document.body.style.overflow = "";
-      window.Telegram?.WebApp?.enableVerticalSwipes?.();
+      setTelegramVerticalSwipes(true);
     }
   },
   { immediate: true },
@@ -103,7 +103,7 @@ watch(
 onUnmounted(() => {
   if (typeof document !== "undefined") {
     document.body.style.overflow = "";
-    window.Telegram?.WebApp?.enableVerticalSwipes?.();
+    setTelegramVerticalSwipes(true);
   }
 });
 </script>

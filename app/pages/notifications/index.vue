@@ -58,7 +58,6 @@ const getColor = (type: string) => {
             v-if="hasUnread"
             variant="soft"
             size="icon"
-            class="px-2"
             aria-label="Отметить все как прочитанные"
             @click="markAllAsRead"
           >
@@ -68,7 +67,6 @@ const getColor = (type: string) => {
             v-if="history.length > 0"
             variant="soft"
             size="icon"
-            class="px-2"
             aria-label="Очистить историю уведомлений"
             @click="clear"
           >
