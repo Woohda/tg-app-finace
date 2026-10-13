@@ -44,7 +44,7 @@ import {
 } from "~/utils/splitAlgorithm";
 
 export default defineEventHandler(async (event) => {
-  const { token } = await requireAuth(event);
+  const { userId, token } = await requireAuth(event);
   const groupId = getRouterParam(event, "id");
   const expenseId = getRouterParam(event, "expenseId");
 
@@ -57,7 +57,21 @@ export default defineEventHandler(async (event) => {
 
   const supabase = getUserSupabase(token);
 
-  // 1. Проверяем существование расхода в группе
+  // 1. Проверяем существование группы
+  const { data: group } = await supabase
+    .from("split_groups")
+    .select("id, user_id")
+    .eq("id", groupId)
+    .single();
+
+  if (!group) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: "Группа не найдена",
+    });
+  }
+
+  // 2. Проверяем существование расхода в группе
   const { data: existingExpense, error: findError } = await supabase
     .from("split_expenses")
     .select("id")
@@ -85,6 +99,48 @@ export default defineEventHandler(async (event) => {
   }
 
   const { title, amount, payer_id, date, split_type, shares } = body.data;
+
+  // 3. Проверяем, что плательщик и все участники сплита принадлежат данной группе (защита от IDOR)
+  const involvedMemberIds = Array.from(
+    new Set([payer_id, ...shares.map((s) => s.member_id)]),
+  );
+
+  const { data: validMembers, error: membersError } = await supabase
+    .from("split_members")
+    .select("id, user_id")
+    .eq("group_id", groupId)
+    .in("id", involvedMemberIds);
+
+  if (
+    membersError ||
+    !validMembers ||
+    validMembers.length !== involvedMemberIds.length
+  ) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Один или несколько участников не принадлежат данной группе",
+    });
+  }
+
+  // 4. Проверяем права доступа: инициатор должен быть владельцем или участником группы
+  const isOwner = group.user_id === userId;
+  const isMember = validMembers.some((m) => m.user_id === userId);
+  if (!isOwner && !isMember) {
+    const { data: callerMember } = await supabase
+      .from("split_members")
+      .select("id")
+      .eq("group_id", groupId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!callerMember) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "У вас нет доступа к этой группе",
+      });
+    }
+  }
+
   const roundedTotalAmount = roundCurrency(amount);
 
   // 2. Рассчитываем и валидируем итоговые суммы долей для каждого выбранного участника

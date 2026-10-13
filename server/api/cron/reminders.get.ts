@@ -32,6 +32,7 @@
 import { InlineKeyboard } from "grammy";
 import { getBot } from "~~/server/utils/bot";
 import { getBotSupabase } from "~~/server/utils/db";
+import { escapeHtml } from "~~/server/utils/format";
 
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
@@ -263,9 +264,10 @@ export default defineEventHandler(async (event) => {
           `pay_sub:${sub.id}`,
         );
 
+        const safeSubName = escapeHtml(sub.name);
         await bot.api.sendMessage(
           telegramId,
-          `💸 Сегодня день платежа «<b>${sub.name}</b>» на сумму <b>${formatBotAmount(Number(sub.amount))}</b>.\n\nВы внесли платёж?`,
+          `💸 Сегодня день платежа «<b>${safeSubName}</b>» на сумму <b>${formatBotAmount(Number(sub.amount))}</b>.\n\nВы внесли платёж?`,
           {
             parse_mode: "HTML",
             reply_markup: keyboard,
@@ -282,9 +284,10 @@ export default defineEventHandler(async (event) => {
     // 2. Проверка за 1 день (завтра)
     if (isSubscriptionDueOnDate(subDay, tomorrow)) {
       try {
+        const safeSubName = escapeHtml(sub.name);
         await bot.api.sendMessage(
           telegramId,
-          `⚠️ Напоминание: завтра регулярный платёж «<b>${sub.name}</b>» на сумму <b>${formatBotAmount(Number(sub.amount))}</b>.`,
+          `⚠️ Напоминание: завтра регулярный платёж «<b>${safeSubName}</b>» на сумму <b>${formatBotAmount(Number(sub.amount))}</b>.`,
           { parse_mode: "HTML" },
         );
         sentTomorrow++;
@@ -298,9 +301,10 @@ export default defineEventHandler(async (event) => {
     // 3. Проверка за 3 дня
     if (isSubscriptionDueOnDate(subDay, in3Days)) {
       try {
+        const safeSubName = escapeHtml(sub.name);
         await bot.api.sendMessage(
           telegramId,
-          `🔔 Напоминание: через 3 дня регулярный платёж «<b>${sub.name}</b>» на сумму <b>${formatBotAmount(Number(sub.amount))}</b>.`,
+          `🔔 Напоминание: через 3 дня регулярный платёж «<b>${safeSubName}</b>» на сумму <b>${formatBotAmount(Number(sub.amount))}</b>.`,
           { parse_mode: "HTML" },
         );
         sentIn3Days++;

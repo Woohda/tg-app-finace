@@ -80,7 +80,12 @@ export async function verifyTelegramWebAppData(
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    return signatureHex === hash;
+    if (signatureHex.length !== hash.length) return false;
+    let match = 0;
+    for (let i = 0; i < signatureHex.length; i++) {
+      match |= signatureHex.charCodeAt(i) ^ hash.charCodeAt(i);
+    }
+    return match === 0;
   } catch (error) {
     console.error("Ошибка проверки Telegram initData:", error);
     return false;
@@ -95,16 +100,41 @@ export async function generateJWT(
 
   const iat = Math.floor(Date.now() / 1000) - 300; // Вычитаем 5 минут для компенсации рассинхронизации времени с БД
 
-  return await new SignJWT({ sub: userId, role: "authenticated" })
+  return await new SignJWT({
+    sub: userId,
+    role: "authenticated",
+    type: "access_token",
+  })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt(iat)
     .setExpirationTime("7d")
     .sign(secretKey);
 }
 
+const usedTicketJtis = new Map<string, number>();
+
+function cleanExpiredTickets() {
+  const now = Date.now();
+  for (const [jti, exp] of usedTicketJtis.entries()) {
+    if (exp <= now) {
+      usedTicketJtis.delete(jti);
+    }
+  }
+}
+
+export function isLoginTicketUsed(jti: string): boolean {
+  cleanExpiredTickets();
+  return usedTicketJtis.has(jti);
+}
+
+export function markLoginTicketUsed(jti: string, expMs = 15 * 60 * 1000): void {
+  cleanExpiredTickets();
+  usedTicketJtis.set(jti, Date.now() + expMs);
+}
+
 /**
  * Генерирует одноразовый короткоживущий тикет для входа через браузер Safari / PWA.
- * Срок действия: 10 минут.
+ * Срок действия: 5 минут.
  */
 export async function generateLoginTicket(
   userId: string,
@@ -120,27 +150,39 @@ export async function generateLoginTicket(
   })
     .setProtectedHeader({ alg: "HS256" })
     .setIssuedAt(iat)
-    .setExpirationTime("10m")
+    .setExpirationTime("5m")
     .sign(secretKey);
 }
 
 /**
  * Проверяет подлинность одноразового тикета входа.
- * Возвращает идентификатор пользователя (userId) или null, если тикет недействителен или просрочен.
+ * Возвращает { userId, jti } или null, если тикет недействителен, уже использован или просрочен.
  */
 export async function verifyLoginTicket(
   ticket: string,
   secret: string,
-): Promise<string | null> {
+): Promise<{ userId: string; jti: string } | null> {
   try {
     const secretKey = new TextEncoder().encode(secret);
     const { payload } = await jwtVerify(ticket, secretKey);
 
-    if (payload.type !== "web_login_ticket" || !payload.sub) {
+    if (
+      payload.type !== "web_login_ticket" ||
+      !payload.sub ||
+      typeof payload.jti !== "string"
+    ) {
       return null;
     }
 
-    return payload.sub;
+    if (isLoginTicketUsed(payload.jti)) {
+      console.warn("verifyLoginTicket: тикет уже был использован ранее:", payload.jti);
+      return null;
+    }
+
+    return {
+      userId: payload.sub as string,
+      jti: payload.jti,
+    };
   } catch (error) {
     console.error("Ошибка проверки тикета входа:", error);
     return null;

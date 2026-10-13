@@ -33,7 +33,7 @@ import { addSplitMemberSchema } from "~/types/validate";
 import { getUserSupabase, getBotSupabase } from "~~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
-  const { token } = await requireAuth(event);
+  const { userId, token } = await requireAuth(event);
   const groupId = getRouterParam(event, "id");
 
   if (!groupId) {
@@ -57,6 +57,23 @@ export default defineEventHandler(async (event) => {
       statusCode: 404,
       statusMessage: "Группа не найдена",
     });
+  }
+
+  const isOwner = group.user_id === userId;
+  if (!isOwner) {
+    const { data: callerMember } = await supabase
+      .from("split_members")
+      .select("id")
+      .eq("group_id", groupId)
+      .eq("user_id", userId)
+      .maybeSingle();
+
+    if (!callerMember) {
+      throw createError({
+        statusCode: 403,
+        statusMessage: "У вас нет доступа к этой группе",
+      });
+    }
   }
 
   const body = await readValidatedBody(event, (data) =>
@@ -156,6 +173,6 @@ export default defineEventHandler(async (event) => {
 
   return {
     ...member,
-    telegram_id: linkedTelegramId,
+    telegram_id: linkedTelegramId ? 1 : null,
   };
 });

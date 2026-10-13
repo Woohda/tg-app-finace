@@ -18,6 +18,15 @@
  * ### Безопасность:
  * - Эндпоинт закрыт от публичного несанкционированного доступа для предотвращения DoS-атак на бота.
  */
+function timingSafeEqualStr(a?: string, b?: string): boolean {
+  if (!a || !b || a.length !== b.length) return false;
+  let match = 0;
+  for (let i = 0; i < a.length; i++) {
+    match |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return match === 0;
+}
+
 export default defineEventHandler(async (event) => {
   const config = useRuntimeConfig(event);
   const token = config.telegramBotToken || process.env.TELEGRAM_BOT_TOKEN;
@@ -38,7 +47,8 @@ export default defineEventHandler(async (event) => {
   const expectedSecret = await getWebhookSecretToken(token);
 
   const isAuthorized =
-    providedSecret === token || providedSecret === expectedSecret;
+    timingSafeEqualStr(providedSecret, token) ||
+    timingSafeEqualStr(providedSecret, expectedSecret);
 
   if (!isAuthorized) {
     throw createError({

@@ -61,16 +61,21 @@ export default defineEventHandler(async (event) => {
     .select("name, type")
     .eq("user_id", userId);
 
+  const sanitizeCat = (name: string) =>
+    name.replace(/[\r\n\t]/g, " ").trim().slice(0, 50);
+
   const expenseCategories =
     categories
       ?.filter((c: Category) => c.type === "expense")
-      .map((c: Category) => c.name)
+      .map((c: Category) => sanitizeCat(c.name))
+      .filter(Boolean)
       .join(", ") || "Еда, Дом, Транспорт, Развлечения";
 
   const incomeCategories =
     categories
       ?.filter((c: Category) => c.type === "income")
-      .map((c: Category) => c.name)
+      .map((c: Category) => sanitizeCat(c.name))
+      .filter(Boolean)
       .join(", ") || "Зарплата, Кэшбек, Переводы";
 
   // Убираем префикс base64 (например, data:image/jpeg;base64,) если он есть
@@ -162,13 +167,7 @@ export default defineEventHandler(async (event) => {
 `;
 
   const fallbackModels = [
-    "gemini-3.5-flash-lite",
-    "gemini-3.1-flash-lite",
-    "gemini-3.6-flash",
-    "gemini-3.7-flash",
-    "gemini-3.8-flash",
     "gemini-2.5-flash-lite",
-    "gemini-3-flash",
     "gemini-2.5-flash",
   ];
 
@@ -195,7 +194,7 @@ export default defineEventHandler(async (event) => {
     }
   }
 
-  const MAX_RETRIES = fallbackAttempts.length;
+  const MAX_RETRIES = Math.min(fallbackAttempts.length, 4);
   let attempt = 0;
 
   while (attempt < MAX_RETRIES) {

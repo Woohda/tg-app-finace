@@ -35,7 +35,7 @@ export default defineEventHandler(async (event) => {
 
   const supabase = getUserSupabase(token);
 
-  // Проверяем наличие хотя бы 1 транзакции (LIMIT 1) для оптимизации
+  // 1. Проверяем наличие связанных транзакций
   const { data: existingTx, error: txError } = await supabase
     .from("transactions")
     .select("id")
@@ -51,12 +51,47 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Если массив не пустой, значит транзакции есть
   if (existingTx && existingTx.length > 0) {
     throw createError({
       statusCode: 400,
       statusMessage:
         "Невозможно удалить категорию, так как с ней связаны транзакции. Сначала удалите их или перенесите в другую категорию.",
+    });
+  }
+
+  // 2. Проверяем наличие связанных регулярных платежей (подписок)
+  const { data: existingSubs, error: subsError } = await supabase
+    .from("subscriptions")
+    .select("id")
+    .eq("category_id", id)
+    .eq("user_id", userId)
+    .limit(1);
+
+  if (subsError) {
+    console.error("Ошибка при проверке подписок:", subsError);
+  } else if (existingSubs && existingSubs.length > 0) {
+    throw createError({
+      statusCode: 400,
+      statusMessage:
+        "Невозможно удалить категорию: к ней привязаны регулярные платежи. Сначала измените категорию в подписках.",
+    });
+  }
+
+  // 3. Проверяем наличие связанных целей бюджета
+  const { data: existingGoals, error: goalsError } = await supabase
+    .from("category_goals")
+    .select("id")
+    .eq("category_id", id)
+    .eq("user_id", userId)
+    .limit(1);
+
+  if (goalsError) {
+    console.error("Ошибка при проверке целей бюджета:", goalsError);
+  } else if (existingGoals && existingGoals.length > 0) {
+    throw createError({
+      statusCode: 400,
+      statusMessage:
+        "Невозможно удалить категорию: для неё настроен лимит бюджета в целях.",
     });
   }
 

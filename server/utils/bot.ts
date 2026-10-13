@@ -21,6 +21,7 @@ import {
 } from "./botHandlers";
 import { getBotSupabase } from "./db";
 import { processInvitePayload } from "./friends";
+import { escapeHtml } from "./format";
 
 let botInstance: Bot | null = null;
 let configuredToken: string | null = null;
@@ -140,8 +141,9 @@ export function getBot(customToken?: string): Bot {
         const webAppUrl = getWebAppUrl();
 
         if (result.success && result.groupId) {
+          const safeMessage = escapeHtml(result.message);
           await ctx.reply(
-            `🎉 <b>${result.message}</b>\n\nТеперь вы можете просматривать баланс группы и добавлять совместные траты!`,
+            `🎉 <b>${safeMessage}</b>\n\nТеперь вы можете просматривать баланс группы и добавлять совместные траты!`,
             {
               parse_mode: "HTML",
               reply_markup: new InlineKeyboard().webApp(
@@ -154,8 +156,9 @@ export function getBot(customToken?: string): Bot {
         }
 
         if (result.success) {
+          const safeMessage = escapeHtml(result.message);
           await ctx.reply(
-            `🎉 <b>${result.message}</b>\n\nТеперь вы можете быстро выбирать друг друга в совместных тратах!`,
+            `🎉 <b>${safeMessage}</b>\n\nТеперь вы можете быстро выбирать друг друга в совместных тратах!`,
             {
               parse_mode: "HTML",
               reply_markup: new InlineKeyboard().webApp(

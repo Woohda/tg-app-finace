@@ -4,6 +4,7 @@
  */
 import { getBotSupabase } from "./db";
 import { getBot } from "./bot";
+import { escapeHtml } from "./format";
 import type { JoinInviteResult } from "~/types/friends";
 
 /**
@@ -106,29 +107,12 @@ export async function processInvitePayload(
     );
 
     if (!alreadyMember) {
-      // Проверяем: возможно создатель ранее создал заглушку с таким же именем
-      const placeholderMember = (existingMembers || []).find(
-        (m) =>
-          !m.user_id &&
-          m.name.trim().toLowerCase() === joiningName.toLowerCase(),
-      );
-
-      if (placeholderMember) {
-        await supabase
-          .from("split_members")
-          .update({
-            user_id: joiningUserId,
-            name: joiningName,
-          })
-          .eq("id", placeholderMember.id);
-      } else {
-        await supabase.from("split_members").insert({
-          group_id: groupId,
-          name: joiningName,
-          user_id: joiningUserId,
-          is_current_user: false,
-        });
-      }
+      await supabase.from("split_members").insert({
+        group_id: groupId,
+        name: joiningName,
+        user_id: joiningUserId,
+        is_current_user: false,
+      });
 
       // Отправляем уведомление пригласившему в Telegram
       if (inviterId && inviterId !== joiningUserId) {
@@ -200,9 +184,11 @@ async function notifyInviterAboutJoin(
 
     if (inviter?.telegram_id) {
       const bot = getBot();
+      const safeJoiningName = escapeHtml(joiningName);
+      const safeGroupName = escapeHtml(groupName);
       await bot.api.sendMessage(
         inviter.telegram_id,
-        `👋 <b>${joiningName}</b> присоединился к вашей группе совместных трат <b>«${groupName}»</b> и добавлен в список друзей!`,
+        `👋 <b>${safeJoiningName}</b> присоединился к вашей группе совместных трат <b>«${safeGroupName}»</b> и добавлен в список друзей!`,
         { parse_mode: "HTML" },
       );
     }
@@ -228,9 +214,10 @@ async function notifyInviterAboutFriend(
 
     if (inviter?.telegram_id) {
       const bot = getBot();
+      const safeJoiningName = escapeHtml(joiningName);
       await bot.api.sendMessage(
         inviter.telegram_id,
-        `🎉 <b>${joiningName}</b> принял ваше приглашение и добавлен в список ваших друзей в FINO!`,
+        `🎉 <b>${safeJoiningName}</b> принял ваше приглашение и добавлен в список ваших друзей в FINO!`,
         { parse_mode: "HTML" },
       );
     }
