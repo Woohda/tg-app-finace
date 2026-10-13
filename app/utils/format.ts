@@ -9,7 +9,9 @@
  * 1. `formatAmount`: форматирует число в валюту (рубли) с двумя знаками после запятой по локали `ru-RU`.
  * 2. `parseAmount`: очищает строку или число от пробелов, неразрывных пробелов, запятых, валютных символов и возвращает округленный `number` или `NaN`.
  * 3. `formatPercent`: форматирует динамику изменений с явным знаком плюса/минуса и заданным суффиксом.
- * 4. `getPluralSub`: склоняет существительное "платеж" по заданному числу (единственное/множественное число)
+ * 4. `getPluralSub`: склоняет существительное "платеж" по заданному числу (единственное/множественное число).
+ * 5. `pluralize`: универсальное склонение русских существительных по числительному (1, 2-4, 5+).
+ * 6. `getInitials`: извлечение 1-2 букв инициалов из имени пользователя.
  */
 
 export function formatAmount(
@@ -91,13 +93,55 @@ export function capitalizeFirstLetter(
 }
 
 /**
- * Склоняет существительное "платеж" по заданному числу (единственное/множественное число)
+ * @function pluralize
+ * @fileoverview Универсальное склонение русских существительных по числительному
+ * @description
+ * Принимает число и массив из трех форм: [для 1 (участник), для 2-4 (участника), для 5+ (участников)].
+ * Возвращает правильную форму слова в зависимости от абсолютного значения числа.
+ */
+export function pluralize(
+  count: number,
+  forms: [string, string, string],
+): string {
+  const mod10 = Math.abs(count) % 10;
+  const mod100 = Math.abs(count) % 100;
+  if (mod100 >= 11 && mod100 <= 19) {
+    return forms[2];
+  }
+  if (mod10 === 1) {
+    return forms[0];
+  }
+  if (mod10 >= 2 && mod10 <= 4) {
+    return forms[1];
+  }
+  return forms[2];
+}
+
+/**
+ * @function getPluralSub
+ * @fileoverview Склонение существительного "платеж" по числу
+ * @description
+ * Использует функцию `pluralize` для выбора формы слова «платёж / платежа / платежей».
  */
 export function getPluralSub(count: number): string {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  if (mod100 >= 11 && mod100 <= 19) return "платежей";
-  if (mod10 === 1) return "платёж";
-  if (mod10 >= 2 && mod10 <= 4) return "платежа";
-  return "платежей";
+  return pluralize(count, ["платёж", "платежа", "платежей"]);
+}
+
+/**
+ * @function getInitials
+ * @fileoverview Извлечение 1-2 букв инициалов из имени пользователя
+ * @description
+ * Разбивает строку имени по пробелам. Если переданы имя и фамилия, возвращает
+ * первые буквы каждого слова в верхнем регистре (например, "Иван Петров" -> "ИП").
+ * Если имя состоит из одного слова, возвращает первые 2 буквы.
+ */
+export function getInitials(name?: string | null): string {
+  if (!name) return "";
+  const parts = name.trim().split(/\s+/);
+  const first = parts[0];
+  const second = parts[1];
+  if (first && second && first[0] && second[0]) {
+    return (first[0] + second[0]).toUpperCase();
+  }
+  return name.slice(0, 2).toUpperCase();
 }

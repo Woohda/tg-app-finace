@@ -20,7 +20,7 @@ export default defineNuxtPlugin(async () => {
   try {
     tg.ready();
     tg.expand();
-    tg.disableVerticalSwipes?.();
+    setTelegramVerticalSwipes(false);
   } catch (err) {
     console.warn("[Telegram Plugin] Ошибка при вызове ready/expand/disableVerticalSwipes:", err);
   }
