@@ -16,20 +16,20 @@
  * 7. Расчет балансов участников с помощью `calculateMemberBalances`.
  * 8. Оптимизация долговых обязательств через `simplifyDebts`.
  * 9. Возврат агрегированного объекта `SplitGroupDetail`.
- * 
+ *
  * ### Параметры запроса:
  * - `id` (route param) — UUID группы совместных трат.
- * 
+ *
  * ### Ошибки:
  * - `400 Bad Request`: параметр `id` отсутствует.
  * - `401 Unauthorized`: неавторизованный запрос.
  * - `404 Not Found`: группа не найдена или нет прав доступа.
  * - `500 Internal Server Error`: ошибка выполнения SQL-запроса в Supabase.
- * 
+ *
  * ### Особенности:
  * - Оптимизация долгов сводит множество взаимных переводов к минимально возможному числу транзакций.
  */
-import { getUserSupabase } from "~~/server/utils/db";
+import { getUserSupabase, getBotSupabase } from "~~/server/utils/db";
 import {
   calculateMemberBalances,
   simplifyDebts,
@@ -69,24 +69,10 @@ export default defineEventHandler(async (event): Promise<SplitGroupDetail> => {
     });
   }
 
-  // 2. Получаем участников с джойном пользователей (для telegram_id)
+  // 2. Получаем участников группы
   const { data: rawMembers, error: membersError } = await supabase
     .from("split_members")
-    .select(
-      `
-      id,
-      group_id,
-      name,
-      user_id,
-      is_current_user,
-      created_at,
-      users (
-        telegram_id,
-        username,
-        first_name
-      )
-    `,
-    )
+    .select("id, group_id, name, user_id, is_current_user, created_at")
     .eq("group_id", groupId)
     .order("created_at", { ascending: true });
 
@@ -109,14 +95,47 @@ export default defineEventHandler(async (event): Promise<SplitGroupDetail> => {
     });
   }
 
+  // Загружаем профили участников через сервисный клиент (в обход RLS)
+  const userIds = Array.from(
+    new Set([
+      group.user_id,
+      ...(rawMembers || []).map((m) => m.user_id),
+    ].filter(Boolean)),
+  ) as string[];
+
+  const userMap = new Map<
+    string,
+    { first_name: string | null; telegram_id: number | null }
+  >();
+
+  if (userIds.length > 0) {
+    const botSupabase = getBotSupabase();
+    const { data: usersData } = await botSupabase
+      .from("users")
+      .select("id, first_name, telegram_id")
+      .in("id", userIds);
+
+    for (const u of usersData || []) {
+      userMap.set(u.id, {
+        first_name: u.first_name,
+        telegram_id: u.telegram_id,
+      });
+    }
+  }
+
   const members: SplitMember[] = (rawMembers || []).map((m) => {
-    const u = Array.isArray(m.users) ? m.users[0] : m.users;
+    const effectiveUserId =
+      m.user_id || (isOwner && m.is_current_user ? group.user_id : null);
+    const u = effectiveUserId ? userMap.get(effectiveUserId) : null;
     const isCurrentUser = Boolean(
       (userId && m.user_id === userId) ||
         (!m.user_id && isOwner && m.is_current_user),
     );
-    const profileName = u?.first_name?.trim() || u?.username?.trim();
-    const displayName = m.name === "Я" && profileName ? profileName : m.name;
+    const profileName = u?.first_name?.trim();
+    const displayName =
+      (m.name === "Я" || m.name.toLowerCase() === "я") && profileName
+        ? profileName
+        : m.name;
 
     return {
       id: m.id,

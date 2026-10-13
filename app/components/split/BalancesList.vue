@@ -19,49 +19,43 @@ defineProps<{
 </script>
 
 <template>
-  <GlassCard class="p-4 pb-1.5 flex flex-col gap-2.5">
+  <GlassCard class="p-4 pb-2 flex flex-col gap-2">
     <div
       v-for="b in balances"
       :key="b.memberId"
-      class="flex items-center justify-between gap-3 pb-2.5 border-b border-black/5 last:border-none"
+      class="flex items-center justify-between gap-3 pb-2 border-b border-black/5 last:border-none"
     >
-      <div class="flex items-center gap-2 min-w-0 flex-1">
-        <Avatar
-          :name="b.memberName"
-          class="size-9 text-sm"
-        />
-        <div class="flex flex-col items-start min-w-0 flex-1">
-          <div class="flex items-center gap-1 min-w-0 max-w-full">
-            <span
-              class="text-text-primary font-bold text-sm truncate"
-              :title="b.memberName"
-            >
-              {{ b.memberName }}
-            </span>
-            <span
-              v-if="b.isCurrentUser"
-              class="text-text-accent font-semibold text-xs shrink-0"
-            >
-              (Вы)
-            </span>
-          </div>
-          <div
-            class="flex flex-wrap items-center gap-x-1.5 text-text-secondary text-[10px] max-w-full leading-tight"
+      <div class="flex flex-col gap-px items-start min-w-0 flex-1">
+        <div class="flex items-center gap-1 min-w-0 max-w-full">
+          <span
+            class="text-text-primary font-bold text-sm truncate"
+            :title="b.memberName"
           >
-            <span v-if="b.totalPaid > 0" class="whitespace-nowrap">
-              Оплатил {{ formatAmount(b.totalPaid) }}
-            </span>
-            <span
-              v-if="b.totalPaid > 0"
-              class="text-text-secondary/40 select-none"
-              aria-hidden="true"
-            >
-              •
-            </span>
-            <span class="whitespace-nowrap">
-              Доля {{ formatAmount(b.totalOwed) }}
-            </span>
-          </div>
+            {{ b.memberName }}
+          </span>
+          <span
+            v-if="b.isCurrentUser"
+            class="text-text-accent font-semibold text-xs shrink-0"
+          >
+            (Вы)
+          </span>
+        </div>
+        <div
+          class="flex flex-wrap items-center gap-x-1 text-text-secondary text-[10px] max-w-full leading-tight"
+        >
+          <span v-if="b.totalPaid > 0" class="whitespace-nowrap">
+            Оплатил {{ formatAmount(b.totalPaid) }}
+          </span>
+          <span
+            v-if="b.totalPaid > 0"
+            class="text-text-secondary select-none"
+            aria-hidden="true"
+          >
+            •
+          </span>
+          <span class="whitespace-nowrap">
+            Доля {{ formatAmount(b.totalOwed) }}
+          </span>
         </div>
       </div>
 

@@ -65,7 +65,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  // Проверяем, есть ли расходы у этого участника
+  // Проверяем, есть ли расходы или доли у этого участника
   const { count: paidCount } = await supabase
     .from("split_expenses")
     .select("id", { count: "exact", head: true })
@@ -80,6 +80,24 @@ export default defineEventHandler(async (event) => {
     throw createError({
       statusCode: 400,
       statusMessage: "Нельзя удалить участника, у которого есть записанные расходы или доли",
+    });
+  }
+
+  // Проверяем, есть ли взаиморасчеты у этого участника
+  const { count: settlementFromCount } = await supabase
+    .from("split_settlements")
+    .select("id", { count: "exact", head: true })
+    .eq("from_member_id", memberId);
+
+  const { count: settlementToCount } = await supabase
+    .from("split_settlements")
+    .select("id", { count: "exact", head: true })
+    .eq("to_member_id", memberId);
+
+  if ((settlementFromCount || 0) > 0 || (settlementToCount || 0) > 0) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Нельзя удалить участника, у которого есть записи взаиморасчетов",
     });
   }
 

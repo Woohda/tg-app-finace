@@ -72,20 +72,54 @@ export default defineEventHandler(async (event) => {
   }
 
   const { name, telegram_username } = body.data;
+  const trimmedName = name.trim();
 
   let linkedUserId: string | null = null;
+  let linkedTelegramId: number | null = null;
 
   if (telegram_username && telegram_username.trim()) {
     const cleanUsername = telegram_username.trim().replace(/^@/, "");
     const botSupabase = getBotSupabase();
     const { data: foundUser } = await botSupabase
       .from("users")
-      .select("id")
+      .select("id, telegram_id")
       .ilike("username", cleanUsername)
       .maybeSingle();
 
     if (foundUser) {
       linkedUserId = foundUser.id;
+      linkedTelegramId = foundUser.telegram_id;
+    }
+  }
+
+  // Проверяем на дубликаты участников в группе
+  const { data: existingMembers } = await supabase
+    .from("split_members")
+    .select("id, name, user_id")
+    .eq("group_id", groupId);
+
+  const duplicateName = (existingMembers || []).some(
+    (m) => m.name.trim().toLowerCase() === trimmedName.toLowerCase(),
+  );
+
+  if (duplicateName) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: "Участник с таким именем уже есть в группе",
+    });
+  }
+
+  if (linkedUserId) {
+    const duplicateUser = (existingMembers || []).some(
+      (m) => m.user_id === linkedUserId,
+    );
+
+    if (duplicateUser) {
+      throw createError({
+        statusCode: 400,
+        statusMessage:
+          "Пользователь с этим Telegram-аккаунтом уже добавлен в группу",
+      });
     }
   }
 
@@ -93,7 +127,7 @@ export default defineEventHandler(async (event) => {
     .from("split_members")
     .insert({
       group_id: groupId,
-      name: name.trim(),
+      name: trimmedName,
       user_id: linkedUserId,
       is_current_user: false,
     })
@@ -108,5 +142,8 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  return member;
+  return {
+    ...member,
+    telegram_id: linkedTelegramId,
+  };
 });

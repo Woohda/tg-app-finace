@@ -60,14 +60,31 @@ export default defineEventHandler(async (event) => {
 
   const { category_id, title } = body.data;
 
-  // 1. Находим профиль участника для текущего пользователя в группе
+  // 1. Находим группу и профиль участника для текущего пользователя в группе
+  const { data: group } = await supabase
+    .from("split_groups")
+    .select("id, user_id")
+    .eq("id", groupId)
+    .single();
+
+  if (!group) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: "Группа не найдена",
+    });
+  }
+
   const { data: members } = await supabase
     .from("split_members")
     .select("id, user_id, is_current_user")
     .eq("group_id", groupId);
 
+  const isOwner = group.user_id === userId;
+
   const currentMember = (members || []).find(
-    (m) => userId && m.user_id === userId,
+    (m) =>
+      (userId && m.user_id === userId) ||
+      (!m.user_id && isOwner && m.is_current_user),
   );
 
   if (!currentMember) {

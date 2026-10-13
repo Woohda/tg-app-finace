@@ -27,7 +27,7 @@
  * - Автоматически гарантирует, что создатель группы всегда присутствует в списке участников под своим именем из Telegram.
  */
 import { createSplitGroupSchema } from "~/types/validate";
-import { getUserSupabase } from "~~/server/utils/db";
+import { getUserSupabase, getBotSupabase } from "~~/server/utils/db";
 
 export default defineEventHandler(async (event) => {
   const { userId, token } = await requireAuth(event);
@@ -47,15 +47,15 @@ export default defineEventHandler(async (event) => {
 
   const { name, initialMembers } = body.data;
 
-  // 1. Получаем имя текущего пользователя из таблицы users
-  const { data: userProfile } = await supabase
+  // 1. Получаем реальное имя (first_name) текущего пользователя через сервисный клиент (в обход RLS)
+  const botSupabase = getBotSupabase();
+  const { data: userProfile } = await botSupabase
     .from("users")
-    .select("first_name, username")
+    .select("first_name")
     .eq("id", userId)
-    .single();
+    .maybeSingle();
 
-  const currentUserName =
-    userProfile?.first_name?.trim() || userProfile?.username?.trim() || "Я";
+  const currentUserName = userProfile?.first_name?.trim() || "Я";
 
   // 2. Создаем группу
   const { data: group, error: groupError } = await supabase
