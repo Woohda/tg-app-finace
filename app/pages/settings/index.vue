@@ -122,7 +122,7 @@ const handleLogout = async () => {
 
     <GlassCard>
       <div class="w-full flex gap-3 items-center justify-start">
-        <Avatar :src="avatarUrl" size="lg" />
+        <Avatar :src="avatarUrl" :name="userName" size="lg" />
         <div class="flex flex-col gap-0.5 items-start">
           <h2 class="text-text-primary font-bold text-lg">
             {{ userName }}

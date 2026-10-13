@@ -26,11 +26,10 @@ defineProps<{
       class="flex items-center justify-between gap-3 pb-2.5 border-b border-black/5 last:border-none"
     >
       <div class="flex items-center gap-2 min-w-0 flex-1">
-        <div
-          class="size-9 rounded-full glass-pill flex items-center justify-center font-bold text-sm text-text-primary shrink-0"
-        >
-          {{ getInitials(b.memberName) }}
-        </div>
+        <Avatar
+          :name="b.memberName"
+          class="size-9 text-sm"
+        />
         <div class="flex flex-col items-start min-w-0 flex-1">
           <div class="flex items-center gap-1 min-w-0 max-w-full">
             <span

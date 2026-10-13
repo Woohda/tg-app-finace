@@ -8,7 +8,6 @@
  * Построена на базе унифицированного компонента `GlassBottomSheet`.
  */
 import { cn } from "~/utils/cn";
-import { getInitials } from "~/utils/format";
 import type { SplitMember } from "~/types/split";
 
 withDefaults(
@@ -47,18 +46,16 @@ const emit = defineEmits<{
   >
     <template #item="{ item: m, selected }">
       <div class="flex items-center min-w-0 flex-1 mr-2">
-        <div
+        <Avatar
+          :name="m.name"
+          size="sm"
           :class="
             cn(
-              'size-8 rounded-full flex items-center justify-center shrink-0 mr-2 transition-colors glass-pill font-bold',
+              'mr-2 transition-colors',
               selected ? 'text-text-accent' : 'text-text-primary',
             )
           "
-        >
-          <span class="text-xs uppercase select-none">
-            {{ getInitials(m.name) }}
-          </span>
-        </div>
+        />
 
         <div class="flex items-center gap-1.5 min-w-0 flex-1">
           <span

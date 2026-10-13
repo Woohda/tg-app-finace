@@ -12,7 +12,6 @@
  * 3. Открытие нижней шторки `MemberBottomSheet` при клике и проброс выбранного ID через `update:modelValue`.
  */
 import { computed, ref } from "vue";
-import { User } from "@lucide/vue";
 import type { SplitMember } from "~/types/split";
 
 const props = withDefaults(
@@ -59,21 +58,11 @@ const handleSelect = (member: SplitMember) => {
     :display-text="selectedMember?.name"
   >
     <template #icon>
-      <!-- Аватар/инициалы выбранного участника -->
-      <div
-        v-if="selectedMember"
-        class="size-6 rounded-full glass-pill flex items-center justify-center font-bold text-[11px] text-text-primary shrink-0 mr-2 select-none"
-      >
-        {{ getInitials(selectedMember.name) }}
-      </div>
-
-      <!-- Иконка пользователя по умолчанию до выбора -->
-      <div
-        v-else
-        class="size-6 rounded-full glass-pill flex items-center justify-center shrink-0 mr-2 text-text-secondary"
-      >
-        <User class="size-3" />
-      </div>
+      <Avatar
+        :name="selectedMember?.name"
+        size="xs"
+        :class="cn('mr-2', !selectedMember && 'text-text-secondary')"
+      />
     </template>
 
     <template #default>

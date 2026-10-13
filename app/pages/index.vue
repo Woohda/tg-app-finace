@@ -45,7 +45,7 @@ const currentDate = computed(() => formatWeekdayAndDate());
   <div class="relative flex flex-col gap-4">
     <header class="flex items-center justify-between">
       <div class="flex items-center gap-3">
-        <Avatar :src="avatarUrl" />
+        <Avatar :src="avatarUrl" :name="userName" />
         <p class="text-text-primary font-bold">{{ userName }}</p>
       </div>
 
