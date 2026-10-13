@@ -47,7 +47,6 @@ const groupId = computed(() => route.params.id as string);
 const {
   currentGroup,
   fetchGroup,
-  deleteGroup,
   deleteExpense,
   notifyDebtors,
   pending,
@@ -70,6 +69,7 @@ const isAddMemberOpen = ref(false);
 const isSettleModalOpen = ref(false);
 const isExportModalOpen = ref(false);
 const isDeleteMemberOpen = ref(false);
+const isDeleteGroupOpen = ref(false);
 const memberToDelete = ref<SplitMember | null>(null);
 
 const promptDeleteMember = (member: unknown) => {
@@ -136,13 +136,12 @@ const handleDeleteExpense = async (expenseId: string) => {
   }
 };
 
-const handleDeleteGroup = async () => {
-  if (confirm("Вы уверены, что хотите удалить всю группу и все её расходы?")) {
-    const success = await deleteGroup(groupId.value);
-    if (success) {
-      router.replace("/split");
-    }
-  }
+const openDeleteGroupModal = () => {
+  isDeleteGroupOpen.value = true;
+};
+
+const handleGroupDeleted = () => {
+  router.replace("/split");
 };
 
 const handleCopyReport = async () => {
@@ -203,7 +202,7 @@ const handleNotify = async () => {
           variant="soft"
           size="icon"
           aria-label="Удалить группу"
-          @click="handleDeleteGroup"
+          @click="openDeleteGroupModal"
         >
           <Trash2 class="text-text-accent" :stroke-width="1.5" />
         </GlassButton>
@@ -482,7 +481,7 @@ const handleNotify = async () => {
             @click="openAddExpenseModal"
           >
             <Plus class="size-3.5 text-text-accent" :stroke-width="1.5" />
-            Трата
+            Платеж
           </GlassButton>
         </div>
 
@@ -527,10 +526,10 @@ const handleNotify = async () => {
         <GlassCard
           v-for="s in currentGroup.settlements"
           :key="s.id"
-          class="p-3.5 flex items-center justify-between"
+          class="p-4 flex items-center justify-between"
         >
           <div class="flex flex-col">
-            <span class="text-xs font-bold text-text-primary">
+            <span class="text-sm font-bold text-text-primary">
               {{ formatSettlementParticipants(s) }}
             </span>
             <span class="text-[11px] text-text-secondary">
@@ -600,6 +599,13 @@ const handleNotify = async () => {
         memberToDelete = null;
       "
       @deleted="fetchGroup(groupId)"
+    />
+
+    <DeleteGroupModal
+      :is-open="isDeleteGroupOpen"
+      :group="currentGroup"
+      @close="isDeleteGroupOpen = false"
+      @deleted="handleGroupDeleted"
     />
   </div>
 </template>

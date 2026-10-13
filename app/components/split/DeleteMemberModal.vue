@@ -13,7 +13,7 @@
  * 3. Морфинг кнопки в состояние успеха со слотом пламени и отправка события `deleted`.
  */
 import { ref, watch } from "vue";
-import { SquareExclamationPoint, Flame } from "@lucide/vue";
+import { AlertTriangle, Flame } from "@lucide/vue";
 import type { SplitMember } from "~/types/split";
 
 const props = defineProps<{
@@ -79,7 +79,7 @@ const handleConfirm = async () => {
       <div
         class="flex items-start gap-1.5 text-[11px] text-text-secondary leading-snug"
       >
-        <SquareExclamationPoint
+        <AlertTriangle
           class="text-xs text-text-accent shrink-0 select-none stroke-1.5"
         />
         <span>
