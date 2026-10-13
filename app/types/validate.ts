@@ -121,8 +121,6 @@ export const categoryGoalSchema = z.object({
     .max(100_000_000, "Слишком большая сумма"),
 });
 
-export type CategoryGoalInput = z.infer<typeof categoryGoalSchema>;
-
 // --- Split ---
 export const createSplitGroupSchema = z.object({
   name: z

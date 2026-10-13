@@ -22,7 +22,7 @@ import {
   getNow,
   toSafeDate,
 } from "~/utils/date";
-import { formatAmount } from "~/utils/format";
+import { formatAmount, pluralize } from "~/utils/format";
 import { calculateMedian } from "./math";
 
 /**
@@ -282,17 +282,7 @@ export interface CategoryGoalPacingResult {
   remainingDays: number;
 }
 
-/**
- * Склоняет слово «покупка» для натуральных чисел в русском языке.
- */
-function pluralizePurchases(count: number): string {
-  const mod10 = count % 10;
-  const mod100 = count % 100;
-  if (mod100 >= 11 && mod100 <= 19) return `${count} покупок`;
-  if (mod10 === 1) return `${count} покупка`;
-  if (mod10 >= 2 && mod10 <= 4) return `${count} покупки`;
-  return `${count} покупок`;
-}
+
 
 /**
  * Рассчитывает темп расходования лимита категории (Category Goal Pacing):
@@ -353,7 +343,7 @@ export function calculateCategoryGoalPacing(
     remainingChecksByMedian = checks;
 
     if (checks >= 1) {
-      paceText = `не более ${pluralizePurchases(checks)} (медианный чек ${formatAmount(medianCheck)})`;
+      paceText = `не более ${checks} ${pluralize(checks, ["покупка", "покупки", "покупок"])} (медианный чек ${formatAmount(medianCheck)})`;
     } else if (remainingLimit > 0) {
       paceText = `менее 1 покупки (остаток ${formatAmount(remainingLimit)})`;
     } else {

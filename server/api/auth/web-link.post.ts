@@ -32,15 +32,7 @@ export default defineEventHandler(async (event) => {
 
   const ticket = await generateLoginTicket(userId, jwtSecret);
 
-  let rawUrl =
-    config.webAppUrl ||
-    process.env.WEB_APP_URL ||
-    "https://tg-app-finace.pages.dev";
-  if (!rawUrl.startsWith("http://") && !rawUrl.startsWith("https://")) {
-    rawUrl = `https://${rawUrl}`;
-  }
-  const cleanBase = rawUrl.replace(/\/+$/, "");
-  const url = `${cleanBase}/login?ticket=${encodeURIComponent(ticket)}`;
+  const url = `${getWebAppUrl()}/login?ticket=${encodeURIComponent(ticket)}`;
 
   return { url };
 });

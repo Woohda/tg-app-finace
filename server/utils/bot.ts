@@ -24,13 +24,24 @@ import { getBotSupabase } from "./db";
 let botInstance: Bot | null = null;
 let configuredToken: string | null = null;
 
-function getWebAppUrl(): string {
-  const rawUrl = process.env.WEB_APP_URL || "https://tg-app-finace.pages.dev";
-
-  if (rawUrl.startsWith("https://")) {
-    return rawUrl;
+/**
+ * Возвращает канонический базовый URL веб-приложения (с протоколом https:// и без завершающего слэша).
+ */
+export function getWebAppUrl(): string {
+  let rawUrl: string | undefined;
+  try {
+    rawUrl = useRuntimeConfig().webAppUrl;
+  } catch {
+    // Вне контекста Nitro берем из process.env
   }
-  return `https://${rawUrl}`;
+  if (!rawUrl) {
+    rawUrl = process.env.WEB_APP_URL || "https://tg-app-finace.pages.dev";
+  }
+  const cleanBase = rawUrl.startsWith("http://") || rawUrl.startsWith("https://")
+    ? rawUrl.replace(/\/+$/, "")
+    : `https://${rawUrl.replace(/\/+$/, "")}`;
+
+  return cleanBase;
 }
 
 /**

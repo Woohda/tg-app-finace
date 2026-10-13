@@ -94,14 +94,7 @@ export function getMonthIndex(
   return getMonth(toSafeDate(dateInput));
 }
 
-/**
- * Возвращает порядковый номер месяца (1..12, где 1 — январь, 12 — декабрь).
- */
-export function getMonthNumber(
-  dateInput?: Date | string | number | null,
-): number {
-  return getMonth(toSafeDate(dateInput)) + 1;
-}
+
 
 /**
  * Возвращает полный год (например, 2026).
@@ -227,23 +220,7 @@ export function isCurrentMonth(
   return isSameMonth(toSafeDate(dateInput), getNow());
 }
 
-/**
- * Проверяет, совпадает ли год переданной даты с текущим годом.
- */
-export function isCurrentYear(
-  dateInput?: Date | string | number | null,
-): boolean {
-  return getYear(dateInput) === getYear(getNow());
-}
 
-/**
- * Проверяет, приходится ли дата на сегодняшний день.
- */
-export function isCurrentDay(
-  dateInput?: Date | string | number | null,
-): boolean {
-  return isToday(toSafeDate(dateInput));
-}
 
 /**
  * Форматирует число и название месяца в родительном падеже на русском языке.
@@ -431,15 +408,7 @@ export function addDaysSafe(
   return addDays(toSafeDate(dateInput), days);
 }
 
-/**
- * Вычитает указанное количество дней из даты.
- */
-export function subDaysSafe(
-  dateInput: Date | string | number | null | undefined,
-  days: number,
-): Date {
-  return subDays(toSafeDate(dateInput), days);
-}
+
 
 /**
  * Безопасно переходит на следующий месяц без бага перескока через 28/30 число.

@@ -25,18 +25,7 @@ export async function handleWebLoginCommand(ctx: Context): Promise<void> {
     .eq("telegram_id", telegramId)
     .maybeSingle();
 
-  let rawUrl: string | undefined;
-  try {
-    rawUrl = useRuntimeConfig().webAppUrl;
-  } catch {
-    // Вне контекста Nitro берем из process.env
-  }
-  if (!rawUrl) {
-    rawUrl = process.env.WEB_APP_URL || "https://tg-app-finace.pages.dev";
-  }
-  const cleanBase = rawUrl.startsWith("http")
-    ? rawUrl.replace(/\/+$/, "")
-    : `https://${rawUrl.replace(/\/+$/, "")}`;
+  const cleanBase = getWebAppUrl();
 
   if (!user) {
     await ctx.reply(
