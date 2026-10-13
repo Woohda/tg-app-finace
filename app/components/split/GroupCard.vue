@@ -53,22 +53,21 @@ defineProps<{
       </div>
 
       <!-- Бейдж личного баланса -->
-      <div class="flex items-center justify-between text-xs">
-        <span class="text-text-secondary">Ваш баланс:</span>
+      <div class="flex items-center justify-between text-xs gap-2">
+        <span class="text-text-secondary shrink-0">Ваш баланс:</span>
         <span
           v-if="group.userNetBalance > 0.01"
-          class="font-semibold text-accent-success"
+          class="font-semibold text-accent-success whitespace-nowrap tabular-nums"
         >
           Вам должны {{ formatAmount(group.userNetBalance) }}
         </span>
         <span
           v-else-if="group.userNetBalance < -0.01"
-          class="font-semibold text-text-accent"
+          class="font-semibold text-text-accent whitespace-nowrap tabular-nums"
         >
-          Вы должны
-          {{ formatAmount(Math.abs(group.userNetBalance)) }}
+          Вы должны {{ formatAmount(Math.abs(group.userNetBalance)) }}
         </span>
-        <span v-else class="font-medium text-text-secondary">
+        <span v-else class="font-medium text-text-secondary whitespace-nowrap">
           Все расчеты закрыты
         </span>
       </div>

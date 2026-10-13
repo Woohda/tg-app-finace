@@ -114,7 +114,7 @@ const handleRemove = (member: NormalizedMember) => {
         :class="[
           modelValue === m.id
             ? 'bg-accent-start/8 text-text-accent border border-accent-start/30 scale-105'
-            : 'text-text-primary hover:bg-black/5 dark:hover:bg-white/5',
+            : 'text-text-primary hover:bg-black/5',
         ]"
         :title="m.name"
         @click="handleSelect(m)"

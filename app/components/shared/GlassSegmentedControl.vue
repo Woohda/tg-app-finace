@@ -6,14 +6,16 @@
  * Компонент переключения вкладок/сегментов в стиле Glassmorphism.
  * Поддерживает WAI-ARIA роли tablist и tab, а также навигацию стрелками клавиатуры
  * (ArrowLeft / ArrowRight / ArrowUp / ArrowDown, Home, End) с циклическим переключением.
- * Поддерживает размеры 'sm' (для компактных зон) и 'md' (для списков и фильтров).
+ * Поддерживает размеры 'sm' (для компактных зон) и 'md' (для списков и фильтров),
+ * а также выравнивание сегментов по одинаковой ширине (`equalWidth`).
  * ---
  * ### Логика работы:
  * 1. Синхронизирует активное состояние с `modelValue` через событие `update:modelValue`.
  * 2. Обеспечивает паттерн Roving Tabindex: активный таб имеет `tabindex="0"`, остальные — `-1`.
  * 3. При нажатии стрелок переключает активный таб и переносит на него DOM-фокус.
+ * 4. Одинаковая ширина сегментов: равномерное распределение пространства между вкладками.
  */
-import { ref, nextTick } from "vue";
+import { ref, nextTick, type HTMLAttributes } from "vue";
 
 export interface SegmentOption<V extends string = string> {
   id: V;
@@ -24,10 +26,14 @@ interface Props {
   modelValue: T;
   options: Array<SegmentOption<T> | T>;
   size?: "sm" | "md";
+  equalWidth?: boolean;
+  class?: HTMLAttributes["class"];
 }
 
 const props = withDefaults(defineProps<Props>(), {
   size: "md",
+  equalWidth: true,
+  class: undefined,
 });
 
 const emit = defineEmits<{
@@ -103,6 +109,10 @@ function onKeyDown(e: KeyboardEvent) {
   <div
     ref="containerRef"
     class="flex items-center justify-center"
+    :class="[
+      equalWidth ? 'w-full max-w-sm mx-auto' : '',
+      props.class,
+    ]"
     role="tablist"
     @keydown="onKeyDown"
   >
@@ -116,8 +126,15 @@ function onKeyDown(e: KeyboardEvent) {
       :tabindex="modelValue === getOptionId(opt) ? 0 : -1"
       class="relative rounded-full flex items-center justify-center cursor-pointer select-none transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
       :class="[
+        equalWidth ? 'flex-1 min-w-0' : '',
         // Размеры
-        size === 'sm' ? 'px-5.5 py-1.25 text-[13px]' : 'px-7 py-1.5 text-sm',
+        size === 'sm'
+          ? equalWidth
+            ? 'px-2 py-1.25 text-[13px]'
+            : 'px-5.5 py-1.25 text-[13px]'
+          : equalWidth
+            ? 'px-3 py-1.5 text-sm'
+            : 'px-7 py-1.5 text-sm',
         'h-auto',
         // Нахлест соседних карточек (кроме первой)
         index > 0 ? '-ml-5' : '',
@@ -125,7 +142,7 @@ function onKeyDown(e: KeyboardEvent) {
         // Стили для Активного и Неактивного состояния
         modelValue === getOptionId(opt)
           ? 'z-20 scale-100 opacity-100 shadow-[0_4px_20px_rgba(225,29,72,0.3)]! text-text-primary blur-0'
-          : 'z-10 scale-90 opacity-80 text-text-secondary blur-[1px] hover:blur-0 hover:opacity-90',
+          : 'z-10 scale-95 opacity-80 text-text-secondary blur-[1px] hover:blur-0 hover:opacity-90',
       ]"
       @click="selectOption(getOptionId(opt))"
     >
@@ -139,7 +156,7 @@ function onKeyDown(e: KeyboardEvent) {
         ]"
       />
       <span
-        class="relative z-10 font-bold tracking-wide whitespace-nowrap transition-colors duration-300"
+        class="relative z-10 font-bold tracking-wide whitespace-nowrap truncate transition-colors duration-300"
         style="font-family: var(--font-sans)"
       >
         {{ getOptionLabel(opt) }}
