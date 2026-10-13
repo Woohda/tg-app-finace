@@ -84,6 +84,15 @@ const cardStyle = computed(() => {
   };
 });
 
+// Адаптивный размер шрифта заголовка в зависимости от длины текста
+const titleSizeClass = computed(() => {
+  if (!props.title) return "text-xl";
+  const len = props.title.trim().length;
+  if (len >= 24) return "text-[17px]";
+  if (len >= 17) return "text-[19px]";
+  return "text-xl";
+});
+
 // Управление блокировкой прокрутки фона и вертикальных свайпов Telegram
 watch(
   () => props.isOpen,
@@ -156,7 +165,9 @@ onUnmounted(() => {
               <slot name="header">
                 <h2
                   v-if="title"
-                  class="text-text-primary text-xl font-bold truncate"
+                  class="text-text-primary font-bold truncate transition-all duration-200"
+                  :class="titleSizeClass"
+                  :title="title"
                 >
                   {{ title }}
                 </h2>

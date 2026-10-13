@@ -84,7 +84,7 @@ const close = () => {
 <template>
   <div class="relative w-full flex flex-col gap-1">
     <!-- Лейбл поля (если передан) -->
-    <label v-if="label" class="text-sm font-bold text-text-primary pl-3">
+    <label v-if="label" class="text-xs text-text-secondary pl-3">
       {{ label }}
     </label>
 
@@ -102,7 +102,7 @@ const close = () => {
       "
       :class="
         cn(
-          'relative w-full text-left flex items-center justify-between rounded-full px-4 py-2.75 glass-pill',
+          'relative w-full text-left flex items-center justify-between rounded-full px-4 py-2.25 glass-pill',
           'transition-all duration-300 transform-gpu cursor-pointer',
           'focus:outline-none a11y-focus focus:shadow-[0_4px_20px_rgba(225,29,72,0.3)]!',
           disabled

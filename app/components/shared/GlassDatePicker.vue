@@ -256,7 +256,7 @@ const selectQuick = (isoDate: string) => {
 <template>
   <div class="flex flex-col gap-1 w-full">
     <!-- Лейбл -->
-    <label v-if="label" class="text-sm font-bold text-text-primary pl-3">
+    <label v-if="label" class="text-xs text-text-secondary pl-3">
       {{ label }}
     </label>
 
@@ -273,7 +273,7 @@ const selectQuick = (isoDate: string) => {
       "
       :class="
         cn(
-          'relative w-full text-left inline-flex items-center justify-between rounded-full px-4 py-2.5 glass-pill',
+          'relative w-full text-left inline-flex items-center justify-between rounded-full px-4 py-2.25 glass-pill',
           'transition-all duration-300 transform-gpu cursor-pointer outline-none a11y-focus',
           'focus:shadow-[0_4px_20px_rgba(225,29,72,0.3)]!',
           disabled
@@ -284,7 +284,7 @@ const selectQuick = (isoDate: string) => {
       "
       @click="openDatePicker"
     >
-      <div class="flex items-center gap-2.5 min-w-0 flex-1">
+      <div class="flex items-center gap-2 min-w-0 flex-1">
         <Calendar class="size-5 text-text-secondary shrink-0" />
         <span
           :class="
