@@ -40,7 +40,7 @@ const onGroupCreated = (groupId: string) => {
       subtitle="Сплит расходов и долгов"
       back-to="/settings"
       back-aria-label="Назад к настройкам"
-      show-action
+      :show-action="Boolean(groups.length)"
       action-aria-label="Создать группу"
       @action="isAddGroupOpen = true"
     />
@@ -49,46 +49,56 @@ const onGroupCreated = (groupId: string) => {
     <GlassCard
       class="p-4 flex flex-col gap-1 text-center items-center justify-center"
     >
-      <span class="text-text-secondary text-xs"
-        >Ваш общий баланс по группам:</span
-      >
-      <span
-        v-if="totalNetBalance > 0.01"
-        class="font-bold text-accent-success tracking-tight whitespace-nowrap tabular-nums"
-        :class="
-          Math.abs(totalNetBalance) >= 10_000_000
-            ? 'text-xl sm:text-2xl'
-            : 'text-2xl'
-        "
-      >
-        +{{ formatAmount(totalNetBalance) }}
-      </span>
-      <span
-        v-else-if="totalNetBalance < -0.01"
-        class="font-bold text-text-accent tracking-tight whitespace-nowrap tabular-nums"
-        :class="
-          Math.abs(totalNetBalance) >= 10_000_000
-            ? 'text-xl sm:text-2xl'
-            : 'text-2xl'
-        "
-      >
-        -{{ formatAmount(Math.abs(totalNetBalance)) }}
-      </span>
-      <span
-        v-else
-        class="text-2xl font-bold text-text-primary whitespace-nowrap"
-      >
-        0&nbsp;₽
-      </span>
-      <span class="text-text-secondary text-[11px]">
-        {{
-          totalNetBalance > 0.01
-            ? "Вам должны в сумме"
-            : totalNetBalance < -0.01
-              ? "Вы должны в сумме"
-              : "Все взаимные расчеты закрыты"
-        }}
-      </span>
+      <!-- Скелетон загрузки -->
+      <template v-if="pending && groups.length === 0">
+        <Skeleton class="w-44 h-3.5" rounded="md" />
+        <Skeleton class="w-32 h-7 my-1" rounded="lg" />
+        <Skeleton class="w-48 h-3" rounded="md" />
+      </template>
+
+      <!-- Состояние с данными -->
+      <template v-else>
+        <span class="text-text-secondary text-xs">
+          Ваш общий баланс по группам:
+        </span>
+        <span
+          v-if="totalNetBalance > 0.01"
+          class="font-bold text-accent-success tracking-tight whitespace-nowrap tabular-nums"
+          :class="
+            Math.abs(totalNetBalance) >= 10_000_000
+              ? 'text-xl sm:text-2xl'
+              : 'text-2xl'
+          "
+        >
+          +{{ formatAmount(totalNetBalance) }}
+        </span>
+        <span
+          v-else-if="totalNetBalance < -0.01"
+          class="font-bold text-text-accent tracking-tight whitespace-nowrap tabular-nums"
+          :class="
+            Math.abs(totalNetBalance) >= 10_000_000
+              ? 'text-xl sm:text-2xl'
+              : 'text-2xl'
+          "
+        >
+          -{{ formatAmount(Math.abs(totalNetBalance)) }}
+        </span>
+        <span
+          v-else
+          class="text-2xl font-bold text-text-primary whitespace-nowrap"
+        >
+          0&nbsp;₽
+        </span>
+        <span class="text-text-secondary text-[11px]">
+          {{
+            totalNetBalance > 0.01
+              ? "Вам должны в сумме"
+              : totalNetBalance < -0.01
+                ? "Вы должны в сумме"
+                : "Все взаимные расчеты закрыты"
+          }}
+        </span>
+      </template>
     </GlassCard>
 
     <!-- Скелетон загрузки -->
@@ -113,7 +123,7 @@ const onGroupCreated = (groupId: string) => {
     <!-- Пустое состояние -->
     <div
       v-else-if="groups.length === 0"
-      class="p-8 text-center flex flex-col items-center justify-center gap-3 glass-card rounded-3xl"
+      class="text-center flex flex-col items-center justify-center gap-3"
     >
       <span class="text-4xl">🏕️</span>
       <h3 class="text-text-primary font-bold text-base">
@@ -124,8 +134,9 @@ const onGroupCreated = (groupId: string) => {
         записывать расходы и легко делить чеки.
       </p>
       <GlassButton
-        variant="primary"
-        class="mt-2 text-xs py-2 px-5"
+        variant="soft"
+        size="sm"
+        class="mt-2 text-xs py-1 px-5"
         @click="isAddGroupOpen = true"
       >
         Создать первую группу
