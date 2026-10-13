@@ -71,13 +71,25 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const { name, telegram_username } = body.data;
+  const { name, telegram_username, user_id } = body.data;
   const trimmedName = name.trim();
 
   let linkedUserId: string | null = null;
   let linkedTelegramId: number | null = null;
 
-  if (telegram_username && telegram_username.trim()) {
+  if (user_id) {
+    linkedUserId = user_id;
+    const botSupabase = getBotSupabase();
+    const { data: foundUser } = await botSupabase
+      .from("users")
+      .select("id, telegram_id")
+      .eq("id", user_id)
+      .maybeSingle();
+
+    if (foundUser) {
+      linkedTelegramId = foundUser.telegram_id;
+    }
+  } else if (telegram_username && telegram_username.trim()) {
     const cleanUsername = telegram_username.trim().replace(/^@/, "");
     const botSupabase = getBotSupabase();
     const { data: foundUser } = await botSupabase

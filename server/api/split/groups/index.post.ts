@@ -28,6 +28,7 @@
  */
 import { createSplitGroupSchema } from "~/types/validate";
 import { getUserSupabase, getBotSupabase } from "~~/server/utils/db";
+import { addMutualFriendship } from "~~/server/utils/friends";
 
 export default defineEventHandler(async (event) => {
   const { userId, token } = await requireAuth(event);
@@ -92,15 +93,23 @@ export default defineEventHandler(async (event) => {
   ];
 
   if (Array.isArray(initialMembers)) {
-    for (const memberName of initialMembers) {
+    for (const member of initialMembers) {
+      const memberName = typeof member === "string" ? member : member.name;
+      const memberUserId =
+        typeof member === "object" && member.user_id ? member.user_id : null;
       const trimmed = memberName.trim();
       if (trimmed && trimmed.toLowerCase() !== currentUserName.toLowerCase()) {
         membersToInsert.push({
           group_id: group.id,
           name: trimmed,
-          user_id: null,
+          user_id: memberUserId,
           is_current_user: false,
         });
+
+        // Если участник привязан к пользователю FINO, гарантируем взаимную связь в друзьях
+        if (memberUserId && memberUserId !== userId) {
+          addMutualFriendship(userId, memberUserId).catch(() => {});
+        }
       }
     }
   }

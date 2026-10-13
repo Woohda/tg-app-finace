@@ -13,13 +13,14 @@
  * ### Особенности:
  * - `configuredToken` используется для пересоздания инстанса при изменении токена (например, в dev-режиме).
  */
-import { Bot } from "grammy";
+import { Bot, InlineKeyboard } from "grammy";
 import {
   handleBotTextMessage,
   handleBotCallbackQuery,
   handleWebLoginCommand,
 } from "./botHandlers";
 import { getBotSupabase } from "./db";
+import { processInvitePayload } from "./friends";
 
 let botInstance: Bot | null = null;
 let configuredToken: string | null = null;
@@ -86,6 +87,7 @@ export function getBot(customToken?: string): Bot {
 
   newBot.command("start", async (ctx) => {
     const payload = ctx.match?.trim();
+    const telegramId = ctx.from?.id;
 
     // 1. Если перешли по диплинку авторизации /start web
     if (payload === "web") {
@@ -93,28 +95,92 @@ export function getBot(customToken?: string): Bot {
       return;
     }
 
-    // 2. Если пользователь уже нажимал старт ранее (аккаунт существует в БД)
-    const telegramId = ctx.from?.id;
+    // 2. Проверяем или регистрируем пользователя в базе данных
+    let user: { id: string; first_name: string | null } | null = null;
     if (telegramId) {
       try {
         const supabase = getBotSupabase();
-        const { data: user } = await supabase
+        const { data: existingUser } = await supabase
           .from("users")
-          .select("id")
+          .select("id, first_name")
           .eq("telegram_id", telegramId)
           .maybeSingle();
 
-        if (user) {
-          // Пользователь уже зарегистрирован — сразу выдаем персональный доступ к Web и приложению
-          await handleWebLoginCommand(ctx);
-          return;
+        if (existingUser) {
+          user = existingUser;
+        } else {
+          // Автоматическая регистрация нового пользователя при старте
+          const { data: newUser } = await supabase
+            .from("users")
+            .insert({
+              telegram_id: telegramId,
+              first_name: ctx.from?.first_name || "Пользователь",
+              username: ctx.from?.username || null,
+            })
+            .select("id, first_name")
+            .single();
+          user = newUser;
         }
       } catch (err) {
         console.warn(
-          "[Telegram Bot] Ошибка проверки пользователя при /start:",
+          "[Telegram Bot] Ошибка проверки/создания пользователя при /start:",
           err,
         );
       }
+    }
+
+    // 3. Обработка реферальных кодов: join_... (группа + друзья) или friend_... (только друзья)
+    if (
+      user &&
+      payload &&
+      (payload.startsWith("join_") || payload.startsWith("friend_"))
+    ) {
+      try {
+        const result = await processInvitePayload(user.id, payload);
+        const webAppUrl = getWebAppUrl();
+
+        if (result.success && result.groupId) {
+          await ctx.reply(
+            `🎉 <b>${result.message}</b>\n\nТеперь вы можете просматривать баланс группы и добавлять совместные траты!`,
+            {
+              parse_mode: "HTML",
+              reply_markup: new InlineKeyboard().webApp(
+                "🐶 Открыть группу",
+                `${webAppUrl}/split/${result.groupId}`,
+              ),
+            },
+          );
+          return;
+        }
+
+        if (result.success) {
+          await ctx.reply(
+            `🎉 <b>${result.message}</b>\n\nТеперь вы можете быстро выбирать друг друга в совместных тратах!`,
+            {
+              parse_mode: "HTML",
+              reply_markup: new InlineKeyboard().webApp(
+                "🐶 Открыть FINO",
+                `${webAppUrl}/split`,
+              ),
+            },
+          );
+          return;
+        }
+
+        await ctx.reply(`⚠️ ${result.message}`);
+        return;
+      } catch (err) {
+        console.error(
+          "[Telegram Bot] Ошибка обработки инвайт-диплинка:",
+          err,
+        );
+      }
+    }
+
+    // 4. Если пользователь уже нажимал старт ранее — выдаем доступ
+    if (user) {
+      await handleWebLoginCommand(ctx);
+      return;
     }
 
     const webAppUrl = getWebAppUrl();
