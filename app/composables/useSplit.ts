@@ -14,7 +14,7 @@
  * 5. Фиксация взаиморасчетов между участниками и рассылка Telegram-уведомлений.
  * 6. Экспорт персональной доли затрат в личные финансы FINO.
  */
-import { ref, computed } from "vue";
+import { ref } from "vue";
 import type {
   SplitGroupSummary,
   SplitGroupDetail,
@@ -29,17 +29,11 @@ export const useSplit = () => {
   const api = useApi();
   const toast = useAppToast();
 
-  const groups = useState<SplitGroupSummary[]>("split:groups", () => []);
-  const currentGroup = useState<SplitGroupDetail | null>(
-    "split:currentGroup",
-    () => null,
-  );
-  const isLoaded = useState<boolean>("split:isLoaded", () => false);
-  const isFetching = ref(false);
-  const isLoading = ref(false);
+  const groups = useGlobalSplitGroups();
+  const currentGroup = useGlobalSplitCurrentGroup();
+  const isLoaded = useGlobalSplitIsLoaded();
+  const pending = ref(false);
   const error = ref<string | null>(null);
-
-  const pending = computed(() => !isLoaded.value || isFetching.value);
 
   /**
    * Загрузка списка всех групп совместных трат
@@ -49,8 +43,7 @@ export const useSplit = () => {
       return groups.value;
     }
 
-    isFetching.value = true;
-    isLoading.value = true;
+    pending.value = true;
     error.value = null;
     try {
       const data = await api<SplitGroupSummary[]>("/api/split/groups");
@@ -63,9 +56,25 @@ export const useSplit = () => {
       toast.error(msg);
       return [];
     } finally {
-      isFetching.value = false;
-      isLoading.value = false;
+      pending.value = false;
       isLoaded.value = true;
+    }
+  };
+
+  /**
+   * Синхронизация сводки группы в общем списке groups
+   */
+  const syncGroupSummary = (detail: SplitGroupDetail) => {
+    const idx = groups.value.findIndex((g) => g.id === detail.id);
+    if (idx !== -1) {
+      groups.value[idx] = {
+        ...groups.value[idx]!,
+        name: detail.name,
+        currency: detail.currency,
+        membersCount: detail.members.length,
+        totalExpenses: detail.totalGroupSpending,
+        userNetBalance: detail.userNetBalance,
+      };
     }
   };
 
@@ -73,11 +82,12 @@ export const useSplit = () => {
    * Загрузка полной информации о конкретной группе
    */
   const fetchGroup = async (id: string) => {
-    isLoading.value = true;
+    pending.value = true;
     error.value = null;
     try {
       const data = await api<SplitGroupDetail>(`/api/split/groups/${id}`);
       currentGroup.value = data;
+      syncGroupSummary(data);
       return data;
     } catch (e) {
       console.error("Ошибка загрузки группы:", e);
@@ -86,7 +96,7 @@ export const useSplit = () => {
       toast.error(msg);
       return null;
     } finally {
-      isLoading.value = false;
+      pending.value = false;
     }
   };
 
@@ -94,7 +104,6 @@ export const useSplit = () => {
    * Создание новой группы совместных трат
    */
   const createGroup = async (name: string, initialMembers?: string[]) => {
-    isLoading.value = true;
     error.value = null;
     try {
       const newGroup = await api<{ id: string; name: string }>(
@@ -116,8 +125,6 @@ export const useSplit = () => {
       error.value = msg;
       toast.error(msg);
       return null;
-    } finally {
-      isLoading.value = false;
     }
   };
 
@@ -125,7 +132,6 @@ export const useSplit = () => {
    * Удаление группы
    */
   const deleteGroup = async (id: string) => {
-    isLoading.value = true;
     error.value = null;
     try {
       await api(`/api/split/groups/${id}`, {
@@ -143,8 +149,6 @@ export const useSplit = () => {
       error.value = msg;
       toast.error(msg);
       return false;
-    } finally {
-      isLoading.value = false;
     }
   };
 
@@ -156,7 +160,6 @@ export const useSplit = () => {
     name: string,
     telegramUsername?: string,
   ) => {
-    isLoading.value = true;
     try {
       const member = await api<SplitMember>(
         `/api/split/groups/${groupId}/members`,
@@ -172,8 +175,6 @@ export const useSplit = () => {
       console.error("Ошибка добавления участника:", e);
       toast.error(parseApiError(e, "Не удалось добавить участника"));
       return null;
-    } finally {
-      isLoading.value = false;
     }
   };
 
@@ -181,7 +182,6 @@ export const useSplit = () => {
    * Удаление участника из группы
    */
   const deleteMember = async (groupId: string, memberId: string) => {
-    isLoading.value = true;
     try {
       await api(`/api/split/groups/${groupId}/members/${memberId}`, {
         method: "DELETE",
@@ -193,19 +193,13 @@ export const useSplit = () => {
       console.error("Ошибка удаления участника:", e);
       toast.error(parseApiError(e, "Не удалось удалить участника"));
       return false;
-    } finally {
-      isLoading.value = false;
     }
   };
 
   /**
    * Добавление расхода
    */
-  const addExpense = async (
-    groupId: string,
-    payload: SplitExpensePayload,
-  ) => {
-    isLoading.value = true;
+  const addExpense = async (groupId: string, payload: SplitExpensePayload) => {
     try {
       const expense = await api<SplitExpense>(
         `/api/split/groups/${groupId}/expenses`,
@@ -224,8 +218,6 @@ export const useSplit = () => {
       console.error("Ошибка добавления расхода:", e);
       toast.error(parseApiError(e, "Не удалось добавить расход"));
       return null;
-    } finally {
-      isLoading.value = false;
     }
   };
 
@@ -233,7 +225,6 @@ export const useSplit = () => {
    * Удаление расхода
    */
   const deleteExpense = async (groupId: string, expenseId: string) => {
-    isLoading.value = true;
     try {
       await api(`/api/split/groups/${groupId}/expenses/${expenseId}`, {
         method: "DELETE",
@@ -245,8 +236,6 @@ export const useSplit = () => {
       console.error("Ошибка удаления расхода:", e);
       toast.error(parseApiError(e, "Не удалось удалить расход"));
       return false;
-    } finally {
-      isLoading.value = false;
     }
   };
 
@@ -258,7 +247,6 @@ export const useSplit = () => {
     expenseId: string,
     payload: SplitExpensePayload,
   ) => {
-    isLoading.value = true;
     try {
       const expense = await api<SplitExpense>(
         `/api/split/groups/${groupId}/expenses/${expenseId}`,
@@ -277,8 +265,6 @@ export const useSplit = () => {
       console.error("Ошибка обновления расхода:", e);
       toast.error(parseApiError(e, "Не удалось обновить расход"));
       return null;
-    } finally {
-      isLoading.value = false;
     }
   };
 
@@ -294,7 +280,6 @@ export const useSplit = () => {
       date?: string;
     },
   ) => {
-    isLoading.value = true;
     try {
       const settlement = await api<SplitSettlement>(
         `/api/split/groups/${groupId}/settlements`,
@@ -310,8 +295,6 @@ export const useSplit = () => {
       console.error("Ошибка сохранения перевода:", e);
       toast.error(parseApiError(e, "Не удалось зафиксировать перевод"));
       return null;
-    } finally {
-      isLoading.value = false;
     }
   };
 
@@ -319,7 +302,6 @@ export const useSplit = () => {
    * Отправка персональных Telegram-уведомлений должникам группы
    */
   const notifyDebtors = async (groupId: string) => {
-    isLoading.value = true;
     try {
       const result = await api<{
         success: boolean;
@@ -343,8 +325,6 @@ export const useSplit = () => {
       console.error("Ошибка отправки уведомлений:", e);
       toast.error(parseApiError(e, "Не удалось отправить уведомления"));
       return null;
-    } finally {
-      isLoading.value = false;
     }
   };
 
@@ -357,7 +337,6 @@ export const useSplit = () => {
     categoryId: string,
     title?: string,
   ) => {
-    isLoading.value = true;
     try {
       await api(
         `/api/split/groups/${groupId}/expenses/${expenseId}/to-transaction`,
@@ -378,8 +357,6 @@ export const useSplit = () => {
       console.error("Ошибка переноса доли в расходы:", e);
       toast.error(parseApiError(e, "Не удалось перенести долю в расходы"));
       return false;
-    } finally {
-      isLoading.value = false;
     }
   };
 
@@ -387,8 +364,6 @@ export const useSplit = () => {
     groups,
     currentGroup,
     pending,
-    isFetching,
-    isLoading,
     error,
     fetchGroups,
     fetchGroup,
