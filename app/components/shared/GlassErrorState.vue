@@ -51,9 +51,9 @@ const emit = defineEmits<{
       <div class="flex items-center gap-2.5 text-left min-w-0">
         <slot name="icon">
           <div
-            class="size-8 rounded-full glass-pill flex items-center justify-center shrink-0 text-text-accent"
+            class="size-9 rounded-full glass-pill flex items-center justify-center shrink-0 text-text-accent"
           >
-            <AlertTriangle class="size-4.5" :stroke-width="2" />
+            <AlertTriangle class="size-5" :stroke-width="2" />
           </div>
         </slot>
         <div class="flex flex-col min-w-0">
@@ -85,7 +85,7 @@ const emit = defineEmits<{
           :class="asCard ? 'size-12' : 'size-10'"
         >
           <AlertTriangle
-            :class="asCard ? 'size-6' : 'size-5'"
+            :class="asCard ? 'size-6.5' : 'size-5'"
             :stroke-width="1.8"
           />
         </div>
@@ -107,7 +107,7 @@ const emit = defineEmits<{
         v-if="showRetry"
         variant="soft"
         size="sm"
-        class="mt-1"
+        class="px-3.5"
         @click="emit('retry')"
       >
         {{ retryText }}
