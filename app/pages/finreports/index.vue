@@ -19,7 +19,12 @@ import { formatAmount } from "~/utils/format";
 
 const { startDate, endDate, currentDate, prevMonth, nextMonth } =
   useDateFilter();
-const { pending, transactions } = useTransactions({
+const {
+  pending,
+  transactions,
+  error: txError,
+  refresh: refreshTransactions,
+} = useTransactions({
   startDate,
   endDate,
 });
@@ -37,9 +42,7 @@ const {
 const { fetchBudget } = useBudgets();
 
 onMounted(() => {
-  if (!monthlyBudget.value) {
-    fetchBudget();
-  }
+  fetchBudget();
 });
 
 type ViewMode = "budget" | "spent";
@@ -122,6 +125,8 @@ const currentLabel = computed(() =>
       :empty-message="emptyMessage"
       :pending="pending"
       :total-count="transactions.length"
+      :error="txError"
+      @retry="refreshTransactions"
     />
   </div>
 </template>

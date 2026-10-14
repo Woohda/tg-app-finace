@@ -61,12 +61,14 @@ watch(period, (newPeriod) => {
 });
 
 const { fetchGoals } = useCategoryGoals();
+const { subscriptions, fetchSubscriptions } = useSubscriptions();
 
-onMounted(() => {
-  fetchGoals();
+onMounted(async () => {
+  await Promise.all([
+    fetchGoals(),
+    fetchSubscriptions(),
+  ]);
 });
-
-const { subscriptions } = useSubscriptions();
 
 const {
   pending,
