@@ -12,8 +12,10 @@
  * 3. Открытие модальных окон для создания, редактирования и удаления категорий.
  */
 import { ref, computed, onMounted } from "vue";
+import { Z_INDEX } from "~/utils/zIndex";
 
-const { categories, fetchCategories, isLoading, error } = useCategories();
+const { categories, fetchCategories, isLoading, error, deleteCategory } =
+  useCategories();
 
 onMounted(() => {
   fetchCategories();
@@ -72,15 +74,35 @@ const closeForm = () => {
 // Состояние модалки удаления
 const isDeleteModalOpen = ref(false);
 const deletingCategoryId = ref<string | null>(null);
+const categoryDeleteError = ref<string | null>(null);
+
+const deletingCategory = computed(() =>
+  categories.value.find((c) => c.id === deletingCategoryId.value) ?? null,
+);
 
 const confirmDelete = (id: string) => {
   deletingCategoryId.value = id;
+  categoryDeleteError.value = null;
   isDeleteModalOpen.value = true;
 };
 
 const cancelDelete = () => {
   isDeleteModalOpen.value = false;
   deletingCategoryId.value = null;
+  categoryDeleteError.value = null;
+};
+
+const handleDeleteCategory = async () => {
+  if (!deletingCategoryId.value) return false;
+  categoryDeleteError.value = null;
+  const success = await deleteCategory(deletingCategoryId.value);
+  if (!success) {
+    categoryDeleteError.value =
+      error.value ||
+      "Невозможно удалить категорию, так как с ней связаны транзакции.";
+    return false;
+  }
+  return true;
 };
 </script>
 
@@ -162,10 +184,20 @@ const cancelDelete = () => {
       @close="closeForm"
     />
 
-    <!-- Модалка удаления -->
-    <CategoryDeleteModal
+    <!-- Модалка удаления категории -->
+    <ConfirmDeleteModal
       :is-open="isDeleteModalOpen"
-      :category-id="deletingCategoryId"
+      title="Удаление категории"
+      :description="
+        deletingCategory
+          ? `Вы уверены, что хотите удалить категорию «${deletingCategory.name}»?`
+          : 'Вы уверены, что хотите удалить эту категорию?'
+      "
+      confirm-text="🧨 Сжечь"
+      position="center"
+      :z-index="Z_INDEX.CATEGORY_DELETE"
+      :error="categoryDeleteError"
+      :on-confirm="handleDeleteCategory"
       @close="cancelDelete"
     />
   </div>
