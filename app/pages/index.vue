@@ -19,7 +19,16 @@ import { Bell } from "@lucide/vue";
 const { userName, avatarUrl } = useAuth();
 const { hasUnread } = useNotifications();
 const { startDate, endDate } = useDateFilter();
-const { transactions, pending } = useTransactions({ startDate, endDate });
+const {
+  transactions,
+  pending,
+  error: txError,
+  refresh: refreshTransactions,
+  fetchTransactions,
+} = useTransactions({
+  startDate,
+  endDate,
+});
 const { monthlyExpense, monthlyIncome } = useTransactionView(transactions);
 const { expensesByCategory } = useExpensesByCategory(transactions);
 
@@ -32,10 +41,22 @@ const {
   dailyGuideline,
 } = useBudgets({ monthlyExpense });
 
-onMounted(() => {
-  if (!budget.value) {
-    fetchBudget();
-  }
+const { fetchSubscriptions } = useSubscriptions();
+
+const retryAll = async () => {
+  await Promise.all([
+    refreshTransactions(),
+    fetchBudget(true),
+    fetchSubscriptions(true),
+  ]);
+};
+
+onMounted(async () => {
+  await Promise.all([
+    fetchTransactions(),
+    fetchBudget(),
+    fetchSubscriptions(),
+  ]);
 });
 
 const currentDate = computed(() => formatWeekdayAndDate());
@@ -66,6 +87,16 @@ const currentDate = computed(() => formatWeekdayAndDate());
         </ClientOnly>
       </NuxtLink>
     </header>
+
+    <!-- Ошибка загрузки дашборда -->
+    <GlassErrorState
+      v-if="txError && transactions.length === 0 && !pending"
+      compact
+      title="Не удалось загрузить данные"
+      :error="txError"
+      retry-text="Повторить"
+      @retry="retryAll"
+    />
 
     <!-- Текст приветствия -->
     <div class="flex flex-col gap-2">

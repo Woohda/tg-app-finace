@@ -14,6 +14,7 @@ import type { Subscription } from "~/composables/useSubscriptions";
 const {
   subscriptions,
   pending,
+  error,
   fetchSubscriptions,
   deleteSubscription,
   totalMonthly,
@@ -90,7 +91,14 @@ const handleDelete = async () => {
         <span class="text-text-secondary text-sm"> Всего в месяц </span>
         <CalendarClock class="size-5 text-text-secondary" />
       </div>
-      <div class="flex items-baseline gap-1">
+      <div
+        v-if="pending && subscriptions.length === 0"
+        class="flex items-baseline gap-2 py-1 animate-pulse"
+      >
+        <Skeleton class="w-32 h-8" rounded="lg" />
+        <Skeleton class="w-20 h-4" rounded="md" />
+      </div>
+      <div v-else class="flex items-baseline gap-1">
         <span class="text-3xl font-bold text-text-primary tracking-tight">
           {{ formatAmount(totalMonthly) }}
         </span>
@@ -123,6 +131,14 @@ const handleDelete = async () => {
           <Skeleton class="w-20 h-5" />
         </GlassCard>
       </div>
+
+      <!-- Ошибка загрузки -->
+      <GlassErrorState
+        v-else-if="error && subscriptions.length === 0"
+        title="Не удалось загрузить регулярные платежи"
+        :error="error"
+        @retry="fetchSubscriptions(true)"
+      />
 
       <!-- Пустое состояние -->
       <div

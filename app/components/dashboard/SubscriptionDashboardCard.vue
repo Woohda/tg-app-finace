@@ -16,6 +16,7 @@ import type { Subscription } from "~/composables/useSubscriptions";
 const {
   subscriptions,
   pending,
+  error,
   fetchSubscriptions,
   totalMonthly,
   upcomingSubscriptions,
@@ -72,6 +73,15 @@ function closeEditModal() {
       <Skeleton class="w-full h-14" rounded="full" />
       <Skeleton class="w-full h-14" rounded="full" />
     </div>
+
+    <!-- Состояние ошибки загрузки -->
+    <GlassErrorState
+      v-else-if="error && subscriptions.length === 0"
+      :as-card="false"
+      title="Не удалось загрузить регулярные платежи"
+      :error="error"
+      @retry="fetchSubscriptions(true)"
+    />
 
     <!-- Состояние 2: Подписок нет -->
     <div

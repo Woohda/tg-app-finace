@@ -35,6 +35,7 @@ interface Props {
   emptyMessage?: string;
   pending?: boolean;
   totalCount?: number;
+  error?: string | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -42,11 +43,13 @@ const props = withDefaults(defineProps<Props>(), {
   emptyMessage: "За этот период трат нет",
   pending: false,
   totalCount: undefined,
+  error: null,
 });
 
 const emit = defineEmits<{
   (e: "update:activePeriod", value: PeriodType): void;
   (e: "update:searchQuery", value: string): void;
+  (e: "retry"): void;
 }>();
 
 const { deleteTransaction } = useTransactions();
@@ -211,6 +214,15 @@ const summaryBadgeText = computed(() => {
         </button>
       </div>
     </div>
+
+    <!-- Ошибка загрузки -->
+    <GlassErrorState
+      v-else-if="error && displayedTransactions.length === 0"
+      :as-card="false"
+      title="Не удалось загрузить операции"
+      :error="error"
+      @retry="emit('retry')"
+    />
 
     <!-- Пустое состояние при отсутствии трат -->
     <div
