@@ -33,6 +33,7 @@ import { getBot } from "~~/server/utils/bot";
 import { escapeHtml } from "~~/server/utils/format";
 import { calculateMemberBalances, simplifyDebts } from "~/utils/splitAlgorithm";
 import type { SplitMember, SplitExpense, SplitSettlement } from "~/types/split";
+import type { Database } from "~/types/database.types";
 
 export default defineEventHandler(async (event) => {
   const { userId, token } = await requireAuth(event);
@@ -47,17 +48,48 @@ export default defineEventHandler(async (event) => {
 
   const supabase = getUserSupabase(token);
 
-  // 1. Получаем группу
-  const { data: group } = await supabase
+  // 1. Получаем группу с поддержкой last_notified_at
+  let group: {
+    id: string;
+    name: string;
+    user_id: string;
+    last_notified_at?: string | null;
+  };
+
+  const fullGroupQuery = await supabase
     .from("split_groups")
-    .select("id, name, user_id")
+    .select("id, name, user_id, last_notified_at")
     .eq("id", groupId)
     .single();
 
-  if (!group) {
+  if (!fullGroupQuery.error && fullGroupQuery.data) {
+    group = fullGroupQuery.data as unknown as typeof group;
+  } else {
+    const fallbackQuery = await supabase
+      .from("split_groups")
+      .select("id, name, user_id")
+      .eq("id", groupId)
+      .single();
+
+    if (fallbackQuery.error || !fallbackQuery.data) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Группа не найдена",
+      });
+    }
+    group = fallbackQuery.data;
+  }
+
+  // Защита от спама: отправка напоминаний должникам разрешена не чаще одного раза в сутки
+  const { isCooldown, remainingHours } = getSplitGroupNotificationCooldown(
+    groupId,
+    group.last_notified_at,
+  );
+
+  if (isCooldown) {
     throw createError({
-      statusCode: 404,
-      statusMessage: "Группа не найдена",
+      statusCode: 429,
+      statusMessage: `Напоминание можно отправлять не чаще одного раза в сутки. Следующая отправка будет доступна через ${remainingHours} ч.`,
     });
   }
 
@@ -236,10 +268,40 @@ export default defineEventHandler(async (event) => {
     }
   }
 
+  const now = Date.now();
+
+  if (notifiedCount > 0) {
+    recordSplitGroupNotification(groupId, now);
+
+    // Фиксируем штамп в БД (если колонка last_notified_at существует)
+    try {
+      type SplitGroupUpdateWithNotification =
+        Database["public"]["Tables"]["split_groups"]["Update"] & {
+          last_notified_at?: string;
+        };
+      const untypedTable = supabase.from("split_groups") as unknown as {
+        update: (values: SplitGroupUpdateWithNotification) => {
+          eq: (col: string, val: string) => Promise<unknown>;
+        };
+      };
+      await untypedTable
+        .update({ last_notified_at: new Date(now).toISOString() })
+        .eq("id", groupId);
+    } catch {
+      // Игнорируем ошибку обновления, если колонка еще не мигрирована в БД
+    }
+  }
+
+  const effectiveNotifiedAt =
+    notifiedCount > 0
+      ? new Date(now).toISOString()
+      : getSplitGroupLastNotifiedAt(groupId, group.last_notified_at);
+
   return {
     success: true,
     notifiedCount,
     totalDebtsCount: transfers.length,
+    notifiedAt: effectiveNotifiedAt,
     message:
       notifiedCount > 0
         ? `Отправлено ${notifiedCount} уведомлений в Telegram`

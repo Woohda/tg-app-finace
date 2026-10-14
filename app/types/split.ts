@@ -15,6 +15,7 @@ export interface SplitMember {
   is_current_user: boolean;
   created_at: string;
   telegram_id?: number | null;
+  photo_url?: string | null;
 }
 
 export interface SplitExpenseShare {
@@ -76,6 +77,7 @@ export interface SplitMemberBalance {
   netBalance: number;
   userId?: string | null;
   telegramId?: number | null;
+  photoUrl?: string | null;
 }
 
 export interface SplitDebtTransfer {
@@ -86,6 +88,8 @@ export interface SplitDebtTransfer {
   amount: number;
   fromTelegramId?: number | null;
   toTelegramId?: number | null;
+  fromPhotoUrl?: string | null;
+  toPhotoUrl?: string | null;
 }
 
 export interface SplitGroupDetail {
@@ -101,6 +105,7 @@ export interface SplitGroupDetail {
   optimizedDebts: SplitDebtTransfer[];
   userNetBalance: number;
   totalGroupSpending: number;
+  last_notified_at?: string | null;
 }
 
 export interface SplitGroupSummary {

@@ -84,7 +84,10 @@ export const parseReceiptSchema = z.object({
 });
 
 export const bulkTransactionSchema = z.object({
-  transactions: z.array(transactionSchema),
+  transactions: z
+    .array(transactionSchema)
+    .min(1, "Передайте хотя бы одну транзакцию")
+    .max(100, "Максимальный размер пакета — 100 транзакций"),
 });
 
 // --- Subscriptions ---

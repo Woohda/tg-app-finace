@@ -31,8 +31,40 @@ import type { Database } from "~/types/database.types";
 
 type Category = Database["public"]["Tables"]["categories"]["Insert"];
 
+const userReceiptTimestamps = new Map<string, number[]>();
+const MAX_RECEIPTS_PER_HOUR = 10;
+const ONE_HOUR_MS = 60 * 60 * 1000;
+
+function isReceiptScanRateLimited(userId: string): boolean {
+  const now = Date.now();
+  let timestamps = userReceiptTimestamps.get(userId);
+  if (!timestamps) {
+    timestamps = [];
+    userReceiptTimestamps.set(userId, timestamps);
+  }
+
+  while (timestamps.length > 0 && now - timestamps[0]! > ONE_HOUR_MS) {
+    timestamps.shift();
+  }
+
+  if (timestamps.length >= MAX_RECEIPTS_PER_HOUR) {
+    return true;
+  }
+
+  timestamps.push(now);
+  return false;
+}
+
 export default defineEventHandler(async (event) => {
   const { userId, token } = await requireAuth(event);
+
+  if (isReceiptScanRateLimited(userId)) {
+    throw createError({
+      statusCode: 429,
+      statusMessage:
+        "Превышен лимит распознавания чеков (не более 10 в час). Пожалуйста, подождите перед следующей загрузкой.",
+    });
+  }
   const supabase = getUserSupabase(token);
   const config = useRuntimeConfig();
 
@@ -62,7 +94,10 @@ export default defineEventHandler(async (event) => {
     .eq("user_id", userId);
 
   const sanitizeCat = (name: string) =>
-    name.replace(/[\r\n\t]/g, " ").trim().slice(0, 50);
+    name
+      .replace(/[\r\n\t]/g, " ")
+      .trim()
+      .slice(0, 50);
 
   const expenseCategories =
     categories
@@ -166,10 +201,7 @@ export default defineEventHandler(async (event) => {
 5. СТРОГИЙ ВЫХОДНОЙ ФОРМАТ: Верни результат ИСКЛЮЧИТЕЛЬНО в виде валидного JSON-объекта согласно заданной схеме, без пояснений, комментариев и лишнего текста.
 `;
 
-  const fallbackModels = [
-    "gemini-2.5-flash-lite",
-    "gemini-2.5-flash",
-  ];
+  const fallbackModels = ["gemini-2.5-flash-lite", "gemini-2.5-flash"];
 
   const apiKeys = [config.geminiApiKey];
   if (config.geminiApiKey2) {

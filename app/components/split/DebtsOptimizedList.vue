@@ -46,6 +46,15 @@ const getToMemberName = (t: SplitDebtTransfer): string => {
   return isToMe(t) ? "Мне" : t.toMemberName;
 };
 
+const { avatarUrl: currentAuthAvatarUrl } = useAuth();
+
+const getFromMemberAvatar = (t: SplitDebtTransfer): string | null => {
+  if (isFromMe(t) && currentAuthAvatarUrl.value) {
+    return currentAuthAvatarUrl.value;
+  }
+  return t.fromPhotoUrl || null;
+};
+
 /**
  * Проверяет, является ли имя коротким (не требует агрессивного сжатия)
  */
@@ -62,14 +71,14 @@ const getFromNameContainerClass = (t: SplitDebtTransfer): string => {
     return "shrink-0 max-w-[calc(50%-8px)]";
   }
   if (!fromShort && !toShort) {
-    // Оба длинные: делят доступную ширину поровну
-    return "min-w-0 flex-1 max-w-[calc(50%-8px)]";
+    // Оба длинные: делят доступную ширину поровну без принудительного растягивания
+    return "min-w-0 shrink max-w-[calc(50%-8px)]";
   }
   if (!fromShort && toShort) {
-    // Отправитель длинный, получатель короткий
-    return "min-w-0 flex-1 max-w-[calc(100%-2.5rem)]";
+    // Отправитель длинный, получатель короткий: занимает естественную ширину без отталкивания стрелки
+    return "min-w-0 shrink max-w-[calc(100%-2.5rem)]";
   }
-  // Отправитель короткий, получатель длинный
+  // Отправитель короткий, получатель длинный: отправитель не сжимается
   return "shrink-0 max-w-[calc(50%-8px)]";
 };
 
@@ -84,14 +93,14 @@ const getToNameClass = (t: SplitDebtTransfer): string => {
     return "shrink-0 max-w-[calc(50%-8px)]";
   }
   if (!fromShort && !toShort) {
-    // Оба длинные: делят доступную ширину поровну
-    return "min-w-0 flex-1 max-w-[calc(50%-8px)]";
+    // Оба длинные: делят доступную ширину поровну без принудительного растягивания
+    return "min-w-0 shrink max-w-[calc(50%-8px)]";
   }
   if (fromShort && !toShort) {
-    // Получатель длинный, отправитель короткий
-    return "min-w-0 flex-1 max-w-[calc(100%-2.5rem)]";
+    // Получатель длинный, отправитель короткий: занимает естественную ширину
+    return "min-w-0 shrink max-w-[calc(100%-2.5rem)]";
   }
-  // Получатель короткий, отправитель длинный
+  // Получатель короткий, отправитель длинный: получатель не сжимается
   return "shrink-0 max-w-[calc(50%-8px)]";
 };
 </script>
@@ -121,7 +130,11 @@ const getToNameClass = (t: SplitDebtTransfer): string => {
           class="flex flex-col px-3.5 py-2.5"
         >
           <div class="flex items-center justify-between gap-2">
-            <Avatar :name="t.fromMemberName" size="md" />
+            <Avatar
+              :src="getFromMemberAvatar(t)"
+              :name="t.fromMemberName"
+              size="md"
+            />
             <!-- От кого и Кому -->
             <div
               class="flex flex-col gap-0.5 text-[13px] sm:text-sm font-semibold text-text-primary min-w-0 flex-1"

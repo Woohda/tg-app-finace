@@ -59,6 +59,7 @@ const handleSelect = (member: SplitMember) => {
   >
     <template #icon>
       <Avatar
+        :src="selectedMember?.photo_url"
         :name="selectedMember?.name"
         size="xs"
         :class="cn('mr-2', !selectedMember && 'text-text-secondary')"

@@ -326,12 +326,17 @@ export const useSplit = () => {
         success: boolean;
         notifiedCount: number;
         totalDebtsCount: number;
+        notifiedAt?: string | null;
         message: string;
       }>(`/api/split/groups/${groupId}/notify-debtors`, {
         method: "POST",
       });
 
       if (result.notifiedCount > 0) {
+        if (currentGroup.value && currentGroup.value.id === groupId) {
+          currentGroup.value.last_notified_at =
+            result.notifiedAt || new Date().toISOString();
+        }
         toast.success(
           "Уведомления отправлены",
           `Отправлено ${result.notifiedCount} должникам через @vfino_bot`,

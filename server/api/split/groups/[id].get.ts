@@ -55,18 +55,38 @@ export default defineEventHandler(async (event): Promise<SplitGroupDetail> => {
 
   const supabase = getUserSupabase(token);
 
-  // 1. Получаем группу
-  const { data: group, error: groupError } = await supabase
+  // 1. Получаем группу с поддержкой last_notified_at
+  let group: {
+    id: string;
+    name: string;
+    currency: string;
+    user_id: string;
+    created_at: string;
+    last_notified_at?: string | null;
+  };
+
+  const fullGroupQuery = await supabase
     .from("split_groups")
-    .select("id, name, currency, user_id, created_at")
+    .select("id, name, currency, user_id, created_at, last_notified_at")
     .eq("id", groupId)
     .single();
 
-  if (groupError || !group) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: "Группа не найдена",
-    });
+  if (!fullGroupQuery.error && fullGroupQuery.data) {
+    group = fullGroupQuery.data as unknown as typeof group;
+  } else {
+    const fallbackQuery = await supabase
+      .from("split_groups")
+      .select("id, name, currency, user_id, created_at")
+      .eq("id", groupId)
+      .single();
+
+    if (fallbackQuery.error || !fallbackQuery.data) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Группа не найдена",
+      });
+    }
+    group = fallbackQuery.data;
   }
 
   // 2. Получаем участников группы
@@ -105,20 +125,25 @@ export default defineEventHandler(async (event): Promise<SplitGroupDetail> => {
 
   const userMap = new Map<
     string,
-    { first_name: string | null; telegram_id: number | null }
+    {
+      first_name: string | null;
+      telegram_id: number | null;
+      photo_url: string | null;
+    }
   >();
 
   if (userIds.length > 0) {
     const botSupabase = getBotSupabase();
     const { data: usersData } = await botSupabase
       .from("users")
-      .select("id, first_name, telegram_id")
+      .select("id, first_name, telegram_id, photo_url")
       .in("id", userIds);
 
     for (const u of usersData || []) {
       userMap.set(u.id, {
         first_name: u.first_name,
         telegram_id: u.telegram_id,
+        photo_url: u.photo_url ?? null,
       });
     }
   }
@@ -145,6 +170,7 @@ export default defineEventHandler(async (event): Promise<SplitGroupDetail> => {
       is_current_user: isCurrentUser,
       created_at: m.created_at,
       telegram_id: u?.telegram_id ?? null,
+      photo_url: u?.photo_url ?? null,
     };
   });
 
@@ -255,6 +281,10 @@ export default defineEventHandler(async (event): Promise<SplitGroupDetail> => {
     currency: group.currency,
     user_id: group.user_id,
     created_at: group.created_at,
+    last_notified_at: getSplitGroupLastNotifiedAt(
+      group.id,
+      group.last_notified_at,
+    ),
     members,
     expenses,
     settlements,

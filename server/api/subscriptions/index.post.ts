@@ -58,6 +58,21 @@ export default defineEventHandler(async (event) => {
   };
 
   if (id) {
+    // Защита от IDOR: проверяем, что переданный ID не занят чужой записью
+    const { data: existing } = await supabase
+      .from("subscriptions")
+      .select("id, user_id")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (existing && existing.user_id !== userId) {
+      throw createError({
+        statusCode: 403,
+        statusMessage:
+          "Доступ запрещен: регулярный платеж принадлежит другому пользователю",
+      });
+    }
+
     payload.id = id;
   }
 
