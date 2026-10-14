@@ -28,22 +28,25 @@ export default defineEventHandler(async (event) => {
 
   const query = getQuery(event);
 
-  const startDateStr = query.startDate
-    ? formatDateISO(String(query.startDate))
-    : formatDateISO(getPrevMonth());
-  const endDateStr = query.endDate
-    ? formatDateISO(String(query.endDate))
-    : formatDateISO();
-
-  const { data, error } = await supabase
+  let dbQuery = supabase
     .from("transactions")
     .select(TRANSACTION_SELECT_FIELDS)
     .eq("user_id", userId)
-    .gte("date", startDateStr)
-    .lte("date", endDateStr)
     .order("date", { ascending: false })
     .order("created_at", { ascending: false })
     .limit(500);
+
+  if (query.startDate) {
+    dbQuery = dbQuery.gte("date", formatDateISO(String(query.startDate)));
+  } else {
+    dbQuery = dbQuery.gte("date", formatDateISO(getPrevMonth()));
+  }
+
+  if (query.endDate) {
+    dbQuery = dbQuery.lte("date", formatDateISO(String(query.endDate)));
+  }
+
+  const { data, error } = await dbQuery;
 
   if (error) {
     console.error("Ошибка получения транзакций:", error);
