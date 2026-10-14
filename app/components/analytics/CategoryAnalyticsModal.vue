@@ -123,7 +123,7 @@ const prevPeriodName = computed(() => {
 const prevPeriodButtonName = computed(() => {
   switch (localPeriod.value) {
     case "1M":
-      return `за ${formatPreviousMonth()}`;
+      return `за ${formatPreviousMonth(modalAnchorDate.value)}`;
     case "1W":
       return "за прошлую неделю";
     case "3M":

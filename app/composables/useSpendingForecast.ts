@@ -33,9 +33,7 @@ export const useSpendingForecast = (options: SpendingForecastOptions) => {
   const { subscriptions, fetchSubscriptions } = useSubscriptions();
 
   onMounted(() => {
-    if (subscriptions.value.length === 0) {
-      fetchSubscriptions();
-    }
+    fetchSubscriptions();
   });
 
   const daysPassed = computed(() => {
@@ -54,6 +52,7 @@ export const useSpendingForecast = (options: SpendingForecastOptions) => {
     if (!isCurrentMonthPeriod.value) {
       return {
         recordedIds: new Set<string>(),
+        recordedExpenseIds: new Set<string>(),
         upcomingSubscriptions: [],
         upcomingTotal: 0,
         pastTotal: 0,

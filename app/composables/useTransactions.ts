@@ -30,6 +30,8 @@ export interface Transaction {
 
 let isTxNotificationObserverAttached = false;
 
+const inFlightTxFetches = new Map<string, Promise<void>>();
+
 export const useTransactions = (options?: {
   startDate?: Ref<Date>;
   endDate?: Ref<Date>;
@@ -60,32 +62,42 @@ export const useTransactions = (options?: {
 
   const pending = ref(!txCache.value[cacheKey.value]);
   const isMutating = ref(false);
-  const error = ref<unknown>(null);
+  const error = ref<string | null>(null);
 
   const fetchTransactions = async (force = false): Promise<void> => {
     const key = cacheKey.value;
     if (!force && txCache.value[key]) {
       return;
     }
+    const inFlight = inFlightTxFetches.get(key);
+    if (inFlight) {
+      return inFlight;
+    }
 
     pending.value = true;
     error.value = null;
 
-    try {
-      const data = await api<Transaction[]>("/api/transactions", {
-        query: query.value,
-      });
+    const promise = (async () => {
+      try {
+        const data = await api<Transaction[]>("/api/transactions", {
+          query: query.value,
+        });
 
-      txCache.value = {
-        ...txCache.value,
-        [key]: data,
-      };
-    } catch (err: unknown) {
-      error.value = err;
-      console.error("Ошибка загрузки транзакций:", err);
-    } finally {
-      pending.value = false;
-    }
+        txCache.value = {
+          ...txCache.value,
+          [key]: data,
+        };
+      } catch (err: unknown) {
+        error.value = parseApiError(err, "Не удалось загрузить транзакции");
+        console.error("Ошибка загрузки транзакций:", err);
+      } finally {
+        pending.value = false;
+        inFlightTxFetches.delete(key);
+      }
+    })();
+
+    inFlightTxFetches.set(key, promise);
+    return promise;
   };
 
   const transactions = computed<Transaction[]>(() => {
@@ -329,12 +341,22 @@ export const useTransactions = (options?: {
     }
   };
 
+  const findTransactionById = (id: string): Transaction | undefined => {
+    for (const list of Object.values(txCache.value)) {
+      const found = list.find((t) => t.id === id);
+      if (found) return found;
+    }
+    return undefined;
+  };
+
   return {
     transactions,
     pending,
     isMutating,
     error,
     refresh,
+    fetchTransactions,
+    findTransactionById,
     addTransaction,
     updateTransaction,
     deleteTransaction,

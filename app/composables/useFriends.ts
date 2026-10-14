@@ -5,6 +5,8 @@
 import { ref } from "vue";
 import type { UserFriend } from "~/types/friends";
 
+let inFlightFriendsFetch: Promise<UserFriend[]> | null = null;
+
 export const useFriends = () => {
   const api = useApi();
   const toast = useAppToast();
@@ -21,19 +23,27 @@ export const useFriends = () => {
     if (!force && isLoaded.value) {
       return friends.value;
     }
+    if (inFlightFriendsFetch) {
+      return inFlightFriendsFetch;
+    }
 
     pending.value = true;
-    try {
-      const data = await api<UserFriend[]>("/api/friends");
-      friends.value = data;
-      isLoaded.value = true;
-      return data;
-    } catch (e) {
-      console.warn("Ошибка загрузки списка друзей:", e);
-      return [];
-    } finally {
-      pending.value = false;
-    }
+    inFlightFriendsFetch = (async () => {
+      try {
+        const data = await api<UserFriend[]>("/api/friends");
+        friends.value = data;
+        isLoaded.value = true;
+        return data;
+      } catch (e) {
+        console.warn("Ошибка загрузки списка друзей:", e);
+        return [];
+      } finally {
+        pending.value = false;
+        inFlightFriendsFetch = null;
+      }
+    })();
+
+    return inFlightFriendsFetch;
   };
 
   /**
