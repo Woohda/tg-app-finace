@@ -43,7 +43,7 @@ export async function handleBotTextMessage(ctx: Context): Promise<void> {
 
   const { data: user } = await supabase
     .from("users")
-    .select("id")
+    .select("id, timezone")
     .eq("telegram_id", telegramId)
     .maybeSingle();
 
@@ -85,7 +85,7 @@ export async function handleBotTextMessage(ctx: Context): Promise<void> {
 
   if (matchedCategory) {
     const type = matchedCategory.type;
-    const date = formatDateISO();
+    const date = getUserLocalDateISO(user.timezone || "Europe/Moscow");
 
     const { error } = await supabase.from("transactions").insert({
       user_id: user.id,

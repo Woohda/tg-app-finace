@@ -46,7 +46,7 @@ export async function handleBotCallbackQuery(ctx: Context): Promise<void> {
 
     const { data: user } = await supabase
       .from("users")
-      .select("id")
+      .select("id, timezone")
       .eq("telegram_id", telegramId)
       .maybeSingle();
 
@@ -81,7 +81,7 @@ export async function handleBotCallbackQuery(ctx: Context): Promise<void> {
       return;
     }
 
-    const date = formatDateISO();
+    const date = getUserLocalDateISO(user.timezone || "Europe/Moscow");
     const subName = capitalizeFirstLetter(sub.name);
 
     const { error: insertError } = await supabase.from("transactions").insert({
@@ -154,7 +154,7 @@ export async function handleBotCallbackQuery(ctx: Context): Promise<void> {
 
   const { data: user } = await supabase
     .from("users")
-    .select("id")
+    .select("id, timezone")
     .eq("telegram_id", telegramId)
     .single();
 
@@ -174,7 +174,7 @@ export async function handleBotCallbackQuery(ctx: Context): Promise<void> {
     return;
   }
 
-  const date = formatDateISO();
+  const date = getUserLocalDateISO(user.timezone || "Europe/Moscow");
   const formattedName = capitalizeFirstLetter(name);
 
   const { error } = await supabase.from("transactions").insert({
