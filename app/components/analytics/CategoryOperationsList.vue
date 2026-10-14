@@ -15,9 +15,8 @@
  * 3. Отслеживает пересечение триггера внизу списка через `IntersectionObserver` и подгружает следующую порцию.
  * 4. Предоставляет методы удаления (с визуальной индикацией) и редактирования через модальное окно транзакции.
  */
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, toRef } from "vue";
 import type { Transaction } from "~/composables/useTransactions";
-import { formatAmount } from "~/utils/format";
 
 interface Props {
   transactions: Transaction[];
@@ -35,67 +34,15 @@ const props = withDefaults(defineProps<Props>(), {
 const { deleteTransaction } = useTransactions();
 const { openModal } = useTransactionModal();
 
-const INITIAL_PAGE_SIZE = 10;
-const displayedLimit = ref(INITIAL_PAGE_SIZE);
-
-watch(
-  () => props.transactions,
-  () => {
-    displayedLimit.value = INITIAL_PAGE_SIZE;
-  },
-);
-
-const displayedTransactions = computed(() =>
-  props.transactions.slice(0, displayedLimit.value),
-);
-
-const hasMoreTransactions = computed(
-  () => displayedLimit.value < props.transactions.length,
-);
-
-const remainingCount = computed(
-  () => props.transactions.length - displayedLimit.value,
-);
-
-const loadMore = () => {
-  displayedLimit.value += INITIAL_PAGE_SIZE;
-};
-
-const loadMoreTriggerRef = ref<HTMLElement | null>(null);
-let observer: IntersectionObserver | null = null;
-
-onMounted(() => {
-  if (typeof IntersectionObserver !== "undefined") {
-    observer = new IntersectionObserver(
-      (entries) => {
-        if (
-          entries[0]?.isIntersecting &&
-          hasMoreTransactions.value &&
-          !props.pending &&
-          !props.loading
-        ) {
-          loadMore();
-        }
-      },
-      { rootMargin: "120px" },
-    );
-  }
-});
-
-watch(loadMoreTriggerRef, (el) => {
-  if (observer) {
-    observer.disconnect();
-    if (el) {
-      observer.observe(el);
-    }
-  }
-});
-
-onUnmounted(() => {
-  if (observer) {
-    observer.disconnect();
-    observer = null;
-  }
+const {
+  displayedTransactions,
+  hasMoreTransactions,
+  remainingCount,
+  loadMoreTriggerRef,
+  loadMore,
+  filteredAmountText,
+} = useOperationsPagination(toRef(props, "transactions"), {
+  isPaused: computed(() => props.pending || props.loading),
 });
 
 const deletingId = ref<string | null>(null);
@@ -112,32 +59,6 @@ async function handleDelete(id: string) {
 function handleEdit(tx: Transaction) {
   openModal(tx);
 }
-
-const filteredExpense = computed(() =>
-  props.transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0),
-);
-
-const filteredIncome = computed(() =>
-  props.transactions
-    .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0),
-);
-
-/**
- * Форматированная сумма операций как на экране финотчетов.
- */
-const filteredAmountText = computed(() => {
-  if (props.transactions.length === 0) return "";
-  if (filteredExpense.value > 0 && filteredIncome.value > 0) {
-    return `−${formatAmount(filteredExpense.value)} / +${formatAmount(filteredIncome.value)}`;
-  }
-  if (filteredIncome.value > 0) {
-    return `+${formatAmount(filteredIncome.value)}`;
-  }
-  return `−${formatAmount(filteredExpense.value)}`;
-});
 
 /**
  * Текст бейджа в шапке списка операций (количество и сумма).

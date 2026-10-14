@@ -19,14 +19,13 @@
  * 4. Автоматически подгружает следующую страницу при приближении к концу списка через `IntersectionObserver`.
  * 5. Предоставляет удаление с блокировкой строки и редактирование транзакций через модальное окно.
  */
-import { ref, computed, watch, onMounted, onUnmounted } from "vue";
+import { ref, computed, watch, toRef } from "vue";
 import { Search, X } from "@lucide/vue";
 import type { Transaction } from "~/composables/useTransactions";
 import type {
   PeriodType,
   PeriodOption,
 } from "~/composables/useTransactionView";
-import { formatAmount } from "~/utils/format";
 
 interface Props {
   transactions: Transaction[];
@@ -72,66 +71,20 @@ const isSearchVisible = computed(() => {
   return count > 10 || Boolean(props.searchQuery.trim());
 });
 
-const INITIAL_PAGE_SIZE = 10;
-const displayedLimit = ref(INITIAL_PAGE_SIZE);
-
-watch(
-  [() => props.transactions, () => props.activePeriod, () => props.searchQuery],
-  () => {
-    displayedLimit.value = INITIAL_PAGE_SIZE;
-  },
-);
-
-const displayedTransactions = computed(() =>
-  props.transactions.slice(0, displayedLimit.value),
-);
-
-const hasMoreTransactions = computed(
-  () => displayedLimit.value < props.transactions.length,
-);
-
-const remainingCount = computed(
-  () => props.transactions.length - displayedLimit.value,
-);
-
-const loadMore = () => {
-  displayedLimit.value += INITIAL_PAGE_SIZE;
-};
-
-const loadMoreTriggerRef = ref<HTMLElement | null>(null);
-let observer: IntersectionObserver | null = null;
-
-onMounted(() => {
-  if (typeof IntersectionObserver !== "undefined") {
-    observer = new IntersectionObserver(
-      (entries) => {
-        if (
-          entries[0]?.isIntersecting &&
-          hasMoreTransactions.value &&
-          !props.pending
-        ) {
-          loadMore();
-        }
-      },
-      { rootMargin: "120px" },
-    );
-  }
+const {
+  displayedTransactions,
+  hasMoreTransactions,
+  remainingCount,
+  displayedLimit,
+  loadMoreTriggerRef,
+  loadMore,
+  filteredAmountText,
+} = useOperationsPagination(toRef(props, "transactions"), {
+  isPaused: toRef(props, "pending"),
 });
 
-watch(loadMoreTriggerRef, (el) => {
-  if (observer) {
-    observer.disconnect();
-    if (el) {
-      observer.observe(el);
-    }
-  }
-});
-
-onUnmounted(() => {
-  if (observer) {
-    observer.disconnect();
-    observer = null;
-  }
+watch([() => props.activePeriod, () => props.searchQuery], () => {
+  displayedLimit.value = 10;
 });
 
 const deletingId = ref<string | null>(null);
@@ -148,32 +101,6 @@ async function handleDelete(id: string) {
 function handleEdit(tx: Transaction) {
   openModal(tx);
 }
-
-const filteredExpense = computed(() =>
-  props.transactions
-    .filter((t) => t.type === "expense")
-    .reduce((sum, t) => sum + t.amount, 0),
-);
-
-const filteredIncome = computed(() =>
-  props.transactions
-    .filter((t) => t.type === "income")
-    .reduce((sum, t) => sum + t.amount, 0),
-);
-
-/**
- * Форматированная сумма отфильтрованных операций.
- */
-const filteredAmountText = computed(() => {
-  if (props.transactions.length === 0) return "";
-  if (filteredExpense.value > 0 && filteredIncome.value > 0) {
-    return `−${formatAmount(filteredExpense.value)} / +${formatAmount(filteredIncome.value)}`;
-  }
-  if (filteredIncome.value > 0) {
-    return `+${formatAmount(filteredIncome.value)}`;
-  }
-  return `−${formatAmount(filteredExpense.value)}`;
-});
 
 /**
  * Текст бейджа в шапке списка транзакций (количество и сумма).
