@@ -62,6 +62,21 @@ export default defineEventHandler(async (event) => {
   };
 
   if (id) {
+    // Защита от IDOR: проверяем, что переданный ID не занят чужой или системной категорией
+    const { data: existing } = await supabase
+      .from("categories")
+      .select("id, user_id")
+      .eq("id", id)
+      .maybeSingle();
+
+    if (existing && existing.user_id !== userId) {
+      throw createError({
+        statusCode: 403,
+        statusMessage:
+          "Доступ запрещен: категория принадлежит другому пользователю или является системной",
+      });
+    }
+
     payload.id = id;
   }
 

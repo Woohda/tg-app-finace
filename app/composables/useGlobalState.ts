@@ -93,8 +93,9 @@ export const clearAllAppCaches = () => {
   useState<UserFriend[]>("global_user_friends", () => []).value = [];
   useState<boolean>("global_user_friends_loaded", () => false).value = false;
 
-  // 8. Локальные данные транзакций
+  // 8. Локальные данные транзакций и уведомлений
   if (typeof localStorage !== "undefined") {
     localStorage.removeItem("app-known-tx-ids");
+    localStorage.removeItem("app-notifications");
   }
 };

@@ -89,18 +89,24 @@ export async function processInvitePayload(
       return { success: false, message: "Группа не найдена или была удалена" };
     }
 
-    const inviterId = explicitInviterId || group.user_id;
-
-    // Добавляем в друзья с создателем/пригласившим
-    if (inviterId && inviterId !== joiningUserId) {
-      await addMutualFriendship(inviterId, joiningUserId);
-    }
-
     // Загружаем участников группы
     const { data: existingMembers } = await supabase
       .from("split_members")
       .select("id, name, user_id")
       .eq("group_id", groupId);
+
+    // Защита от подделки inviterId: доверяем explicitInviterId ТОЛЬКО если он состоит в группе
+    const isExplicitInviterValid =
+      Boolean(explicitInviterId) &&
+      (group.user_id === explicitInviterId ||
+        (existingMembers || []).some((m) => m.user_id === explicitInviterId));
+
+    const inviterId = isExplicitInviterValid ? explicitInviterId : group.user_id;
+
+    // Добавляем в друзья с проверенным пригласившим/создателем
+    if (inviterId && inviterId !== joiningUserId) {
+      await addMutualFriendship(inviterId, joiningUserId);
+    }
 
     const alreadyMember = (existingMembers || []).some(
       (m) => m.user_id === joiningUserId,
