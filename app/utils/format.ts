@@ -11,6 +11,7 @@
  * 3. `getPluralSub`: склоняет существительное "платеж" по заданному числу (единственное/множественное число).
  * 4. `pluralize`: универсальное склонение русских существительных по числительному (1, 2-4, 5+).
  * 5. `getInitials`: извлечение 1-2 букв инициалов из имени пользователя.
+ * 6. `getAmountTextSize`: динамический подбор Tailwind-класса размера текста на основе величины суммы.
  */
 
 export function formatAmount(
@@ -146,4 +147,114 @@ export function getInitials(name?: string | null): string {
     return cleanTrimmed.toUpperCase();
   }
   return trimmed.slice(0, 2).toUpperCase();
+}
+
+export type AmountSizeVariant = "card" | "hero" | "compact";
+
+export interface AmountSizeConfig {
+  large: string;
+  medium: string;
+  small: string;
+}
+
+export interface AmountSizeOptions {
+  variant?: AmountSizeVariant;
+  classes?: AmountSizeConfig;
+  mediumThreshold?: number;
+  smallThreshold?: number;
+}
+
+const AMOUNT_SIZE_PRESETS: Record<AmountSizeVariant, AmountSizeConfig> = {
+  card: {
+    large: "text-lg",
+    medium: "text-base",
+    small: "text-sm",
+  },
+  hero: {
+    large: "text-2xl sm:text-3xl",
+    medium: "text-xl sm:text-2xl",
+    small: "text-lg sm:text-xl",
+  },
+  compact: {
+    large: "text-base",
+    medium: "text-sm",
+    small: "text-xs",
+  },
+};
+
+const DEFAULT_MEDIUM_THRESHOLD = 1_000_000;
+const DEFAULT_SMALL_THRESHOLD = 10_000_000;
+
+/**
+ * Извлекает абсолютное числовое значение из числа или строки.
+ */
+function extractNumericValue(
+  value: number | string | null | undefined,
+): number {
+  if (value === null || value === undefined) return 0;
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? Math.abs(value) : 0;
+  }
+  const parsed = parseAmount(value);
+  if (!Number.isNaN(parsed)) {
+    return Math.abs(parsed);
+  }
+  const digitsOnly = value.replace(/\D/g, "");
+  return digitsOnly ? Number(digitsOnly) : 0;
+}
+
+/**
+ * @function getAmountTextSize
+ * @fileoverview Вычисление Tailwind CSS-класса размера шрифта в зависимости от величины числа
+ * @description
+ * Динамически подбирает класс размера текста (`text-lg`, `text-base`, `text-sm` и др.)
+ * на основе абсолютного значения числа или максимального значения из переданного массива чисел.
+ * Предотвращает переполнение контейнеров и перенос длинных сумм (миллионы, десятки миллионов)
+ * в карточках, сетках и главных балансовых блоках.
+ * ---
+ * ### Логика работы:
+ * 1. Нормализация входных данных: поддержка чисел, строк, null/undefined или массивов значений.
+ * 2. Определение максимальной величины среди переданных значений.
+ * 3. Сопоставление с порогами (по умолчанию: >= 1 000 000 — средний, >= 10 000 000 — компактный).
+ * 4. Возврат соответствующего Tailwind-класса для выбранного пресета (`card`, `hero` или `compact`).
+ */
+export function getAmountTextSize(
+  amount:
+    | number
+    | string
+    | null
+    | undefined
+    | (number | string | null | undefined)[],
+  variantOrOptions: AmountSizeVariant | AmountSizeOptions = "card",
+): string {
+  const options: AmountSizeOptions =
+    typeof variantOrOptions === "string"
+      ? { variant: variantOrOptions }
+      : variantOrOptions;
+
+  const variant = options.variant || "card";
+  const config = options.classes || AMOUNT_SIZE_PRESETS[variant];
+  const medThreshold = options.mediumThreshold ?? DEFAULT_MEDIUM_THRESHOLD;
+  const smallThreshold = options.smallThreshold ?? DEFAULT_SMALL_THRESHOLD;
+
+  let maxVal = 0;
+
+  if (Array.isArray(amount)) {
+    for (const item of amount) {
+      const val = extractNumericValue(item);
+      if (val > maxVal) {
+        maxVal = val;
+      }
+    }
+  } else {
+    maxVal = extractNumericValue(amount);
+  }
+
+  if (maxVal >= smallThreshold) {
+    return config.small;
+  }
+  if (maxVal >= medThreshold) {
+    return config.medium;
+  }
+  return config.large;
 }

@@ -33,13 +33,6 @@ import {
   calculateMedian,
 } from "~/utils/analytics";
 import { Z_INDEX } from "~/utils/zIndex";
-import GlassModal from "~/components/shared/GlassModal.vue";
-import GlassCard from "~/components/shared/GlassCard.vue";
-import Skeleton from "~/components/ui/Skeleton.vue";
-import CategoryGoalCard from "~/components/goals/CategoryGoalCard.vue";
-import CategoryMetricsCard from "./CategoryMetricsCard.vue";
-import CategoryDynamicsCard from "./CategoryDynamicsCard.vue";
-import CategoryOperationsList from "./CategoryOperationsList.vue";
 
 interface Props {
   isOpen: boolean;

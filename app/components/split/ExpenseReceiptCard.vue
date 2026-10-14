@@ -23,7 +23,7 @@ import {
   ChevronUp,
 } from "@lucide/vue";
 import type { SplitExpense } from "~/types/split";
-import { formatAmount } from "~/utils/format";
+import { formatAmount, getAmountTextSize } from "~/utils/format";
 import { roundCurrency } from "~/utils/splitAlgorithm";
 import { getHapticFeedback } from "~/utils/haptics";
 
@@ -96,6 +96,10 @@ interface GroupedShare {
   amount: number;
   members: GroupedMember[];
 }
+
+const amountsTextSize = computed(() => {
+  return getAmountTextSize([props.expense.amount]);
+});
 
 // Группировка долей участников по одинаковым суммам с красивым отображением
 const groupedShares = computed<GroupedShare[]>(() => {
@@ -229,8 +233,8 @@ const handleDelete = () => {
 
         <!-- ШАПКА ЧЕКА: НАЗВАНИЕ, ОБЩАЯ СУММА, ПЛАТЕЛЬЩИК И ДАТА -->
         <div class="mt-1 px-5 cursor-pointer select-none" @click="toggleExpand">
-          <div class="flex items-start justify-between gap-3">
-            <div class="flex items-center gap-2 min-w-0 flex-1">
+          <div class="flex items-baseline justify-between gap-3">
+            <div class="min-w-0 flex-1">
               <span
                 class="text-text-primary font-bold text-xl truncate"
                 :title="expense.title"
@@ -240,7 +244,7 @@ const handleDelete = () => {
             </div>
             <div class="text-right shrink-0">
               <span
-                class="text-xl font-bold text-text-primary whitespace-nowrap"
+                class="font-bold text-lg text-text-primary whitespace-nowrap tabular-nums"
               >
                 {{ formatAmount(expense.amount) }}
               </span>
@@ -299,7 +303,7 @@ const handleDelete = () => {
               >
                 <!-- Имена участников (сгруппированные через запятую) -->
                 <span
-                  class="text-text-primary font-medium min-w-0 max-w-[62%] truncate shrink-0"
+                  class="text-text-primary font-medium min-w-0 truncate shrink"
                   :title="g.members.map((m) => m.displayName).join(', ')"
                 >
                   {{ g.members.map((m) => m.displayName).join(", ") }}
@@ -307,21 +311,23 @@ const handleDelete = () => {
 
                 <!-- Пунктирные отточия между именем и ценой -->
                 <span
-                  class="flex-1 border-b border-dotted border-text-secondary/40 mx-1.5 mb-1 min-w-3"
+                  class="flex-1 border-b border-dotted border-text-secondary/40 mx-0.5 mb-1 min-w-5"
                 />
 
-                <!-- Сумма доли -->
-                <span
-                  class="font-bold text-text-primary shrink-0 whitespace-nowrap text-right"
-                >
+                <!-- Блок суммы доли с выравниванием чисел строго друг под другом -->
+                <div class="flex items-baseline shrink-0">
                   <span
                     v-if="g.members.length > 1"
-                    class="text-text-secondary font-normal text-[11px] mr-0.5"
+                    class="text-text-secondary font-normal text-[11px] shrink-0 tabular-nums mr-1"
                   >
-                    по
+                    {{ g.members.length > 1 ? "по" : "" }}
                   </span>
-                  {{ formatAmount(g.amount) }}
-                </span>
+                  <span
+                    class="font-bold text-text-primary shrink-0 tabular-nums whitespace-nowrap text-right"
+                  >
+                    {{ formatAmount(g.amount) }}
+                  </span>
+                </div>
               </div>
             </div>
 
@@ -381,7 +387,10 @@ const handleDelete = () => {
               <!-- Текст поверх маркера -->
               <div class="relative z-10 flex items-baseline gap-1.5">
                 <span class="text-xs text-text-secondary"> Ваша доля: </span>
-                <span class="text-sm font-bold text-text-accent tracking-wide">
+                <span
+                  class="font-bold text-text-accent tracking-wide"
+                  :class="amountsTextSize"
+                >
                   {{ formatAmount(myShare) }}
                 </span>
               </div>
@@ -471,12 +480,12 @@ const handleDelete = () => {
 
   mask-image:
     radial-gradient(
-      circle 16px at 0 calc(100% - 76px),
+      circle 16px at 0 calc(100% - 75.5px),
       transparent 15.5px,
       #000 16px
     ),
     radial-gradient(
-      circle 16px at 100% calc(100% - 76px),
+      circle 16px at 100% calc(100% - 75.5px),
       transparent 15.5px,
       #000 16px
     );

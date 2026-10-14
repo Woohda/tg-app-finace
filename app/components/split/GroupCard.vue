@@ -11,7 +11,7 @@
  * 2. Отрисовка названия, суммарных трат и бейджа персонального баланса.
  * 3. Навигация на страницу группы по клику.
  */
-import { Users, ChevronRight } from "@lucide/vue";
+import { Users, UserGroup, ChevronRight } from "@lucide/vue";
 import type { SplitGroupSummary } from "~/types/split";
 
 defineProps<{
@@ -32,7 +32,10 @@ defineProps<{
           <div
             class="size-12 rounded-full glass-pill flex items-center justify-center text-text-primary shrink-0"
           >
-            <span class="text-[27px]">👥</span>
+            <UserGroup
+              class="size-7 text-[#F43F5E] dark:text-[#FB7185]"
+              :stroke-width="1.5"
+            />
           </div>
           <div class="flex flex-col items-start">
             <h2 class="text-text-primary font-bold text-base line-clamp-1">
