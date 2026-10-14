@@ -89,7 +89,7 @@ const amountsTextSize = computed(() => {
     <div class="flex items-center gap-2.5">
       <!-- Круглая стеклянная плашка с градиентной иконкой группы -->
       <div
-        class="-mt-2 size-24 rounded-full glass-pill flex items-center justify-center shrink-0"
+        class="-mt-2 size-24 rounded-full glass-pill bg-white/50 backdrop-blur-xl flex items-center justify-center shrink-0"
       >
         <GroupIcon class="size-18" :stroke-width="12" />
       </div>
@@ -105,7 +105,7 @@ const amountsTextSize = computed(() => {
 
         <button
           type="button"
-          class="text-xs text-text-secondary hover:text-text-primary transition-colors text-left w-fit cursor-pointer select-none a11y-focus"
+          class="text-xs text-text-secondary hover:text-text-primary transition-colors text-left w-fit cursor-pointer select-none a11y-focus tracking-wide"
           title="Открыть список участников"
           @click="emit('openMembers')"
         >
@@ -156,12 +156,12 @@ const amountsTextSize = computed(() => {
             size="sm"
             type="button"
             variant="soft"
-            class="h-auto ml-0.5 p-2.5"
+            class="h-auto ml-0.5 p-2.25"
             title="Добавить участника"
             aria-label="Добавить участника"
             @click="emit('addMember')"
           >
-            <UserPlus class="size-6 text-text-accent" :stroke-width="2" />
+            <UserPlus class="size-5 text-text-accent" :stroke-width="2" />
           </GlassButton>
         </div>
       </div>
@@ -214,10 +214,10 @@ const amountsTextSize = computed(() => {
     </div>
 
     <!-- Кнопки действий: Напомнить и Отчет -->
-    <div class="flex items-center gap-1.5 pt-0.5 w-full">
+    <div class="flex items-center gap-2.5">
       <GlassButton
         variant="soft"
-        class="h-auto flex-1 min-w-0 py-1.5 px-3.5 flex items-center justify-center gap-1.5 text-xs font-medium"
+        class="h-auto flex-1 min-w-0 py-1.5 px-3 flex items-center justify-center gap-1 text-xs font-medium"
         :class="isNotifiedRecently && 'disabled:opacity-75'"
         :disabled="isNotifying || isNotifiedRecently"
         :title="notifyButtonTooltip"
@@ -242,7 +242,7 @@ const amountsTextSize = computed(() => {
 
       <GlassButton
         variant="soft"
-        class="h-auto py-1.5 px-3.5 flex items-center justify-center gap-1.5 text-xs font-medium whitespace-nowrap"
+        class="h-auto flex-1 min-w-0 py-1.5 px-3 flex items-center justify-center gap-1.25 text-xs font-medium"
         @click="emit('copyReport')"
       >
         <component

@@ -201,7 +201,16 @@ export default defineEventHandler(async (event) => {
 5. СТРОГИЙ ВЫХОДНОЙ ФОРМАТ: Верни результат ИСКЛЮЧИТЕЛЬНО в виде валидного JSON-объекта согласно заданной схеме, без пояснений, комментариев и лишнего текста.
 `;
 
-  const fallbackModels = ["gemini-2.5-flash-lite", "gemini-2.5-flash"];
+  const fallbackModels = [
+    "gemini-3.5-flash-lite",
+    "gemini-3.1-flash-lite",
+    "gemini-3.6-flash",
+    "gemini-3.7-flash",
+    "gemini-3.8-flash",
+    "gemini-2.5-flash-lite",
+    "gemini-3-flash",
+    "gemini-2.5-flash",
+  ];
 
   const apiKeys = [config.geminiApiKey];
   if (config.geminiApiKey2) {
@@ -318,13 +327,12 @@ export default defineEventHandler(async (event) => {
         errorMessage.includes("ResourceExhausted") ||
         errorMessage.includes("fetch failed");
 
-      if (isOverloaded && attempt < MAX_RETRIES - 1) {
+      if (attempt < MAX_RETRIES - 1) {
         attempt++;
-        const delay = attempt * 1000;
-        console.log(`Ждем ${delay}мс перед следующей попыткой...`);
+        const delay = attempt * 600;
+        console.log(`Пробуем следующую модель/ключ через ${delay}мс...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
-      } else if (attempt === MAX_RETRIES - 1) {
-        // Если это последняя попытка или ошибка не связана с перегрузкой
+      } else if (isOverloaded) {
         throw createError({
           statusCode: 503,
           statusMessage:
