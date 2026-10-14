@@ -60,6 +60,34 @@ const isGroupLoading = computed(() => {
 const isNotifying = ref(false);
 const isCopied = ref(false);
 
+const isNotifiedRecently = computed(() => {
+  const last = currentGroup.value?.last_notified_at;
+  if (!last) return false;
+  const time = new Date(last).getTime();
+  if (isNaN(time)) return false;
+  return Date.now() - time < 24 * 60 * 60 * 1000;
+});
+
+const remainingCooldownHours = computed(() => {
+  const last = currentGroup.value?.last_notified_at;
+  if (!last) return 0;
+  const time = new Date(last).getTime();
+  if (isNaN(time)) return 0;
+  const elapsed = Date.now() - time;
+  const cooldown = 24 * 60 * 60 * 1000;
+  if (elapsed >= cooldown) return 0;
+  return Math.ceil((cooldown - elapsed) / (60 * 60 * 1000));
+});
+
+const notifyButtonTooltip = computed(() => {
+  if (isNotifiedRecently.value) {
+    return remainingCooldownHours.value > 0
+      ? `Напоминание уже отправлено за сегодня (повтор через ${remainingCooldownHours.value} ч.)`
+      : "Напоминание уже отправлено за сегодня";
+  }
+  return "Отправить напоминание должникам в Telegram";
+});
+
 const activeTab = ref<"report" | "expenses" | "transfers">("report");
 
 const tabOptions = [
@@ -188,7 +216,7 @@ const handleCopyReport = async () => {
 };
 
 const handleNotify = async () => {
-  if (!groupId.value || isNotifying.value) return;
+  if (!groupId.value || isNotifying.value || isNotifiedRecently.value) return;
   isNotifying.value = true;
   try {
     await notifyDebtors(groupId.value);
@@ -383,15 +411,25 @@ const handleNotify = async () => {
           <GlassButton
             variant="soft"
             class="h-auto flex-1 min-w-0 py-1.25 flex items-center justify-center gap-1 text-[11px]"
-            :disabled="isNotifying"
+            :class="isNotifiedRecently && 'disabled:opacity-75'"
+            :disabled="isNotifying || isNotifiedRecently"
+            :title="notifyButtonTooltip"
             @click="handleNotify"
           >
-            <Bell
-              class="size-3.5 text-text-accent shrink-0"
-              :stroke-width="1.5"
+            <component
+              :is="isNotifiedRecently ? Check : Bell"
+              class="size-3.5 shrink-0"
+              :class="
+                isNotifiedRecently ? 'text-accent-success' : 'text-text-accent'
+              "
+              :stroke-width="isNotifiedRecently ? 2 : 1.5"
             />
             <span class="truncate">{{
-              isNotifying ? "Сообщаю..." : "Напомнить о переводах"
+              isNotifying
+                ? "Сообщаю..."
+                : isNotifiedRecently
+                  ? "Уже напомнили сегодня"
+                  : "Напомнить о переводах"
             }}</span>
           </GlassButton>
           <GlassButton

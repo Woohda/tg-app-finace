@@ -55,18 +55,38 @@ export default defineEventHandler(async (event): Promise<SplitGroupDetail> => {
 
   const supabase = getUserSupabase(token);
 
-  // 1. Получаем группу
-  const { data: group, error: groupError } = await supabase
+  // 1. Получаем группу с поддержкой last_notified_at
+  let group: {
+    id: string;
+    name: string;
+    currency: string;
+    user_id: string;
+    created_at: string;
+    last_notified_at?: string | null;
+  };
+
+  const fullGroupQuery = await supabase
     .from("split_groups")
-    .select("id, name, currency, user_id, created_at")
+    .select("id, name, currency, user_id, created_at, last_notified_at")
     .eq("id", groupId)
     .single();
 
-  if (groupError || !group) {
-    throw createError({
-      statusCode: 404,
-      statusMessage: "Группа не найдена",
-    });
+  if (!fullGroupQuery.error && fullGroupQuery.data) {
+    group = fullGroupQuery.data as unknown as typeof group;
+  } else {
+    const fallbackQuery = await supabase
+      .from("split_groups")
+      .select("id, name, currency, user_id, created_at")
+      .eq("id", groupId)
+      .single();
+
+    if (fallbackQuery.error || !fallbackQuery.data) {
+      throw createError({
+        statusCode: 404,
+        statusMessage: "Группа не найдена",
+      });
+    }
+    group = fallbackQuery.data;
   }
 
   // 2. Получаем участников группы
@@ -255,6 +275,10 @@ export default defineEventHandler(async (event): Promise<SplitGroupDetail> => {
     currency: group.currency,
     user_id: group.user_id,
     created_at: group.created_at,
+    last_notified_at: getSplitGroupLastNotifiedAt(
+      group.id,
+      group.last_notified_at,
+    ),
     members,
     expenses,
     settlements,

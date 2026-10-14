@@ -101,6 +101,7 @@ export interface SplitGroupDetail {
   optimizedDebts: SplitDebtTransfer[];
   userNetBalance: number;
   totalGroupSpending: number;
+  last_notified_at?: string | null;
 }
 
 export interface SplitGroupSummary {
