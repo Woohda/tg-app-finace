@@ -216,23 +216,25 @@ export function calculateExpenseSharesDistribution(
     }
   } else {
     // splitType === 'exact'
-    let totalSharesAmount = 0;
     for (const s of shares) {
       const shareAmount = roundCurrency(s.amount || 0);
-      totalSharesAmount = roundCurrency(totalSharesAmount + shareAmount);
       calculatedShares.push({
         member_id: s.member_id,
         amount: shareAmount,
         share_value: null,
       });
     }
+  }
 
-    if (Math.abs(totalSharesAmount - roundedTotalAmount) > 0.01) {
-      throw createError({
-        statusCode: 400,
-        statusMessage: `Сумма долей (${totalSharesAmount} ₽) не совпадает с общей суммой расхода (${roundedTotalAmount} ₽)`,
-      });
-    }
+  const sumCalculated = roundCurrency(
+    calculatedShares.reduce((acc, s) => acc + s.amount, 0),
+  );
+
+  if (Math.abs(sumCalculated - roundedTotalAmount) > 0.01) {
+    throw createError({
+      statusCode: 400,
+      statusMessage: `Сумма долей (${sumCalculated} ₽) не совпадает с общей суммой расхода (${roundedTotalAmount} ₽)`,
+    });
   }
 
   return calculatedShares;

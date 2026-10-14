@@ -204,11 +204,16 @@ export function getUserLocalDateISO(
   dateInput?: Date | string | number | null,
 ): string {
   const baseDate = toSafeDate(dateInput);
-  const local = getUserLocalDate(timeZone, baseDate);
-  const year = local.getFullYear();
-  const month = String(local.getMonth() + 1).padStart(2, "0");
-  const day = String(local.getDate()).padStart(2, "0");
-  return `${year}-${month}-${day}`;
+  try {
+    return new Intl.DateTimeFormat("en-CA", {
+      timeZone,
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).format(baseDate);
+  } catch {
+    return formatDateISO(baseDate);
+  }
 }
 
 /**
