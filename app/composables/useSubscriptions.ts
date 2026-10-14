@@ -33,6 +33,8 @@ export interface UpcomingSubscription extends Subscription {
   statusType: "today" | "soon" | "upcoming" | "past";
 }
 
+let inFlightSubscriptionsFetch: Promise<void> | null = null;
+
 export const useSubscriptions = () => {
   const api = useApi();
   const toast = useAppToast();
@@ -48,20 +50,28 @@ export const useSubscriptions = () => {
     if (!force && isLoaded.value) {
       return;
     }
+    if (inFlightSubscriptionsFetch) {
+      return inFlightSubscriptionsFetch;
+    }
 
     isFetching.value = true;
     error.value = null;
 
-    try {
-      const data = await api<Subscription[]>("/api/subscriptions");
-      subscriptions.value = data;
-    } catch (e) {
-      console.error("Ошибка загрузки регулярных платежей:", e);
-      error.value = parseApiError(e, "Не удалось загрузить регулярные платежи");
-    } finally {
-      isFetching.value = false;
-      isLoaded.value = true;
-    }
+    inFlightSubscriptionsFetch = (async () => {
+      try {
+        const data = await api<Subscription[]>("/api/subscriptions");
+        subscriptions.value = data;
+        isLoaded.value = true;
+      } catch (e) {
+        console.error("Ошибка загрузки регулярных платежей:", e);
+        error.value = parseApiError(e, "Не удалось загрузить регулярные платежи");
+      } finally {
+        isFetching.value = false;
+        inFlightSubscriptionsFetch = null;
+      }
+    })();
+
+    return inFlightSubscriptionsFetch;
   };
 
   const createSubscription = async (data: {
@@ -69,11 +79,20 @@ export const useSubscriptions = () => {
     amount: number;
     day_of_month: number;
     category_id?: string | null;
+    id?: string;
   }) => {
     try {
+      const payload = {
+        ...data,
+        id:
+          data.id ||
+          (typeof crypto !== "undefined" && crypto.randomUUID
+            ? crypto.randomUUID()
+            : undefined),
+      };
       const newSub = await api<Subscription>("/api/subscriptions", {
         method: "POST",
-        body: data,
+        body: payload,
       });
       subscriptions.value = [...subscriptions.value, newSub].sort(
         (a, b) => a.day_of_month - b.day_of_month,

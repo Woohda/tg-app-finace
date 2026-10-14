@@ -72,10 +72,12 @@ watch(budget, (newVal) => {
   }
 });
 
-onMounted(() => {
-  fetchBudget();
-  fetchCategories();
-  fetchGoals();
+onMounted(async () => {
+  await Promise.all([
+    fetchBudget(),
+    fetchCategories(),
+    fetchGoals(),
+  ]);
 });
 
 const saveBudget = async () => {
@@ -248,9 +250,11 @@ const handleDeleteGoal = async (categoryId: string) => {
       :budget="budget"
       :can-add-goal="availableCategoriesForGoal.length > 0"
       :loading="isGoalsLoading"
+      :error="goalsError"
       @add="openAddGoalModal"
       @edit="openEditGoalModal"
       @delete="handleDeleteGoal"
+      @retry="fetchGoals(true)"
     />
 
     <!-- Модальное окно добавления / изменения цели -->

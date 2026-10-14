@@ -27,8 +27,9 @@ export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
   const isLoading = ref(false);
   const error = ref<string | null>(null);
 
-  const fetchBudget = async () => {
+  const fetchBudget = async (force = false) => {
     if (!token.value) return;
+    if (!force && isLoaded.value) return;
     if (inFlightFetch) return inFlightFetch;
 
     isLoading.value = true;
@@ -42,12 +43,12 @@ export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
         } else {
           budget.value = 0;
         }
+        isLoaded.value = true;
       } catch (e: unknown) {
         console.error("Ошибка загрузки бюджета:", e);
         error.value = parseApiError(e, "Не удалось загрузить бюджет");
       } finally {
         isLoading.value = false;
-        isLoaded.value = true;
         inFlightFetch = null;
       }
     })();
@@ -69,6 +70,7 @@ export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
 
       if (data && data.amount > 0) {
         budget.value = data.amount;
+        isLoaded.value = true;
         toast.success("Бюджет сохранен");
         notifications.add("Бюджет обновлен", {
           message: `Новый лимит: ${data.amount} ₽`,

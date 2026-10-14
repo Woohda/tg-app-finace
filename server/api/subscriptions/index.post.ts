@@ -61,9 +61,11 @@ export default defineEventHandler(async (event) => {
     payload.id = id;
   }
 
-  const { data, error } = await supabase
-    .from("subscriptions")
-    .insert(payload)
+  const dbQuery = id
+    ? supabase.from("subscriptions").upsert(payload, { onConflict: "id" })
+    : supabase.from("subscriptions").insert(payload);
+
+  const { data, error } = await dbQuery
     .select(SUBSCRIPTION_SELECT_FIELDS)
     .single();
 

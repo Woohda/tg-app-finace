@@ -15,13 +15,13 @@ import { ref, computed, onMounted } from "vue";
 import { UserPlus } from "@lucide/vue";
 
 const router = useRouter();
-const { groups, fetchGroups, pending } = useSplit();
+const { groups, fetchGroups, pending, error } = useSplit();
 const { shareInvite } = useFriends();
 
 const isAddGroupOpen = ref(false);
 
 onMounted(() => {
-  fetchGroups(true);
+  fetchGroups();
 });
 
 // Суммарный баланс по всем группам
@@ -121,6 +121,14 @@ const onGroupCreated = (groupId: string) => {
         </div>
       </GlassCard>
     </div>
+
+    <!-- Ошибка загрузки -->
+    <GlassErrorState
+      v-else-if="error && groups.length === 0"
+      title="Не удалось загрузить группы"
+      :error="error"
+      @retry="fetchGroups(true)"
+    />
 
     <!-- Пустое состояние -->
     <div

@@ -149,7 +149,7 @@ export default defineEventHandler(async (event) => {
     const userTz = rawUser?.timezone || "Europe/Moscow";
     const userLocalNow = getUserLocalDate(userTz);
     const userLocalHour = userLocalNow.getHours();
-    const userTodayISO = getUserLocalDateISO(userTz, userLocalNow);
+    const userTodayISO = getUserLocalDateISO(userTz);
 
     if (!isForce && (userLocalHour < 11 || userLocalHour >= 14)) continue;
     if (!isForce && sub.last_reminded_at) {
@@ -204,7 +204,7 @@ export default defineEventHandler(async (event) => {
     // Локальное время и дата на устройстве пользователя
     const userLocalNow = getUserLocalDate(userTz);
     const userLocalHour = userLocalNow.getHours();
-    const userTodayISO = getUserLocalDateISO(userTz, userLocalNow);
+    const userTodayISO = getUserLocalDateISO(userTz);
 
     // 1. Проверка окна отправки (с 11:00 до 14:00) по устройству пользователя
     if (!isForce && (userLocalHour < 11 || userLocalHour >= 14)) {

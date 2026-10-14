@@ -123,6 +123,9 @@ export const useAuth = () => {
         {
           method: "POST",
           body: { initData, timezone },
+          timeout: 14000,
+          retry: 1,
+          retryDelay: 350,
         },
       );
 
@@ -137,6 +140,7 @@ export const useAuth = () => {
       // или если у пользователя вообще не было токена
       if (status === 401 || !token.value) {
         syncStorage(null, null);
+        clearAllAppCaches();
       }
       return false;
     }
@@ -154,6 +158,9 @@ export const useAuth = () => {
         {
           method: "POST",
           body: { ticket, timezone },
+          timeout: 14000,
+          retry: 1,
+          retryDelay: 350,
         },
       );
 
@@ -194,6 +201,7 @@ export const useAuth = () => {
   const logout = () => {
     syncStorage(null, null);
     tgUser.value = null;
+    clearAllAppCaches();
   };
 
   const devLogin = async () => {
@@ -217,6 +225,7 @@ export const useAuth = () => {
       console.error("Ошибка dev-авторизации:", error);
       syncStorage(null, null);
       tgUser.value = null;
+      clearAllAppCaches();
       return false;
     }
   };

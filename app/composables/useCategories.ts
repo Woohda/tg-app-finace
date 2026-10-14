@@ -7,10 +7,13 @@
  * Инкапсулирует взаимодействие с API (`/api/categories`) и кеширует список
  * в глобальное состояние `useGlobalCategories`.
  */
+import { ref, computed } from "vue";
 import type { Database } from "~/types/database.types";
 import { parseApiError } from "~/utils/api";
 
 type Category = Database["public"]["Tables"]["categories"]["Row"];
+
+let inFlightCategoriesFetch: Promise<void> | null = null;
 
 export const useCategories = () => {
   const { token } = useAuth();
@@ -19,7 +22,9 @@ export const useCategories = () => {
   const notifications = useNotifications();
 
   const categories = useGlobalCategories();
-  const isLoading = ref(false);
+  const isLoaded = useGlobalCategoriesIsLoaded();
+  const isFetching = ref(false);
+  const isMutating = ref(false);
   const error = ref<string | null>(null);
 
   const sortCategories = (cats: Category[]) => {
@@ -29,29 +34,39 @@ export const useCategories = () => {
     });
   };
 
-  const fetchCategories = async () => {
-    if (!token.value || isLoading.value) {
-      if (!token.value) error.value = "Пользователь не авторизован";
+  const fetchCategories = async (force = false) => {
+    if (!token.value) {
+      error.value = "Пользователь не авторизован";
       return;
     }
 
     // Если категории уже загружены в глобальный стейт, не запрашиваем их снова
-    if (categories.value.length > 0) {
+    if (!force && isLoaded.value) {
       return;
     }
 
-    isLoading.value = true;
+    if (inFlightCategoriesFetch) {
+      return inFlightCategoriesFetch;
+    }
+
+    isFetching.value = true;
     error.value = null;
 
-    try {
-      const data = await api<Category[]>("/api/categories");
-      categories.value = data;
-    } catch (e: unknown) {
-      console.error("Ошибка загрузки категорий:", e);
-      error.value = parseApiError(e, "Не удалось загрузить категории");
-    } finally {
-      isLoading.value = false;
-    }
+    inFlightCategoriesFetch = (async () => {
+      try {
+        const data = await api<Category[]>("/api/categories");
+        categories.value = data;
+        isLoaded.value = true;
+      } catch (e: unknown) {
+        console.error("Ошибка загрузки категорий:", e);
+        error.value = parseApiError(e, "Не удалось загрузить категории");
+      } finally {
+        isFetching.value = false;
+        inFlightCategoriesFetch = null;
+      }
+    })();
+
+    return inFlightCategoriesFetch;
   };
 
   const createCategory = async (
@@ -60,12 +75,12 @@ export const useCategories = () => {
     icon?: string,
     id?: string,
   ) => {
-    if (!token.value || isLoading.value) {
+    if (!token.value || isMutating.value) {
       if (!token.value) error.value = "Пользователь не авторизован";
       return null;
     }
 
-    isLoading.value = true;
+    isMutating.value = true;
     error.value = null;
 
     try {
@@ -84,6 +99,7 @@ export const useCategories = () => {
 
       categories.value.push(newCategory);
       sortCategories(categories.value);
+      isLoaded.value = true;
       
       toast.success("Категория добавлена");
       notifications.add("Новая категория", {
@@ -97,14 +113,14 @@ export const useCategories = () => {
       error.value = parseApiError(e, "Не удалось создать категорию");
       return null;
     } finally {
-      isLoading.value = false;
+      isMutating.value = false;
     }
   };
 
   const updateCategory = async (id: string, name: string, icon?: string) => {
-    if (!token.value || isLoading.value) return false;
+    if (!token.value || isMutating.value) return false;
 
-    isLoading.value = true;
+    isMutating.value = true;
     error.value = null;
 
     try {
@@ -120,6 +136,9 @@ export const useCategories = () => {
         categories.value[index] = updated;
         sortCategories(categories.value);
       }
+
+      useTransactionCache().value = {};
+      useGlobalTransactionsVersion().value++;
       
       toast.success("Категория обновлена");
       notifications.add("Категория изменена", {
@@ -133,14 +152,14 @@ export const useCategories = () => {
       error.value = parseApiError(e, "Не удалось обновить категорию");
       return false;
     } finally {
-      isLoading.value = false;
+      isMutating.value = false;
     }
   };
 
   const deleteCategory = async (id: string) => {
-    if (!token.value || isLoading.value) return false;
+    if (!token.value || isMutating.value) return false;
 
-    isLoading.value = true;
+    isMutating.value = true;
     error.value = null;
 
     try {
@@ -150,6 +169,9 @@ export const useCategories = () => {
 
       const cat = categories.value.find((c) => c.id === id);
       categories.value = categories.value.filter((c) => c.id !== id);
+
+      useTransactionCache().value = {};
+      useGlobalTransactionsVersion().value++;
       
       toast.success("Категория удалена");
       if (cat) {
@@ -165,13 +187,14 @@ export const useCategories = () => {
       error.value = parseApiError(e, "Не удалось удалить категорию");
       return false;
     } finally {
-      isLoading.value = false;
+      isMutating.value = false;
     }
   };
 
   return {
     categories,
-    isLoading,
+    isLoading: computed(() => !isLoaded.value || isFetching.value),
+    isLoaded,
     error,
     fetchCategories,
     createCategory,

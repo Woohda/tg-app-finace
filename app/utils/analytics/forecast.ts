@@ -42,6 +42,7 @@ export interface CategoryForecastParams {
  */
 export interface SubscriptionMatchResult {
   recordedIds: Set<string>;
+  recordedExpenseIds: Set<string>;
   upcomingSubscriptions: Subscription[];
   upcomingTotal: number;
   pastTotal: number;
@@ -68,6 +69,7 @@ export function matchSubscriptionsWithExpenses(
   categoryId?: string | null,
 ): SubscriptionMatchResult {
   const recordedIds = new Set<string>();
+  const recordedExpenseIds = new Set<string>();
   const availableExpenses = [...expenses];
 
   const relevantSubs = subscriptions.filter(
@@ -92,6 +94,10 @@ export function matchSubscriptionsWithExpenses(
 
     if (txIndex !== -1) {
       recordedIds.add(sub.id);
+      const matchedTx = availableExpenses[txIndex];
+      if (matchedTx?.id) {
+        recordedExpenseIds.add(matchedTx.id);
+      }
       availableExpenses.splice(txIndex, 1);
     }
   }
@@ -110,6 +116,7 @@ export function matchSubscriptionsWithExpenses(
 
   return {
     recordedIds,
+    recordedExpenseIds,
     upcomingSubscriptions,
     upcomingTotal,
     pastTotal,
@@ -198,7 +205,7 @@ export function calculateCategoryForecast(
 
     const remainingDays = Math.max(0, daysInMonth - daysPassed);
     const variableExpenses = currentExpenses.filter(
-      (t) => !match.recordedIds.has(t.id),
+      (t) => !match.recordedExpenseIds.has(t.id),
     );
     const { regularTotal: regularVariableSpent } = partitionOutliers(
       variableExpenses,

@@ -25,6 +25,8 @@ import type {
 } from "~/types/split";
 import { parseApiError } from "~/utils/api";
 
+let inFlightGroupsFetch: Promise<SplitGroupSummary[]> | null = null;
+
 export const useSplit = () => {
   const api = useApi();
   const toast = useAppToast();
@@ -42,23 +44,32 @@ export const useSplit = () => {
     if (!force && isLoaded.value) {
       return groups.value;
     }
+    if (inFlightGroupsFetch) {
+      return inFlightGroupsFetch;
+    }
 
     pending.value = true;
     error.value = null;
-    try {
-      const data = await api<SplitGroupSummary[]>("/api/split/groups");
-      groups.value = data;
-      return data;
-    } catch (e) {
-      console.error("Ошибка загрузки групп совместных трат:", e);
-      const msg = parseApiError(e, "Не удалось загрузить совместные траты");
-      error.value = msg;
-      toast.error(msg);
-      return [];
-    } finally {
-      pending.value = false;
-      isLoaded.value = true;
-    }
+
+    inFlightGroupsFetch = (async () => {
+      try {
+        const data = await api<SplitGroupSummary[]>("/api/split/groups");
+        groups.value = data;
+        isLoaded.value = true;
+        return data;
+      } catch (e) {
+        console.error("Ошибка загрузки групп совместных трат:", e);
+        const msg = parseApiError(e, "Не удалось загрузить совместные траты");
+        error.value = msg;
+        toast.error(msg);
+        return [];
+      } finally {
+        pending.value = false;
+        inFlightGroupsFetch = null;
+      }
+    })();
+
+    return inFlightGroupsFetch;
   };
 
   /**
@@ -356,6 +367,9 @@ export const useSplit = () => {
           },
         },
       );
+      useTransactionCache().value = {};
+      useGlobalTransactionsVersion().value++;
+
       toast.success(
         "Внесено в расходы",
         "Трата добавлена в ваши личные финансы",

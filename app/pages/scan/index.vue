@@ -73,9 +73,7 @@ const editableItems = ref<ScannedTransaction[]>(
 );
 
 onMounted(async () => {
-  if (categories.value.length === 0) {
-    await fetchCategories();
-  }
+  await fetchCategories();
 
   if (!scanResults.value || scanResults.value.length === 0) {
     router.push("/");

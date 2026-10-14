@@ -32,6 +32,7 @@ interface Props {
   canAddGoal?: boolean;
   loading?: boolean;
   skeletonCount?: number;
+  error?: string | null;
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -39,12 +40,14 @@ const props = withDefaults(defineProps<Props>(), {
   canAddGoal: true,
   loading: false,
   skeletonCount: 3,
+  error: null,
 });
 
 const emit = defineEmits<{
   add: [];
   edit: [goal: GoalItemData];
   delete: [categoryId: string];
+  retry: [];
 }>();
 
 const totalGoalsAmount = computed(() => {
@@ -162,6 +165,15 @@ const budgetPercent = computed(() => {
         @delete="emit('delete', goal.categoryId)"
       />
     </div>
+
+    <!-- Ошибка загрузки целей -->
+    <GlassErrorState
+      v-else-if="error && goals.length === 0"
+      :as-card="false"
+      title="Не удалось загрузить цели"
+      :error="error"
+      @retry="emit('retry')"
+    />
 
     <!-- Пустое состояние -->
     <div v-else class="flex flex-col items-center justify-center gap-3">

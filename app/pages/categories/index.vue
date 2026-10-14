@@ -13,7 +13,7 @@
  */
 import { ref, computed, onMounted } from "vue";
 
-const { categories, fetchCategories, isLoading } = useCategories();
+const { categories, fetchCategories, isLoading, error } = useCategories();
 
 onMounted(() => {
   fetchCategories();
@@ -97,49 +97,59 @@ const cancelDelete = () => {
       @action="openCreateForm('expense')"
     />
 
+    <!-- Ошибка загрузки -->
+    <GlassErrorState
+      v-if="error && categories.length === 0"
+      title="Не удалось загрузить категории"
+      :error="error"
+      @retry="fetchCategories(true)"
+    />
+
     <!-- Списки категорий -->
-    <div
-      v-for="section in sections"
-      :key="section.title"
-      class="flex flex-col gap-2"
-    >
-      <h2 class="text-text-primary font-bold">{{ section.title }}</h2>
-      <GlassCard class="px-2 py-0.5 flex flex-col">
-        <template v-if="isLoading && categories.length === 0">
-          <div
-            v-for="i in 3"
-            :key="i"
-            class="flex items-center justify-between px-3 py-2 border-b border-black/6 last:border-none animate-pulse"
-          >
-            <div class="flex items-center gap-3 w-full">
-              <Skeleton class="size-9" rounded="full" />
-              <Skeleton class="h-4 w-1/2" />
+    <template v-else>
+      <div
+        v-for="section in sections"
+        :key="section.title"
+        class="flex flex-col gap-2"
+      >
+        <h2 class="text-text-primary font-bold">{{ section.title }}</h2>
+        <GlassCard class="px-2 py-0.5 flex flex-col">
+          <template v-if="isLoading && categories.length === 0">
+            <div
+              v-for="i in 3"
+              :key="i"
+              class="flex items-center justify-between px-3 py-2 border-b border-black/6 last:border-none animate-pulse"
+            >
+              <div class="flex items-center gap-3 w-full">
+                <Skeleton class="size-9" rounded="full" />
+                <Skeleton class="h-4 w-1/2" />
+              </div>
+              <div class="flex items-center gap-5 ml-2">
+                <Skeleton class="size-5" />
+                <Skeleton class="size-5" />
+              </div>
             </div>
-            <div class="flex items-center gap-5 ml-2">
-              <Skeleton class="size-5" />
-              <Skeleton class="size-5" />
+          </template>
+          <template v-else>
+            <div
+              v-if="section.items.length === 0"
+              class="p-4 text-center text-text-secondary text-sm"
+            >
+              У вас нет добавленных категорий
             </div>
-          </div>
-        </template>
-        <template v-else>
-          <div
-            v-if="section.items.length === 0"
-            class="p-4 text-center text-text-secondary text-sm"
-          >
-            У вас нет добавленных категорий
-          </div>
-          <CategoryItem
-            v-for="cat in section.items"
-            :key="cat.id"
-            :name="cat.name"
-            :icon="cat.icon || undefined"
-            :default-icon="section.defaultIcon"
-            @edit="openEditForm(cat)"
-            @delete="confirmDelete(cat.id)"
-          />
-        </template>
-      </GlassCard>
-    </div>
+            <CategoryItem
+              v-for="cat in section.items"
+              :key="cat.id"
+              :name="cat.name"
+              :icon="cat.icon || undefined"
+              :default-icon="section.defaultIcon"
+              @edit="openEditForm(cat)"
+              @delete="confirmDelete(cat.id)"
+            />
+          </template>
+        </GlassCard>
+      </div>
+    </template>
 
     <!-- Модалка формы -->
     <CategoryFormModal

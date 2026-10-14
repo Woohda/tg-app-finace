@@ -17,8 +17,10 @@ export function formatAmount(
   amount: number,
   type?: "income" | "expense",
 ): string {
+  const numericAmount = Number.isFinite(amount) ? amount : 0;
   const prefix = type === "expense" ? "−" : "+";
-  const roundAmount = amount.toFixed(2);
+  const absAmount = type ? Math.abs(numericAmount) : numericAmount;
+  const roundAmount = absAmount.toFixed(2);
   const formatted = new Intl.NumberFormat("ru-RU", {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
@@ -128,11 +130,13 @@ export function getPluralSub(count: number): string {
  */
 export function getInitials(name?: string | null): string {
   if (!name) return "";
-  const parts = name.trim().split(/\s+/);
+  const trimmed = name.trim();
+  if (!trimmed) return "";
+  const parts = trimmed.split(/\s+/);
   const first = parts[0];
   const second = parts[1];
   if (first && second && first[0] && second[0]) {
     return (first[0] + second[0]).toUpperCase();
   }
-  return name.slice(0, 2).toUpperCase();
+  return trimmed.slice(0, 2).toUpperCase();
 }

@@ -25,7 +25,8 @@ import { formatZodError } from "~/utils/zod";
 const router = useRouter();
 const toast = useAppToast();
 
-const { addTransaction, updateTransaction } = useTransactions();
+const { addTransaction, updateTransaction, findTransactionById } =
+  useTransactions();
 const { isOpen, editId, editData, closeModal } = useTransactionModal();
 
 const isEditMode = computed(() => !!editId.value);
@@ -86,9 +87,7 @@ watch(
       name.value = editData.value.name || "";
       date.value = editData.value.date;
     } else if (editId.value) {
-      const txCache = useTransactionCache();
-      const allCached = Object.values(txCache.value).flat();
-      const tx = allCached.find((t) => t.id === editId.value);
+      const tx = findTransactionById(editId.value);
       if (tx) {
         type.value = tx.type;
         amount.value = tx.amount;

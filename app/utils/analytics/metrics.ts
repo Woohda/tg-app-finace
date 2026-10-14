@@ -98,39 +98,52 @@ export function buildAnalyticsChartData(
 ): ChartDataPoint[] {
   if (expenses.length === 0) return [];
 
-  const data: Record<string, number> = {};
   const start = toSafeDate(startDate);
   const end = toSafeDate(endDate);
-
   const isDaily = ["1W", "1M"].includes(period);
 
   if (isDaily) {
-    for (let d = start; d <= end; d = addDaysSafe(d, 1)) {
-      const key = formatShortDayMonth(d);
-      data[key] = 0;
-    }
-    expenses.forEach((t) => {
-      const d = toSafeDate(t.date);
-      const key = formatShortDayMonth(d);
-      if (data[key] !== undefined) {
-        data[key] += t.amount;
-      }
-    });
-  } else {
-    for (let d = startOfMonthSafe(start); d <= end; d = getNextMonth(d)) {
-      const key = formatShortMonth(d);
-      data[key] = 0;
-    }
-    expenses.forEach((t) => {
-      const d = toSafeDate(t.date);
-      const key = formatShortMonth(d);
-      if (data[key] !== undefined) {
-        data[key] += t.amount;
-      }
-    });
-  }
+    const points: Array<{ key: string; label: string; value: number }> = [];
+    const indexMap = new Map<string, number>();
 
-  return Object.entries(data).map(([label, value]) => ({ label, value }));
+    for (let d = start; d <= end; d = addDaysSafe(d, 1)) {
+      const key = formatDateISO(d);
+      const label = formatShortDayMonth(d);
+      indexMap.set(key, points.length);
+      points.push({ key, label, value: 0 });
+    }
+
+    expenses.forEach((t) => {
+      const key = formatDateISO(t.date);
+      const idx = indexMap.get(key);
+      if (idx !== undefined) {
+        points[idx]!.value += t.amount;
+      }
+    });
+
+    return points.map(({ label, value }) => ({ label, value }));
+  } else {
+    const points: Array<{ key: string; label: string; value: number }> = [];
+    const indexMap = new Map<string, number>();
+
+    for (let d = startOfMonthSafe(start); d <= end; d = getNextMonth(d)) {
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const label = formatShortMonth(d);
+      indexMap.set(key, points.length);
+      points.push({ key, label, value: 0 });
+    }
+
+    expenses.forEach((t) => {
+      const d = toSafeDate(t.date);
+      const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}`;
+      const idx = indexMap.get(key);
+      if (idx !== undefined) {
+        points[idx]!.value += t.amount;
+      }
+    });
+
+    return points.map(({ label, value }) => ({ label, value }));
+  }
 }
 
 

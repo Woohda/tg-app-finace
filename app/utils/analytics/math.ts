@@ -24,8 +24,12 @@ export function calculatePercentChange(
   current: number,
   previous: number,
 ): number {
-  if (previous === 0) return current > 0 ? 100 : 0;
-  return Math.round(((current - previous) / previous) * 100);
+  if (previous === 0) {
+    if (current > 0) return 100;
+    if (current < 0) return -100;
+    return 0;
+  }
+  return Math.round(((current - previous) / Math.abs(previous)) * 100);
 }
 
 /**

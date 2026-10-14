@@ -44,8 +44,18 @@ const router = useRouter();
 const toast = useAppToast();
 const groupId = computed(() => route.params.id as string);
 
-const { currentGroup, fetchGroup, deleteExpense, notifyDebtors, pending } =
-  useSplit();
+const {
+  currentGroup,
+  fetchGroup,
+  deleteExpense,
+  notifyDebtors,
+  pending,
+  error,
+} = useSplit();
+
+const isGroupLoading = computed(() => {
+  return pending.value || currentGroup.value?.id !== groupId.value;
+});
 
 const isNotifying = ref(false);
 const isCopied = ref(false);
@@ -87,10 +97,17 @@ const openEditExpenseModal = (expense: SplitExpense) => {
   isAddExpenseOpen.value = true;
 };
 
-onMounted(() => {
+const loadCurrentGroup = async () => {
   if (groupId.value) {
-    fetchGroup(groupId.value);
+    if (currentGroup.value && currentGroup.value.id !== groupId.value) {
+      currentGroup.value = null;
+    }
+    await fetchGroup(groupId.value);
   }
+};
+
+onMounted(() => {
+  loadCurrentGroup();
 });
 
 const currentMember = computed(() => {
@@ -206,7 +223,7 @@ const handleNotify = async () => {
 
     <!-- Скелетон загрузки -->
     <div
-      v-if="pending && !currentGroup"
+      v-if="isGroupLoading && !error"
       class="flex flex-col gap-4 animate-pulse"
     >
       <!-- Сводная карточка группы -->
@@ -261,7 +278,15 @@ const handleNotify = async () => {
       </div>
     </div>
 
-    <div v-else-if="currentGroup" class="flex flex-col gap-4">
+    <!-- Ошибка загрузки -->
+    <GlassErrorState
+      v-else-if="error && (!currentGroup || currentGroup.id !== groupId)"
+      title="Не удалось загрузить группу"
+      :error="error"
+      @retry="loadCurrentGroup"
+    />
+
+    <div v-else-if="currentGroup && currentGroup.id === groupId" class="flex flex-col gap-4">
       <!-- Сводная карточка группы -->
       <GlassCard class="flex flex-col gap-2.5">
         <div class="flex flex-col gap-1">
