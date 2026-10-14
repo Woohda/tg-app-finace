@@ -47,6 +47,7 @@ const emit = defineEmits<{
     <template #item="{ item: m, selected }">
       <div class="flex items-center min-w-0 flex-1 mr-2">
         <Avatar
+          :src="m.photo_url"
           :name="m.name"
           size="sm"
           :class="

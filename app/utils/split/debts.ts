@@ -39,6 +39,7 @@ export function calculateMemberBalances(
       netBalance: 0,
       userId: m.user_id,
       telegramId: m.telegram_id,
+      photoUrl: m.photo_url,
     });
   }
 
@@ -104,6 +105,7 @@ export function simplifyDebts(
     id: string;
     name: string;
     telegramId?: number | null;
+    photoUrl?: string | null;
     amount: number;
   }
 
@@ -117,6 +119,7 @@ export function simplifyDebts(
         id: b.memberId,
         name: b.memberName,
         telegramId: b.telegramId,
+        photoUrl: b.photoUrl,
         amount: roundCurrency(-net),
       });
     } else if (net > 0.009) {
@@ -124,6 +127,7 @@ export function simplifyDebts(
         id: b.memberId,
         name: b.memberName,
         telegramId: b.telegramId,
+        photoUrl: b.photoUrl,
         amount: roundCurrency(net),
       });
     }
@@ -152,9 +156,11 @@ export function simplifyDebts(
         fromMemberId: debtor.id,
         fromMemberName: debtor.name,
         fromTelegramId: debtor.telegramId,
+        fromPhotoUrl: debtor.photoUrl,
         toMemberId: creditor.id,
         toMemberName: creditor.name,
         toTelegramId: creditor.telegramId,
+        toPhotoUrl: creditor.photoUrl,
         amount: transferAmount,
       });
     }

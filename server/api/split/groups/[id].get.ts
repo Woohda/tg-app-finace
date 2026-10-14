@@ -125,20 +125,25 @@ export default defineEventHandler(async (event): Promise<SplitGroupDetail> => {
 
   const userMap = new Map<
     string,
-    { first_name: string | null; telegram_id: number | null }
+    {
+      first_name: string | null;
+      telegram_id: number | null;
+      photo_url: string | null;
+    }
   >();
 
   if (userIds.length > 0) {
     const botSupabase = getBotSupabase();
     const { data: usersData } = await botSupabase
       .from("users")
-      .select("id, first_name, telegram_id")
+      .select("id, first_name, telegram_id, photo_url")
       .in("id", userIds);
 
     for (const u of usersData || []) {
       userMap.set(u.id, {
         first_name: u.first_name,
         telegram_id: u.telegram_id,
+        photo_url: u.photo_url ?? null,
       });
     }
   }
@@ -165,6 +170,7 @@ export default defineEventHandler(async (event): Promise<SplitGroupDetail> => {
       is_current_user: isCurrentUser,
       created_at: m.created_at,
       telegram_id: u?.telegram_id ?? null,
+      photo_url: u?.photo_url ?? null,
     };
   });
 
