@@ -13,7 +13,7 @@
  * 3. Если нет ни фото, ни имени — отображает иконку `User`.
  */
 import type { HTMLAttributes } from "vue";
-import { computed } from "vue";
+import { computed, ref, watch } from "vue";
 import { User } from "@lucide/vue";
 import { cn } from "~/utils/cn";
 import { getInitials } from "~/utils/format";
@@ -46,6 +46,15 @@ const props = withDefaults(defineProps<Props>(), {
   class: undefined,
 });
 
+const hasImageError = ref(false);
+
+watch(
+  () => props.src,
+  () => {
+    hasImageError.value = false;
+  },
+);
+
 const initials = computed(() => getInitials(props.name));
 </script>
 
@@ -60,10 +69,14 @@ const initials = computed(() => getInitials(props.name));
     "
   >
     <img
-      v-if="src"
+      v-if="src && !hasImageError"
       :src="src"
       :alt="name ? `Аватар ${name}` : 'Аватар пользователя'"
+      referrerpolicy="no-referrer"
+      loading="lazy"
+      decoding="async"
       class="w-full h-full object-cover"
+      @error="hasImageError = true"
     />
     <span v-else-if="initials" class="uppercase select-none leading-none">
       {{ initials }}

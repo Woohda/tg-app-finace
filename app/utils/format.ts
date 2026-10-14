@@ -132,11 +132,18 @@ export function getInitials(name?: string | null): string {
   if (!name) return "";
   const trimmed = name.trim();
   if (!trimmed) return "";
-  const parts = trimmed.split(/\s+/);
-  const first = parts[0];
-  const second = parts[1];
+  const parts = trimmed.split(/\s+/).filter(Boolean);
+  const first = parts[0]?.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, "");
+  const second = parts[1]?.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, "");
   if (first && second && first[0] && second[0]) {
     return (first[0] + second[0]).toUpperCase();
+  }
+  const cleanTrimmed = trimmed.replace(/[^a-zA-Zа-яА-ЯёЁ0-9]/g, "");
+  if (cleanTrimmed.length >= 2) {
+    return cleanTrimmed.slice(0, 2).toUpperCase();
+  }
+  if (cleanTrimmed.length === 1) {
+    return cleanTrimmed.toUpperCase();
   }
   return trimmed.slice(0, 2).toUpperCase();
 }
