@@ -38,8 +38,8 @@ const gradientId = `split-team-gradient-${instanceId}`;
   <svg
     xmlns="http://www.w3.org/2000/svg"
     viewBox="0 0 512 512"
-    :width="size"
-    :height="size"
+    :width="size || '100%'"
+    :height="size || '100%'"
     fill="none"
     aria-hidden="true"
     focusable="false"

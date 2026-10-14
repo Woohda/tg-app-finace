@@ -91,7 +91,7 @@ const amountsTextSize = computed(() => {
       <div
         class="-mt-2 size-24 rounded-full glass-pill flex items-center justify-center shrink-0"
       >
-        <GroupIcon class="size-18" />
+        <GroupIcon class="size-[72px]" :stroke-width="12" />
       </div>
 
       <!-- Заголовок, количество участников и стек аватарок -->
