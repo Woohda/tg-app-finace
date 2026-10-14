@@ -12,46 +12,24 @@
  * ### Логика работы:
  * 1. Получение ID группы из параметров маршрута и загрузка данных через `fetchGroup`.
  * 2. Отрисовка сводной карточки общих расходов и персонального баланса.
- * 3. Управление участниками через `GroupMembersChips`: добавление через `AddMemberModal` и подтверждение удаления через `DeleteMemberModal`.
+ * 3. Навигация между вкладками «Отчет», «Расходы» и «Переводы» через `GlassSegmentedControl`.
  * 4. Копирование сводного текстового отчета в буфер обмена и отправка Telegram-уведомлений должникам.
- * 5. Навигация между вкладками «Отчет», «Расходы» и «Переводы» через `GlassSegmentedControl`.
- * 6. Управление модальными окнами: создание расходов, добавление участников, фиксация переводов и экспорт долей.
- * 7. Удаление группы владельцем с перенаправлением на список групп.
+ * 5. Делегирование управления всеми модальными окнами компоненту `GroupModals`.
+ * 6. Перенаправление на список групп при удалении группы.
  */
 import { ref, computed, onMounted } from "vue";
-import {
-  Plus,
-  Trash2,
-  UserPlus,
-  Users,
-  HandCoins,
-  Receipt,
-  Scale,
-  Check,
-  Copy,
-  Bell,
-} from "@lucide/vue";
-import type {
-  SplitDebtTransfer,
-  SplitExpense,
-  SplitSettlement,
-  SplitMember,
-} from "~/types/split";
+import { Plus, Users, HandCoins, Receipt, Scale } from "@lucide/vue";
+import type { SplitSettlement } from "~/types/split";
+import type { GroupModalsExpose } from "~/components/split/GroupModals.vue";
 import { formatTelegramSplitReport } from "~/utils/splitAlgorithm";
+import { formatAmount } from "~/utils/format";
 
 const route = useRoute();
 const router = useRouter();
 const toast = useAppToast();
 const groupId = computed(() => route.params.id as string);
 
-const {
-  currentGroup,
-  fetchGroup,
-  deleteExpense,
-  notifyDebtors,
-  pending,
-  error,
-} = useSplit();
+const { currentGroup, fetchGroup, notifyDebtors, pending, error } = useSplit();
 
 const isGroupLoading = computed(() => {
   return pending.value || currentGroup.value?.id !== groupId.value;
@@ -59,34 +37,6 @@ const isGroupLoading = computed(() => {
 
 const isNotifying = ref(false);
 const isCopied = ref(false);
-
-const isNotifiedRecently = computed(() => {
-  const last = currentGroup.value?.last_notified_at;
-  if (!last) return false;
-  const time = new Date(last).getTime();
-  if (isNaN(time)) return false;
-  return Date.now() - time < 24 * 60 * 60 * 1000;
-});
-
-const remainingCooldownHours = computed(() => {
-  const last = currentGroup.value?.last_notified_at;
-  if (!last) return 0;
-  const time = new Date(last).getTime();
-  if (isNaN(time)) return 0;
-  const elapsed = Date.now() - time;
-  const cooldown = 24 * 60 * 60 * 1000;
-  if (elapsed >= cooldown) return 0;
-  return Math.ceil((cooldown - elapsed) / (60 * 60 * 1000));
-});
-
-const notifyButtonTooltip = computed(() => {
-  if (isNotifiedRecently.value) {
-    return remainingCooldownHours.value > 0
-      ? `Напоминание уже отправлено за сегодня (повтор через ${remainingCooldownHours.value} ч.)`
-      : "Напоминание уже отправлено за сегодня";
-  }
-  return "Отправить напоминание должникам в Telegram";
-});
 
 const activeTab = ref<"report" | "expenses" | "transfers">("report");
 
@@ -96,34 +46,8 @@ const tabOptions = [
   { id: "transfers" as const, label: "Переводы" },
 ];
 
-// Модальные окна
-const isAddExpenseOpen = ref(false);
-const isAddMemberOpen = ref(false);
-const isSettleModalOpen = ref(false);
-const isExportModalOpen = ref(false);
-const isDeleteMemberOpen = ref(false);
-const isDeleteGroupOpen = ref(false);
-const memberToDelete = ref<SplitMember | null>(null);
-
-const promptDeleteMember = (member: unknown) => {
-  memberToDelete.value = member as SplitMember;
-  isDeleteMemberOpen.value = true;
-};
-
-const selectedTransferForSettle = ref<SplitDebtTransfer | null>(null);
-const selectedExpenseForExport = ref<SplitExpense | null>(null);
-const selectedShareAmountForExport = ref(0);
-const selectedExpenseForEdit = ref<SplitExpense | null>(null);
-
-const openAddExpenseModal = () => {
-  selectedExpenseForEdit.value = null;
-  isAddExpenseOpen.value = true;
-};
-
-const openEditExpenseModal = (expense: SplitExpense) => {
-  selectedExpenseForEdit.value = expense;
-  isAddExpenseOpen.value = true;
-};
+const { avatarUrl: currentAuthAvatarUrl } = useAuth();
+const modalsRef = ref<GroupModalsExpose | null>(null);
 
 const loadCurrentGroup = async () => {
   if (groupId.value) {
@@ -142,11 +66,6 @@ const currentMember = computed(() => {
   return currentGroup.value?.members.find((m) => m.is_current_user);
 });
 
-const openSettleModal = (transfer?: SplitDebtTransfer) => {
-  selectedTransferForSettle.value = transfer || null;
-  isSettleModalOpen.value = true;
-};
-
 const formatSettlementParticipants = (s: SplitSettlement): string => {
   const isFromMe =
     (currentMember.value && s.from_member_id === currentMember.value.id) ||
@@ -159,25 +78,6 @@ const formatSettlementParticipants = (s: SplitSettlement): string => {
   const toName = isToMe ? "Мне" : s.toMemberName || "Участник";
 
   return `${fromName} ➔ ${toName}`;
-};
-
-const openExportModal = (payload: {
-  expense: SplitExpense;
-  shareAmount: number;
-}) => {
-  selectedExpenseForExport.value = payload.expense;
-  selectedShareAmountForExport.value = payload.shareAmount;
-  isExportModalOpen.value = true;
-};
-
-const handleDeleteExpense = async (expenseId: string) => {
-  if (confirm("Удалить этот расход?")) {
-    await deleteExpense(groupId.value, expenseId);
-  }
-};
-
-const openDeleteGroupModal = () => {
-  isDeleteGroupOpen.value = true;
 };
 
 const handleGroupDeleted = () => {
@@ -216,7 +116,11 @@ const handleCopyReport = async () => {
 };
 
 const handleNotify = async () => {
-  if (!groupId.value || isNotifying.value || isNotifiedRecently.value) return;
+  if (!groupId.value || isNotifying.value) return;
+  const last = currentGroup.value?.last_notified_at;
+  if (last && Date.now() - new Date(last).getTime() < 24 * 60 * 60 * 1000) {
+    return;
+  }
   isNotifying.value = true;
   try {
     await notifyDebtors(groupId.value);
@@ -228,26 +132,8 @@ const handleNotify = async () => {
 
 <template>
   <div class="flex flex-col gap-4">
-    <!-- Шапка группы -->
-    <PageHeader
-      :title="currentGroup?.name || (pending ? 'Загрузка...' : 'Группа')"
-      :subtitle="
-        currentGroup ? `${currentGroup.members.length} участников` : undefined
-      "
-      back-to="/split"
-      back-aria-label="Назад к группам"
-    >
-      <template #action>
-        <GlassButton
-          variant="soft"
-          size="icon"
-          aria-label="Удалить группу"
-          @click="openDeleteGroupModal"
-        >
-          <Trash2 class="text-text-accent" :stroke-width="1.5" />
-        </GlassButton>
-      </template>
-    </PageHeader>
+    <!-- Шапка страницы -->
+    <PageHeader back-to="/split" back-aria-label="Назад к группам" />
 
     <!-- Скелетон загрузки -->
     <div
@@ -255,32 +141,35 @@ const handleNotify = async () => {
       class="flex flex-col gap-4 animate-pulse"
     >
       <!-- Сводная карточка группы -->
-      <GlassCard class="flex flex-col gap-3 p-4">
-        <div class="flex items-center justify-between">
-          <div class="flex flex-col gap-1.5">
-            <Skeleton class="h-3 w-24" />
-            <Skeleton class="h-7 w-32" rounded="lg" />
-          </div>
-          <div class="flex flex-col items-end gap-1.5">
-            <Skeleton class="h-3 w-20" />
-            <Skeleton class="h-7 w-28" rounded="lg" />
+      <div class="flex flex-col gap-3">
+        <div class="flex items-center gap-2.5">
+          <Skeleton class="size-22 shrink-0 -mt-1" rounded="full" />
+          <div class="flex flex-col gap-2 min-w-0 flex-1 justify-center">
+            <Skeleton class="h-6 w-40" rounded="lg" />
+            <Skeleton class="h-3 w-20 -mt-px" rounded="md" />
+            <div class="flex items-center -space-x-1.5 -mt-px">
+              <Skeleton
+                v-for="i in 5"
+                :key="i"
+                class="size-10"
+                rounded="full"
+              />
+            </div>
           </div>
         </div>
 
-        <!-- Чипсы участников -->
-        <div class="flex items-center gap-1.5 pt-1 overflow-hidden">
-          <Skeleton class="h-6.5 w-20" rounded="full" />
-          <Skeleton class="h-6.5 w-24" rounded="full" />
-          <Skeleton class="h-6.5 w-18" rounded="full" />
-          <Skeleton class="h-6.5 w-22" rounded="full" />
+        <!-- Две плашки балансов в ряд -->
+        <div class="grid grid-cols-2 gap-2.5 mt-1">
+          <Skeleton class="h-20 w-full" rounded="3xl" />
+          <Skeleton class="h-20 w-full" rounded="3xl" />
         </div>
 
         <!-- Кнопки действий -->
-        <div class="flex items-center gap-1.5 pt-1">
-          <Skeleton class="h-7 flex-1" rounded="xl" />
-          <Skeleton class="h-7 w-20" rounded="xl" />
+        <div class="flex items-center gap-1.5 pt-0.5">
+          <Skeleton class="h-8 flex-1" rounded="xl" />
+          <Skeleton class="h-8 w-20" rounded="xl" />
         </div>
-      </GlassCard>
+      </div>
 
       <!-- Переключатель вкладок -->
       <div class="flex justify-center px-5">
@@ -314,141 +203,21 @@ const handleNotify = async () => {
       @retry="loadCurrentGroup"
     />
 
-    <div v-else-if="currentGroup && currentGroup.id === groupId" class="flex flex-col gap-4">
+    <div
+      v-else-if="currentGroup && currentGroup.id === groupId"
+      class="flex flex-col gap-4"
+    >
       <!-- Сводная карточка группы -->
-      <GlassCard class="flex flex-col gap-2.5">
-        <div class="flex flex-col gap-1">
-          <!-- Верхний ряд: подписи -->
-          <div
-            class="flex items-center justify-between text-xs text-text-secondary"
-          >
-            <span>Всего потратили:</span>
-            <span>Ваш баланс:</span>
-          </div>
-
-          <!-- Нижний ряд: суммы на единой базовой линии -->
-          <div class="flex items-baseline justify-between gap-3">
-            <span
-              class="font-bold text-text-primary tracking-tight whitespace-nowrap tabular-nums leading-none"
-              :class="
-                currentGroup.totalGroupSpending >= 10_000_000 ||
-                Math.abs(currentGroup.userNetBalance) >= 10_000_000
-                  ? 'text-[22px]'
-                  : currentGroup.totalGroupSpending >= 1_000_000 ||
-                      Math.abs(currentGroup.userNetBalance) >= 1_000_000
-                    ? 'text-2xl'
-                    : 'text-[26px] '
-              "
-            >
-              {{ formatAmount(currentGroup.totalGroupSpending) }}
-            </span>
-
-            <div class="shrink-0 text-right">
-              <span
-                v-if="currentGroup.userNetBalance > 0.01"
-                class="font-extrabold text-emerald-500 whitespace-nowrap tabular-nums tracking-tight leading-none"
-                :class="
-                  currentGroup.totalGroupSpending >= 10_000_000 ||
-                  Math.abs(currentGroup.userNetBalance) >= 10_000_000
-                    ? 'text-base'
-                    : currentGroup.totalGroupSpending >= 1_000_000 ||
-                        Math.abs(currentGroup.userNetBalance) >= 1_000_000
-                      ? 'text-lg'
-                      : 'text-[20px]'
-                "
-              >
-                +{{ formatAmount(currentGroup.userNetBalance) }}
-              </span>
-              <span
-                v-else-if="currentGroup.userNetBalance < -0.01"
-                class="font-extrabold text-rose-500 whitespace-nowrap tabular-nums tracking-tight leading-none"
-                :class="
-                  currentGroup.totalGroupSpending >= 10_000_000 ||
-                  Math.abs(currentGroup.userNetBalance) >= 10_000_000
-                    ? 'text-base'
-                    : currentGroup.totalGroupSpending >= 1_000_000 ||
-                        Math.abs(currentGroup.userNetBalance) >= 1_000_000
-                      ? 'text-lg'
-                      : 'text-[20px] '
-                "
-              >
-                -{{ formatAmount(Math.abs(currentGroup.userNetBalance)) }}
-              </span>
-              <span
-                v-else
-                class="font-bold text-text-secondary whitespace-nowrap leading-none"
-                :class="
-                  currentGroup.totalGroupSpending >= 10_000_000
-                    ? 'text-base'
-                    : 'text-lg'
-                "
-              >
-                0&nbsp;₽
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- Горизонтальный список участников с кнопкой добавления -->
-        <GroupMembersChips
-          :members="currentGroup.members"
-          removable
-          @remove="promptDeleteMember"
-        >
-          <template #append>
-            <GlassButton
-              type="button"
-              variant="soft"
-              class="h-auto inline-flex items-center gap-1 px-2.5 py-1 text-xs shrink-0"
-              @click="isAddMemberOpen = true"
-            >
-              <UserPlus class="size-3.5 text-text-accent" />
-              Добавить
-            </GlassButton>
-          </template>
-        </GroupMembersChips>
-        <div class="flex items-center gap-1.5 pt-1 w-full">
-          <GlassButton
-            variant="soft"
-            class="h-auto flex-1 min-w-0 py-1.25 flex items-center justify-center gap-1 text-[11px]"
-            :class="isNotifiedRecently && 'disabled:opacity-75'"
-            :disabled="isNotifying || isNotifiedRecently"
-            :title="notifyButtonTooltip"
-            @click="handleNotify"
-          >
-            <component
-              :is="isNotifiedRecently ? Check : Bell"
-              class="size-3.5 shrink-0"
-              :class="
-                isNotifiedRecently ? 'text-accent-success' : 'text-text-accent'
-              "
-              :stroke-width="isNotifiedRecently ? 2 : 1.5"
-            />
-            <span class="truncate">{{
-              isNotifying
-                ? "Сообщаю..."
-                : isNotifiedRecently
-                  ? "Уже напомнили сегодня"
-                  : "Напомнить о переводах"
-            }}</span>
-          </GlassButton>
-          <GlassButton
-            variant="soft"
-            class="h-auto py-1.25 flex items-center justify-center gap-1 text-[11px] whitespace-nowrap"
-            @click="handleCopyReport"
-          >
-            <component
-              :is="isCopied ? Check : Copy"
-              class="size-3.5 shrink-0"
-              :stroke-width="1.5"
-              :class="isCopied ? 'text-accent-success' : 'text-text-secondary'"
-            />
-            <span class="whitespace-nowrap">{{
-              isCopied ? "Скопировано!" : "Отчет"
-            }}</span>
-          </GlassButton>
-        </div>
-      </GlassCard>
+      <GroupSummaryCard
+        :group="currentGroup"
+        :is-notifying="isNotifying"
+        :is-copied="isCopied"
+        :current-auth-avatar-url="currentAuthAvatarUrl"
+        @open-members="modalsRef?.openMembers()"
+        @add-member="modalsRef?.openAddMember()"
+        @notify="handleNotify"
+        @copy-report="handleCopyReport"
+      />
 
       <!-- Переключатель вкладок -->
       <GlassSegmentedControl
@@ -480,7 +249,7 @@ const handleNotify = async () => {
             type="button"
             variant="soft"
             class="h-auto inline-flex items-center gap-1 py-1.5 text-sm mt-1"
-            @click="openAddExpenseModal"
+            @click="modalsRef?.openAddExpense()"
           >
             <Plus class="size-4" :stroke-width="2" />
             <span>Добавить первый расход</span>
@@ -507,7 +276,7 @@ const handleNotify = async () => {
           <DebtsOptimizedList
             :transfers="currentGroup.optimizedDebts"
             :current-member-id="currentMember?.id"
-            @settle="openSettleModal"
+            @settle="modalsRef?.openSettle($event)"
           />
         </div>
 
@@ -536,7 +305,7 @@ const handleNotify = async () => {
           <GlassButton
             variant="soft"
             class="h-auto text-xs py-1.5 px-4 gap-1"
-            @click="openAddExpenseModal"
+            @click="modalsRef?.openAddExpense()"
           >
             <Plus class="size-3.5 text-text-accent" :stroke-width="1.5" />
             Платеж
@@ -547,9 +316,9 @@ const handleNotify = async () => {
           :group-id="currentGroup.id"
           :expenses="currentGroup.expenses"
           :current-member-id="currentMember?.id"
-          @delete="handleDeleteExpense"
-          @edit="openEditExpenseModal"
-          @export-share="openExportModal"
+          @delete="modalsRef?.promptDeleteExpense($event)"
+          @edit="modalsRef?.openEditExpense($event)"
+          @export-share="modalsRef?.openExportShare($event)"
         />
       </div>
 
@@ -566,7 +335,7 @@ const handleNotify = async () => {
           <GlassButton
             variant="soft"
             class="h-auto text-xs py-1.5 px-4 gap-1"
-            @click="openSettleModal()"
+            @click="modalsRef?.openSettle()"
           >
             <Plus class="size-3.5 text-text-accent" :stroke-width="1.5" />
             Перевод
@@ -602,70 +371,14 @@ const handleNotify = async () => {
       </div>
     </div>
 
-    <!-- Модальные окна -->
-    <AddExpenseModal
+    <!-- Модальные окна группы -->
+    <GroupModals
       v-if="currentGroup"
-      :is-open="isAddExpenseOpen"
-      :group-id="currentGroup.id"
-      :members="currentGroup.members"
-      :expense-to-edit="selectedExpenseForEdit"
-      @close="
-        isAddExpenseOpen = false;
-        selectedExpenseForEdit = null;
-      "
-      @saved="
-        isAddExpenseOpen = false;
-        selectedExpenseForEdit = null;
-        fetchGroup(groupId);
-      "
-    />
-
-    <AddMemberModal
-      v-if="currentGroup"
-      :is-open="isAddMemberOpen"
-      :group-id="currentGroup.id"
-      :group-name="currentGroup.name"
-      :existing-members="currentGroup.members"
-      @close="isAddMemberOpen = false"
-      @added="fetchGroup(groupId)"
-    />
-
-    <SettleDebtModal
-      v-if="currentGroup"
-      :is-open="isSettleModalOpen"
-      :group-id="currentGroup.id"
-      :members="currentGroup.members"
-      :default-transfer="selectedTransferForSettle"
-      @close="isSettleModalOpen = false"
-      @saved="fetchGroup(groupId)"
-    />
-
-    <ExportShareModal
-      v-if="currentGroup"
-      :is-open="isExportModalOpen"
-      :group-id="currentGroup.id"
-      :expense="selectedExpenseForExport"
-      :user-share-amount="selectedShareAmountForExport"
-      @close="isExportModalOpen = false"
-      @exported="fetchGroup(groupId)"
-    />
-
-    <DeleteMemberModal
-      :is-open="isDeleteMemberOpen"
-      :group-id="groupId"
-      :member="memberToDelete"
-      @close="
-        isDeleteMemberOpen = false;
-        memberToDelete = null;
-      "
-      @deleted="fetchGroup(groupId)"
-    />
-
-    <DeleteGroupModal
-      :is-open="isDeleteGroupOpen"
+      ref="modalsRef"
       :group="currentGroup"
-      @close="isDeleteGroupOpen = false"
-      @deleted="handleGroupDeleted"
+      :current-auth-avatar-url="currentAuthAvatarUrl"
+      @refresh="fetchGroup(groupId)"
+      @group-deleted="handleGroupDeleted"
     />
   </div>
 </template>

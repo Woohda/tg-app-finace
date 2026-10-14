@@ -12,7 +12,6 @@
  * 3. Передача обратной сквозной нумерации чеков (`expenses.length - index`) в компонент `ExpenseReceiptCard`.
  * 4. Проброс событий удаления, редактирования и экспорта на родительскую страницу.
  */
-import ExpenseReceiptCard from "./ExpenseReceiptCard.vue";
 import type { SplitExpense } from "~/types/split";
 
 defineProps<{

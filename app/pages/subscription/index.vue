@@ -7,8 +7,9 @@
  * позволяет создавать, редактировать и удалять платежи со свайпом.
  */
 import { ref, onMounted } from "vue";
-import { CalendarClock, Flame } from "@lucide/vue";
+import { CalendarClock } from "@lucide/vue";
 import { formatAmount, getPluralSub } from "~/utils/format";
+import { Z_INDEX } from "~/utils/zIndex";
 import type { Subscription } from "~/composables/useSubscriptions";
 
 const {
@@ -50,7 +51,6 @@ const closeForm = () => {
 // Модалка удаления
 const isDeleteModalOpen = ref(false);
 const deletingSubscription = ref<Subscription | null>(null);
-const isDeleting = ref(false);
 
 const confirmDelete = (sub: Subscription) => {
   deletingSubscription.value = sub;
@@ -63,12 +63,9 @@ const cancelDelete = () => {
 };
 
 const handleDelete = async () => {
-  if (!deletingSubscription.value) return;
-  isDeleting.value = true;
-  await deleteSubscription(deletingSubscription.value.id);
-  isDeleting.value = false;
-  isDeleteModalOpen.value = false;
-  deletingSubscription.value = null;
+  if (!deletingSubscription.value) return false;
+  const res = await deleteSubscription(deletingSubscription.value.id);
+  return Boolean(res && res.success);
 };
 </script>
 
@@ -184,45 +181,17 @@ const handleDelete = async () => {
         @close="closeForm"
       />
 
-      <!-- Модалка удаления -->
-      <GlassModal
+      <!-- Модалка удаления регулярного платежа -->
+      <ConfirmDeleteModal
         :is-open="isDeleteModalOpen"
         position="center"
-        title="Удалить платёж?"
+        title="Удаление платежа"
+        :description="`Вы уверены, что хотите удалить регулярный платёж «${deletingSubscription?.name}»?`"
+        confirm-text="🧨 Сжечь"
         :z-index="Z_INDEX.SUBSCRIPTION_DELETE"
+        :on-confirm="handleDelete"
         @close="cancelDelete"
-      >
-        <div class="flex flex-col gap-4 text-center">
-          <p class="text-sm text-text-secondary">
-            Вы уверены, что хотите удалить регулярный платёж
-            <strong class="text-text-primary font-bold">
-              «{{ deletingSubscription?.name }}» </strong
-            >?
-          </p>
-
-          <div class="flex gap-3">
-            <GlassButton
-              type="button"
-              variant="soft"
-              class="flex-1"
-              :disabled="isDeleting"
-              @click="cancelDelete"
-            >
-              Отмена
-            </GlassButton>
-            <GlassMorphButton
-              variant="delete"
-              :disabled="isDeleting"
-              @click="handleDelete"
-            >
-              <span>🧨 Сжечь</span>
-              <template #success>
-                <Flame :stroke-width="1.5" />
-              </template>
-            </GlassMorphButton>
-          </div>
-        </div>
-      </GlassModal>
+      />
     </div>
   </div>
 </template>

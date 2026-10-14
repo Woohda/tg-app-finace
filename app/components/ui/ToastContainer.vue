@@ -7,7 +7,6 @@
  * Поддерживает анимации появления/исчезновения.
  */
 import { ref, computed, onMounted } from "vue";
-import { useAppToast } from "~/composables/useAppToast";
 import { CheckCircle2, AlertCircle, Info, X } from "@lucide/vue";
 
 const { toasts, remove } = useAppToast();
