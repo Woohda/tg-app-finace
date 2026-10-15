@@ -36,6 +36,12 @@ export default defineNuxtConfig({
             "public, max-age=86400, stale-while-revalidate=604800",
         },
       },
+      "/telegram-web-app.js": {
+        headers: {
+          "Cache-Control":
+            "public, max-age=86400, stale-while-revalidate=604800",
+        },
+      },
       "/api/**": {
         headers: {
           "Cache-Control": "no-store, no-cache, must-revalidate",
@@ -84,7 +90,7 @@ export default defineNuxtConfig({
       ],
       script: [
         {
-          src: "https://telegram.org/js/telegram-web-app.js",
+          src: "/telegram-web-app.js",
           defer: true,
         },
       ],
