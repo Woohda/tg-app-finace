@@ -26,7 +26,7 @@ export interface CategoryGoalDto {
 }
 
 export const useCategoryGoals = () => {
-  const { token, isAuthenticated } = useAuth();
+  const { token } = useAuth();
   const api = useApi();
   const toast = useAppToast();
 
@@ -39,7 +39,7 @@ export const useCategoryGoals = () => {
   const error = ref<string | null>(null);
 
   const fetchGoals = async (force = false) => {
-    if (!isAuthenticated.value || !token.value) return;
+    if (import.meta.server && !token.value) return;
     if (!force && isLoaded.value) return;
     if (inFlightFetch) return inFlightFetch;
 
@@ -74,7 +74,7 @@ export const useCategoryGoals = () => {
   };
 
   const setGoal = async (categoryId: string, targetAmount: number): Promise<boolean> => {
-    if (!isAuthenticated.value || !token.value || isLoading.value) return false;
+    if (isLoading.value) return false;
 
     const previousAmount = goalsMap.value[categoryId];
     // Оптимистичное обновление
@@ -122,7 +122,7 @@ export const useCategoryGoals = () => {
   };
 
   const removeGoal = async (categoryId: string): Promise<boolean> => {
-    if (!isAuthenticated.value || !token.value || isLoading.value) return false;
+    if (isLoading.value) return false;
 
     const previousAmount = goalsMap.value[categoryId];
     if (previousAmount === undefined) return true;

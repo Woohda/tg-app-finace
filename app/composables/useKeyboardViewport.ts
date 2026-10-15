@@ -1,10 +1,15 @@
 /**
  * @module app/composables/useKeyboardViewport
- * @fileoverview Глобальное реактивное отслеживание виртуальной клавиатуры и видимой области экрана.
+ * @fileoverview Глобальное реактивное отслеживание виртуальной клавиатуры и видимой области экрана
  * @description
  * Отслеживает изменения высоты экрана и появление клавиатуры через нативные события
  * Telegram WebApp (`viewportChanged`) и `window.visualViewport`.
  * Предоставляет стабильные реактивные значения `keyboardHeight` и `isKeyboardOpen`.
+ * ---
+ * ### Логика работы:
+ * 1. Отслеживание нативных параметров высоты контейнера Telegram WebApp (`viewportStableHeight` vs `viewportHeight`).
+ * 2. Fallback на `window.visualViewport` с порогом дельты более 60px.
+ * 3. Реактивное обновление высоты клавиатуры `keyboardHeight` и флага `isKeyboardOpen`.
  */
 import { ref, computed } from "vue";
 

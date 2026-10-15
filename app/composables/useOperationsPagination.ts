@@ -5,6 +5,11 @@
  * Инкапсулирует порционную загрузку транзакций (10 элементов по умолчанию),
  * отслеживание прокрутки через IntersectionObserver и агрегированный подсчет
  * сумм доходов и расходов для шапок списков.
+ * ---
+ * ### Логика работы:
+ * 1. Порционная выдача элементов через `displayedLimit` с автоматическим сбросом при изменении входного списка.
+ * 2. Регистрация `IntersectionObserver` на элементе-триггере (`observerTarget`) для подгрузки следующей порции.
+ * 3. Агрегация общей суммы доходов (`totalIncome`) и расходов (`totalExpense`) по переданным элементам.
  */
 import { ref, computed, watch, onMounted, onUnmounted, type Ref } from "vue";
 import type { Transaction } from "~/composables/useTransactions";

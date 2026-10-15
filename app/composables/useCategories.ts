@@ -1,11 +1,15 @@
 /**
  * @module app/composables/useCategories
  * @fileoverview Управление пользовательскими категориями
- * 
  * @description
  * Обеспечивает получение, создание, удаление и сортировку пользовательских категорий.
  * Инкапсулирует взаимодействие с API (`/api/categories`) и кеширует список
  * в глобальное состояние `useGlobalCategories`.
+ * ---
+ * ### Логика работы:
+ * 1. Загрузка категорий (`fetchCategories`) с дедупликацией in-flight запросов и кешированием в `useGlobalCategories`.
+ * 2. Добавление, редактирование и удаление категорий с оптимистичным обновлением списка и инвалидацией кеша транзакций.
+ * 3. Автоматическая сортировка (`sortCategories`): расходы перед доходами, по алфавиту.
  */
 import { ref, computed } from "vue";
 import type { Database } from "~/types/database.types";
@@ -35,8 +39,7 @@ export const useCategories = () => {
   };
 
   const fetchCategories = async (force = false) => {
-    if (!token.value) {
-      error.value = "Пользователь не авторизован";
+    if (import.meta.server && !token.value) {
       return;
     }
 
@@ -75,8 +78,7 @@ export const useCategories = () => {
     icon?: string,
     id?: string,
   ) => {
-    if (!token.value || isMutating.value) {
-      if (!token.value) error.value = "Пользователь не авторизован";
+    if (isMutating.value) {
       return null;
     }
 
@@ -118,7 +120,7 @@ export const useCategories = () => {
   };
 
   const updateCategory = async (id: string, name: string, icon?: string) => {
-    if (!token.value || isMutating.value) return false;
+    if (isMutating.value) return false;
 
     isMutating.value = true;
     error.value = null;
@@ -157,7 +159,7 @@ export const useCategories = () => {
   };
 
   const deleteCategory = async (id: string) => {
-    if (!token.value || isMutating.value) return false;
+    if (isMutating.value) return false;
 
     isMutating.value = true;
     error.value = null;

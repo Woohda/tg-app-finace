@@ -1,30 +1,70 @@
 /**
  * @module app/composables/useApi
- * @fileoverview Унифицированная обертка над $fetch с защитой от мертвого сокета и cold start
+ * @fileoverview Унифицированная обертка над $fetch с проактивной авторизацией и защитой от сетевых сбоев
  * @description
- * 1. Single-Flight Lock: устраняет шторм авторизации (если несколько запросов параллельно
- *    получают 401, выполняется ровно 1 обновление токена, остальные ожидают его).
- * 2. Адаптивный повтор (backoff):
- *    - При сбросе мертвого сокета WebKit (Load failed / !response) выдерживает паузу 350мс,
- *      позволяя ОС очистить системный пул соединений, и повторяет запрос на чистом сокете.
- *    - При серверных ошибках холодного старта базы (502/503/504) для идемпотентных методов
- *      выдерживает паузу 800мс и делает до 2 повторов, давая Supabase проснуться.
- *    - Для неидемпотентных запросов (POST) повтор при 5xx запрещен во избежание дублей.
- * 3. Логирование в бот: ошибки отправляются только если все попытки исчерпаны.
+ * Централизованный транспортный уровень приложения:
+ * 1. Проактивная авторизация (`ensureAuth`): перед отправкой защищенных запросов на клиенте
+ *    гарантирует готовность сессии и валидность JWT, предотвращая первичные 401 ошибки.
+ * 2. SSR-guard: на сервере при отсутствии валидной сессии немедленно прерывает выполнение с 401
+ *    без лишних сетевых вызовов и повреждения клиентских кук.
+ * 3. Single-Flight Lock: при неожиданном получении 401 выполняет ровно 1 повторную авторизацию,
+ *    а параллельные запросы ожидают завершения единого промиса.
+ * 4. Адаптивный повтор (backoff):
+ *    - При сбросе мертвого сокета WebKit (Load failed) выдерживает паузу 350мс и повторяет запрос.
+ *    - При холодном старте базы (502/503/504) для идемпотентных методов выдерживает 800мс (до 2 повторов).
+ *    - Для неидемпотентных запросов (POST) повтор при 5xx запрещен во избежание дублирования данных.
+ * 5. Логирование в бот: ошибки отправляются только если все попытки исчерпаны.
+ * ---
+ * ### Логика работы:
+ * 1. Проверка маршрута: если маршрут защищенный, гарантируется наличие токена через `ensureAuth()`.
+ * 2. Подстановка заголовка `Authorization: Bearer <token>`.
+ * 3. Выполнение запроса с обработкой 401, сетевых обрывов сокета и 5xx холодного старта.
+ * 4. Перенаправление на `/login` для веб-пользователей при невозможности авторизации.
  */
-import { useAuth } from "./useAuth";
+import { useAuth, isJwtExpired } from "./useAuth";
 
 // Единый разделяемый промис обновления токена для предотвращения лавины запросов
 let activeRefreshPromise: Promise<boolean> | null = null;
 
 export const useApi = () => {
-  const { token, initTelegramAuth, devLogin, logout, user } = useAuth();
+  const { token, ensureAuth, logout, user } = useAuth();
   const router = useRouter();
 
   const api = async <T>(
     request: string,
     options?: Parameters<typeof $fetch>[1],
   ): Promise<T> => {
+    const isAuthRoute = request.includes("/api/auth/");
+
+    // Проактивная защита и синхронизация авторизации перед сетевым запросом
+    if (!isAuthRoute) {
+      if (import.meta.server) {
+        if (!token.value || isJwtExpired(token.value)) {
+          throw createError({
+            statusCode: 401,
+            statusMessage: "Unauthorized on SSR",
+          });
+        }
+      } else {
+        if (!token.value || isJwtExpired(token.value)) {
+          const ok = await ensureAuth();
+          if (!ok) {
+            const isInsideTg =
+              typeof window !== "undefined" &&
+              (window.Telegram?.WebApp?.initData ||
+                window.location.hash.includes("tgWebAppData"));
+            if (!isInsideTg && router.currentRoute.value.path !== "/login") {
+              router.replace("/login");
+            }
+            throw createError({
+              statusCode: 401,
+              statusMessage: "Unauthorized",
+            });
+          }
+        }
+      }
+    }
+
     const headers: Record<string, string> = {
       ...(options?.headers as Record<string, string>),
     };
@@ -64,23 +104,26 @@ export const useApi = () => {
         lastError = e;
         const err = e as {
           response?: { status?: number };
+          statusCode?: number;
           name?: string;
           message?: string;
         };
 
-        const status = err.response?.status;
+        const status = err.response?.status || err.statusCode;
 
         // 1. Single-Flight Lock: перехват 401 Unauthorized
-        if (status === 401 && !request.includes("/api/auth/")) {
+        if (status === 401 && !isAuthRoute) {
+          // На сервере (SSR) не пытаемся логиниться и не затираем сессионные куки клиента
+          if (import.meta.server) {
+            throw lastError;
+          }
+
           if (!activeRefreshPromise) {
             activeRefreshPromise = (async () => {
               try {
-                if (import.meta.dev && !window.Telegram?.WebApp?.initData) {
-                  return await devLogin();
-                }
-                return await initTelegramAuth();
+                return await ensureAuth();
               } catch (refreshErr) {
-                console.error("[useApi] Ошибка обновления токена:", refreshErr);
+                console.error("[useApi] Ошибка повторной авторизации:", refreshErr);
                 return false;
               } finally {
                 activeRefreshPromise = null;
@@ -92,8 +135,14 @@ export const useApi = () => {
           if (refreshSuccess) {
             continue; // Повторяем с новым токеном на следующей итерации
           } else {
+            const isInsideTg =
+              typeof window !== "undefined" &&
+              (window.Telegram?.WebApp?.initData ||
+                window.location.hash.includes("tgWebAppData"));
             logout();
-            router.replace("/login");
+            if (!isInsideTg && router.currentRoute.value.path !== "/login") {
+              router.replace("/login");
+            }
             throw lastError;
           }
         }
@@ -136,10 +185,11 @@ export const useApi = () => {
     }
 
     // Логируем в Telegram-бот только окончательные неразрешимые ошибки (исключая 401 и сам логгер)
-    const finalErr = lastError as { response?: { status?: number } };
+    const finalErr = lastError as { response?: { status?: number }; statusCode?: number };
     if (
       import.meta.client &&
       finalErr?.response?.status !== 401 &&
+      finalErr?.statusCode !== 401 &&
       !request.includes("/api/bot/log-error")
     ) {
       $fetch("/api/bot/log-error", {

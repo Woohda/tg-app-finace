@@ -28,6 +28,7 @@ import { parseApiError } from "~/utils/api";
 let inFlightGroupsFetch: Promise<SplitGroupSummary[]> | null = null;
 
 export const useSplit = () => {
+  const { token } = useAuth();
   const api = useApi();
   const toast = useAppToast();
 
@@ -41,6 +42,9 @@ export const useSplit = () => {
    * Загрузка списка всех групп совместных трат
    */
   const fetchGroups = async (force = false) => {
+    if (import.meta.server && !token.value) {
+      return groups.value;
+    }
     if (!force && isLoaded.value) {
       return groups.value;
     }

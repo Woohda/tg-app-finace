@@ -91,7 +91,6 @@ export default defineNuxtConfig({
       script: [
         {
           src: "/telegram-web-app.js",
-          defer: true,
         },
       ],
     },

@@ -19,6 +19,16 @@ export default defineNuxtRouteMiddleware((to) => {
     return;
   }
 
+  // Если открыто внутри Telegram Mini App, авторизацией управляет плагин telegram.client.ts.
+  // Не перенаправляем на /login, чтобы не срывать сессию во время первичного входа.
+  if (
+    typeof window !== "undefined" &&
+    (window.Telegram?.WebApp?.initData ||
+      window.location.hash.includes("tgWebAppData"))
+  ) {
+    return;
+  }
+
   // Если нет токена и юзера - на страницу логина
   if (!isAuthenticated.value) {
     return navigateTo("/login");

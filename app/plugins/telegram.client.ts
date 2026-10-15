@@ -7,12 +7,32 @@
  * 2. Считывает криптографически подписанный `initData`.
  * 3. Если пользователь ещё не авторизован и `initData` доступен, выполняет фоновую авторизацию через `loginWithTelegram`.
  */
+import type { TelegramWebApp } from "~/types/telegram";
+
+async function resolveTelegramWebApp(
+  maxWaitMs = 1200,
+  stepMs = 30,
+): Promise<TelegramWebApp | null> {
+  const start = Date.now();
+  while (Date.now() - start < maxWaitMs) {
+    if (typeof window !== "undefined" && window.Telegram?.WebApp) {
+      return window.Telegram.WebApp;
+    }
+    await new Promise((resolve) => setTimeout(resolve, stepMs));
+  }
+  return typeof window !== "undefined" && window.Telegram?.WebApp
+    ? window.Telegram.WebApp
+    : null;
+}
+
 export default defineNuxtPlugin(async () => {
   if (!import.meta.client) return;
 
-  const tg = window.Telegram?.WebApp;
+  const tg = await resolveTelegramWebApp();
   if (!tg) {
-    console.info("[Telegram Plugin] Telegram WebApp SDK не обнаружен (запуск в обычном браузере)");
+    console.info(
+      "[Telegram Plugin] Telegram WebApp SDK не обнаружен (запуск в обычном браузере)",
+    );
     return;
   }
 
@@ -22,23 +42,37 @@ export default defineNuxtPlugin(async () => {
     tg.expand();
     setTelegramVerticalSwipes(false);
   } catch (err) {
-    console.warn("[Telegram Plugin] Ошибка при вызове ready/expand/disableVerticalSwipes:", err);
+    console.warn(
+      "[Telegram Plugin] Ошибка при вызове ready/expand/disableVerticalSwipes:",
+      err,
+    );
   }
 
-  const { isAuthenticated, loginWithTelegram } = useAuth();
+  const { isAuthenticated, token, isJwtExpired, loginWithTelegram } = useAuth();
   const route = useRoute();
   const router = useRouter();
 
-  if (tg.initData) {
-    if (!isAuthenticated.value) {
-      // Первичный вход: ждем авторизации перед переходом
-      const success = await loginWithTelegram(tg.initData);
+  // Получаем initData из SDK либо из хэша URL (если SDK ещё не распарсил хэш)
+  const rawInitData =
+    tg.initData ||
+    (typeof window !== "undefined" &&
+    window.location.hash.includes("tgWebAppData")
+      ? new URLSearchParams(window.location.hash.substring(1)).get(
+          "tgWebAppData",
+        ) || ""
+      : "");
+
+  if (rawInitData) {
+    const isTokenValid = isAuthenticated.value && !isJwtExpired(token.value);
+    if (!isTokenValid) {
+      // Первичный вход или токен истёк: ждем авторизации перед монтированием компонентов
+      const success = await loginWithTelegram(rawInitData);
       if (success && route.path === "/login") {
         router.replace("/");
       }
     } else {
-      // Пользователь уже вошел: делаем фоновую тихую авторизацию и прогрев БД без блокировки UI
-      loginWithTelegram(tg.initData).catch((err) => {
+      // Пользователь уже вошел с валидным токеном: делаем фоновую тихую авторизацию и прогрев БД без блокировки UI
+      loginWithTelegram(rawInitData).catch((err) => {
         console.warn("[Telegram Plugin] Ошибка тихой фоновой авторизации:", err);
       });
     }

@@ -64,7 +64,13 @@ export const useTransactions = (options?: {
   const isMutating = ref(false);
   const error = ref<string | null>(null);
 
+  const { token } = useAuth();
+
   const fetchTransactions = async (force = false): Promise<void> => {
+    if (import.meta.server && !token.value) {
+      return;
+    }
+
     const key = cacheKey.value;
     if (!force && txCache.value[key]) {
       return;
@@ -109,7 +115,7 @@ export const useTransactions = (options?: {
   );
 
   // Реактивный слушатель: реагирует на изменение дат (периода) и глобальной версии (CRUD).
-  // Автоматический запрос выполняется ТОЛЬКО при наличии фильтра дат, предотвращая загрузку all_all на старте.
+  // Автоматический запрос выполняется ТОЛЬКО при наличии фильтра дат.
   watch(
     [cacheKey, txVersion],
     () => {

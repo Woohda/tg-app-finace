@@ -8,7 +8,7 @@
  * ---
  * ### Логика работы:
  * 1. Загрузка актуального бюджета через API (`fetchBudget`) с дедупликацией in-flight запросов.
- * 2. Установка нового лимита бюджета через `setBudget`.
+ * 2. Установка нового лимита бюджета через `updateBudget`.
  * 3. Расчет остатка (`remainder`), дневного ориентира (`dailyGuideline`) и дней до конца месяца через `getDaysLeftInMonth()`.
  */
 import { ref, computed, type Ref } from "vue";
@@ -28,7 +28,7 @@ export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
   const error = ref<string | null>(null);
 
   const fetchBudget = async (force = false) => {
-    if (!token.value) return;
+    if (import.meta.server && !token.value) return;
     if (!force && isLoaded.value) return;
     if (inFlightFetch) return inFlightFetch;
 
@@ -57,7 +57,7 @@ export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
   };
 
   const updateBudget = async (amount: number) => {
-    if (!token.value || isLoading.value) return false;
+    if (isLoading.value) return false;
 
     isLoading.value = true;
     error.value = null;

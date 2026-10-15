@@ -26,7 +26,6 @@ export const useReceiptScanner = () => {
   const router = useRouter();
   const { closeModal } = useTransactionModal();
   const scanResults = useState<ScannedTransaction[]>("scanResults", () => []);
-  const { token } = useAuth();
   const api = useApi();
 
   const triggerScan = () => {
@@ -43,15 +42,6 @@ export const useReceiptScanner = () => {
 
     try {
       const base64Data = await compressReceiptImage(file);
-
-      const currentToken = token.value || useCookie("auth_token").value;
-
-      if (!currentToken || currentToken === "null") {
-        scanError.value = "Ошибка авторизации: токен отсутствует. Зайдите заново (Dev Login).";
-        isScanning.value = false;
-        scanStatus.value = "idle";
-        return;
-      }
 
       const res = await api<{ transactions?: ScannedTransaction[] }>("/api/ai/parse-receipt", {
         method: "POST",

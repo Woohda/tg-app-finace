@@ -34,7 +34,7 @@ export async function verifyTelegramWebAppData(
     const authDate = Number(authDateStr);
     if (!Number.isFinite(authDate) || authDate <= 0) return false;
     const nowSeconds = Math.floor(Date.now() / 1000);
-    if (nowSeconds - authDate > 86400 || authDate - nowSeconds > 60) {
+    if (nowSeconds - authDate > 86400 || authDate - nowSeconds > 300) {
       console.warn("verifyTelegramWebAppData: auth_date expired or invalid:", authDate, "now:", nowSeconds);
       return false;
     }

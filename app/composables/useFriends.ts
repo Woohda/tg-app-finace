@@ -1,6 +1,14 @@
 /**
  * @module app/composables/useFriends
  * @fileoverview Управление списком друзей и генерацией инвайт-ссылок
+ * @description
+ * Обеспечивает получение списка подтвержденных друзей пользователя и генерацию
+ * глубоких ссылок Telegram (deep link) для шеринга и инвайтов в группы сплита.
+ * ---
+ * ### Логика работы:
+ * 1. Получение друзей (`fetchFriends`) через `/api/friends` с кешированием в `useGlobalFriends`.
+ * 2. Генерация ссылки приглашения (`getInviteLink`) с параметром `friend_{id}` или `join_{groupId}`.
+ * 3. Отправка через нативный диалог Telegram (`tg.openTelegramLink`) или буфер обмена браузера.
  */
 import { ref } from "vue";
 import type { UserFriend } from "~/types/friends";
@@ -10,7 +18,7 @@ let inFlightFriendsFetch: Promise<UserFriend[]> | null = null;
 export const useFriends = () => {
   const api = useApi();
   const toast = useAppToast();
-  const { user } = useAuth();
+  const { user, token } = useAuth();
 
   const friends = useGlobalFriends();
   const pending = ref(false);
@@ -20,6 +28,9 @@ export const useFriends = () => {
    * Загрузка списка друзей текущего пользователя
    */
   const fetchFriends = async (force = false) => {
+    if (import.meta.server && !token.value) {
+      return friends.value;
+    }
     if (!force && isLoaded.value) {
       return friends.value;
     }
@@ -47,8 +58,7 @@ export const useFriends = () => {
   };
 
   /**
-   * Получение персональной инвайт-ссылки
-   * @param groupId опциональный ID группы для инвайта напрямую в группу
+   * Получение персональной инвайт-ссылки для добавления в друзья или в группу
    */
   const getInviteLink = (groupId?: string): string => {
     const botUsername = "vfino_bot";

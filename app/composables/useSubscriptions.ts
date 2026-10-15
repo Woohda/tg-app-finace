@@ -6,9 +6,10 @@
  * Вычисляет общую сумму подписок в месяц и формирует список ближайших списаний.
  * ---
  * ### Логика работы:
- * 1. CRUD операции над регулярными платежами через API с оптимистичными обновлениями.
- * 2. Расчет ближайших платежей (`upcomingSubscriptions`) с коррекцией на длину месяца (`getEffectiveDayOfMonth`).
- * 3. Вычисление статуса платежа («Сегодня», «Завтра», «Через N дн.») относительно текущего дня (`getDayOfMonth`).
+ * 1. Загрузка регулярных платежей (`fetchSubscriptions`) с дедупликацией in-flight запросов.
+ * 2. CRUD операции над регулярными платежами через API с оптимистичными обновлениями.
+ * 3. Расчет ближайших платежей (`upcomingSubscriptions`) с коррекцией на длину месяца (`getEffectiveDayOfMonth`).
+ * 4. Вычисление статуса платежа («Сегодня», «Завтра», «Через N дн.») относительно текущего дня.
  */
 import { ref, computed } from "vue";
 import { parseApiError } from "~/utils/api";
@@ -36,6 +37,7 @@ export interface UpcomingSubscription extends Subscription {
 let inFlightSubscriptionsFetch: Promise<void> | null = null;
 
 export const useSubscriptions = () => {
+  const { token } = useAuth();
   const api = useApi();
   const toast = useAppToast();
   const notifications = useNotifications();
@@ -47,6 +49,9 @@ export const useSubscriptions = () => {
   const pending = computed(() => !isLoaded.value || isFetching.value);
 
   const fetchSubscriptions = async (force = false) => {
+    if (import.meta.server && !token.value) {
+      return;
+    }
     if (!force && isLoaded.value) {
       return;
     }
