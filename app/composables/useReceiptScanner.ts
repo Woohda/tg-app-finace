@@ -42,13 +42,7 @@ export const useReceiptScanner = () => {
     scanError.value = "";
 
     try {
-      const reader = new FileReader();
-      const base64Promise = new Promise<string>((resolve, reject) => {
-        reader.onload = () => resolve(reader.result as string);
-        reader.onerror = (error) => reject(error);
-      });
-      reader.readAsDataURL(file);
-      const base64Data = await base64Promise;
+      const base64Data = await compressReceiptImage(file);
 
       const currentToken = token.value || useCookie("auth_token").value;
 
