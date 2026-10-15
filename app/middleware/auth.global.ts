@@ -7,6 +7,11 @@
  * перенаправляет на страницу `/login`.
  */
 export default defineNuxtRouteMiddleware((to) => {
+  // На сервере (SSR) не редиректим: Telegram initData передается в хэше URL (#tgWebAppData),
+  // а токены хранятся в localStorage / cookies клиента.
+  // Редирект на /login должен отрабатывать только на клиенте после инициализации Telegram SDK.
+  if (import.meta.server) return;
+
   const { isAuthenticated } = useAuth();
 
   // Исключаем саму страницу логина из проверки, чтобы не было бесконечного редиректа
