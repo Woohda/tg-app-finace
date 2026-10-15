@@ -74,11 +74,11 @@ const displayPercent = computed(() => {
   <div
     class="absolute inset-0 pointer-events-none rounded-[inherit] overflow-hidden"
   >
-    <!-- Свечение / Aurora Blob -->
+    <!-- Свечение / Aurora Blob (высокопроизводительный radial-gradient без тяжелого шейдерного blur) -->
     <div
       class="aurora-blob absolute"
       :style="{
-        backgroundColor: blobColor,
+        '--blob-color': blobColor,
         animationDuration: animationDuration,
         '--base-scale': baseScale,
       }"
@@ -112,14 +112,16 @@ const displayPercent = computed(() => {
 
 <style scoped>
 .aurora-blob {
-  width: 150px;
-  height: 150px;
+  width: 260px;
+  height: 260px;
   border-radius: 50%;
-  filter: blur(60px);
-  top: -40px;
-  right: -20px;
+  background: radial-gradient(circle, var(--blob-color) 0%, transparent 70%);
+  top: -95px;
+  right: -75px;
   animation: blob-float ease-in-out infinite alternate;
-  transition: background-color 1s ease;
+  pointer-events: none;
+  transform: translateZ(0);
+  will-change: transform;
 }
 
 /* Эффект "растворенного в стекле" (вдавленный) текста */

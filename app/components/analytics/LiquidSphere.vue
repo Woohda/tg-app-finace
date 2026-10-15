@@ -12,7 +12,7 @@
  * 3. Генерирует два слоя волн с разной длиной, амплитудой (3px и 2px) и скоростью для эффекта параллакса.
  * 4. Использует SVG-маску для отображения двухцветного текста: темный/акцентный на воздухе и белый внутри жидкости.
  */
-import { computed } from "vue";
+import { computed, ref, onMounted, onUnmounted } from "vue";
 import { liquidWavePath } from "~/utils/svgPaths";
 
 const props = defineProps<{
@@ -22,6 +22,56 @@ const props = defineProps<{
 }>();
 
 const uid = useId();
+
+const containerRef = ref<HTMLElement | null>(null);
+const svgRef = ref<SVGSVGElement | null>(null);
+const isVisible = ref(true);
+
+let observer: IntersectionObserver | null = null;
+
+const updateAnimationState = (visible: boolean) => {
+  isVisible.value = visible;
+  if (!svgRef.value) return;
+  try {
+    if (visible && !document.hidden) {
+      svgRef.value.unpauseAnimations();
+    } else {
+      svgRef.value.pauseAnimations();
+    }
+  } catch {
+    // Безопасный перехват на случай окружений без SMIL
+  }
+};
+
+const onVisibilityChange = () => {
+  updateAnimationState(isVisible.value && !document.hidden);
+};
+
+onMounted(() => {
+  if (typeof IntersectionObserver !== "undefined" && containerRef.value) {
+    observer = new IntersectionObserver(
+      ([entry]) => {
+        updateAnimationState(Boolean(entry?.isIntersecting));
+      },
+      { threshold: 0.05 },
+    );
+    observer.observe(containerRef.value);
+  }
+
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", onVisibilityChange);
+  }
+});
+
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
+  if (typeof document !== "undefined") {
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+  }
+});
 
 const boundedValue = computed(() => Math.min(Math.max(props.value, 0), 100));
 
@@ -41,21 +91,21 @@ const waves = computed(() => [
   {
     d: liquidWavePath(0, yBase.value + 2, size, size, 3, 150),
     w: 150,
-    dur: "5s",
-    opacity: 0.85,
-    reverse: true,
+    dur: "5.5s",
+    opacity: 0.92,
+    reverse: false,
   },
   {
     d: liquidWavePath(0, yBase.value + 5, size, size, 2, 105),
     w: 105,
-    dur: "5s",
-    opacity: 0.5,
-    reverse: false,
+    dur: "5.5s",
+    opacity: 1,
+    reverse: true,
   },
 ]);
 
 // Фиксированный красный фирменный цвет
-const liquidColor = "var(--color-accent-mid)";
+const liquidColor = "var(--color-accent-start)";
 
 // Плавная и естественная адаптация размера шрифта для длинных денежных сумм
 const amountFontSize = computed(() => {
@@ -80,10 +130,15 @@ const textLayout = computed(() => {
 <template>
   <!-- Прозрачная стеклянная сфера с бликами (Transparent Glass Orb) -->
   <div
+    ref="containerRef"
     class="liquid-sphere relative w-28 h-28 shrink-0 rounded-full border border-white/50 shadow-[0_8px_20px_rgba(15,28,63,0.04),inset_0_1.5px_3px_rgba(255,255,255,0.7),inset_0_-1.5px_3px_rgba(255,255,255,0.3)] backdrop-blur-sm flex flex-col items-center justify-center overflow-hidden"
   >
     <!-- Многослойная анимированная жидкость и текст (Pure SVG) -->
-    <svg class="absolute inset-0 w-full h-full" viewBox="0 0 112 112">
+    <svg
+      ref="svgRef"
+      class="absolute inset-0 w-full h-full"
+      viewBox="0 0 112 112"
+    >
       <defs>
         <clipPath :id="uid + '-circle'">
           <circle cx="56" cy="56" r="56" />
@@ -218,5 +273,7 @@ const textLayout = computed(() => {
 .liquid-sphere {
   background: transparent;
   transform: translateZ(0);
+  content-visibility: auto;
+  contain-intrinsic-size: 112px 112px;
 }
 </style>
