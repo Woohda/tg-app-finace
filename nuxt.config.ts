@@ -1,5 +1,6 @@
 // https://nuxt.com/docs/api/configuration/nuxt-config
 export default defineNuxtConfig({
+  ssr: false,
   compatibilityDate: "2025-07-15",
   devtools: { enabled: true },
   future: {
@@ -8,6 +9,21 @@ export default defineNuxtConfig({
   nitro: {
     preset: "cloudflare-pages",
     routeRules: {
+      "/_nuxt/**": {
+        headers: {
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
+      },
+      "/_fonts/**": {
+        headers: {
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
+      },
+      "/fonts/**": {
+        headers: {
+          "Cache-Control": "public, max-age=31536000, immutable",
+        },
+      },
       "/favicon.png": {
         headers: {
           "Cache-Control":
@@ -20,9 +36,9 @@ export default defineNuxtConfig({
             "public, max-age=86400, stale-while-revalidate=604800",
         },
       },
-      "/fonts/**": {
+      "/api/**": {
         headers: {
-          "Cache-Control": "public, max-age=31536000, immutable",
+          "Cache-Control": "no-store, no-cache, must-revalidate",
         },
       },
       "/**": {
