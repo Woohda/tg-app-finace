@@ -22,6 +22,7 @@ import {
 import { getBotSupabase } from "./db";
 import { processInvitePayload } from "./friends";
 import { escapeHtml } from "./format";
+import { seedDefaultCategories } from "./categories";
 
 let botInstance: Bot | null = null;
 let configuredToken: string | null = null;
@@ -121,6 +122,11 @@ export function getBot(customToken?: string): Bot {
             .select("id, first_name")
             .single();
           user = newUser;
+
+          if (user?.id) {
+            // Находим системные категории с user_id null и копируем их новому пользователю
+            await seedDefaultCategories(supabase, user.id);
+          }
         }
       } catch (err) {
         console.warn(
