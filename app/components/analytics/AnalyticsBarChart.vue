@@ -7,6 +7,7 @@
  * Разделен на 2 колонки грида: ось Y с процентными делениями и SVG-график.
  * Вся математика, геометрия баров и шкала вынесены в composable useBarChartMath.
  */
+import { ref, onMounted, onUnmounted } from "vue";
 import type { ChartDataPoint } from "~/utils/analytics";
 
 const props = defineProps<{
@@ -14,6 +15,56 @@ const props = defineProps<{
 }>();
 
 const uid = useId();
+
+const containerRef = ref<HTMLElement | null>(null);
+const svgRef = ref<SVGSVGElement | null>(null);
+const isVisible = ref(true);
+
+let observer: IntersectionObserver | null = null;
+
+const updateAnimationState = (visible: boolean) => {
+  isVisible.value = visible;
+  if (!svgRef.value) return;
+  try {
+    if (visible && !document.hidden) {
+      svgRef.value.unpauseAnimations();
+    } else {
+      svgRef.value.pauseAnimations();
+    }
+  } catch {
+    // Безопасный перехват
+  }
+};
+
+const onVisibilityChange = () => {
+  updateAnimationState(isVisible.value && !document.hidden);
+};
+
+onMounted(() => {
+  if (typeof IntersectionObserver !== "undefined" && containerRef.value) {
+    observer = new IntersectionObserver(
+      ([entry]) => {
+        updateAnimationState(Boolean(entry?.isIntersecting));
+      },
+      { threshold: 0.05 },
+    );
+    observer.observe(containerRef.value);
+  }
+
+  if (typeof document !== "undefined") {
+    document.addEventListener("visibilitychange", onVisibilityChange);
+  }
+});
+
+onUnmounted(() => {
+  if (observer) {
+    observer.disconnect();
+    observer = null;
+  }
+  if (typeof document !== "undefined") {
+    document.removeEventListener("visibilitychange", onVisibilityChange);
+  }
+});
 
 const {
   svgWidth,
@@ -31,7 +82,7 @@ const {
 </script>
 
 <template>
-  <div class="w-full relative select-none">
+  <div ref="containerRef" class="chart-wrapper w-full relative select-none">
     <div
       v-if="data.length === 0"
       class="flex items-center justify-center h-11 text-text-secondary text-sm"
@@ -70,6 +121,7 @@ const {
       <!-- Второй столбец: График (SVG) -->
       <div class="relative w-full h-full min-w-0 overflow-visible">
         <svg
+          ref="svgRef"
           class="w-full h-full overflow-visible"
           :viewBox="`0 0 ${svgWidth} ${svgHeight}`"
           preserveAspectRatio="none"
@@ -264,5 +316,10 @@ const {
 <style scoped>
 .glass-text {
   filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.2));
+}
+
+.chart-wrapper {
+  content-visibility: auto;
+  contain-intrinsic-size: 100% 160px;
 }
 </style>

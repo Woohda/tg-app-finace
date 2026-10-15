@@ -24,17 +24,42 @@ const segments = [
     <defs>
       <filter id="glass-inset" x="-20%" y="-20%" width="140%" height="140%">
         <!-- border: 0.7px solid rgba(255, 255, 255, 0.4) -->
-        <feMorphology operator="dilate" radius="0.7" in="SourceAlpha" result="dilated" />
-        <feComposite operator="out" in="dilated" in2="SourceAlpha" result="border-mask" />
+        <feMorphology
+          operator="dilate"
+          radius="0.7"
+          in="SourceAlpha"
+          result="dilated"
+        />
+        <feComposite
+          operator="out"
+          in="dilated"
+          in2="SourceAlpha"
+          result="border-mask"
+        />
         <feFlood flood-color="rgba(255, 255, 255, 0.4)" result="border-color" />
-        <feComposite operator="in" in="border-color" in2="border-mask" result="border" />
+        <feComposite
+          operator="in"
+          in="border-color"
+          in2="border-mask"
+          result="border"
+        />
 
         <!-- inset 0 2px 3px rgba(255, 255, 255, 0.4) -->
         <feOffset dx="0" dy="2" in="SourceAlpha" />
         <feGaussianBlur stdDeviation="1.5" result="offset-blur" />
-        <feComposite operator="out" in="SourceAlpha" in2="offset-blur" result="inverse" />
+        <feComposite
+          operator="out"
+          in="SourceAlpha"
+          in2="offset-blur"
+          result="inverse"
+        />
         <feFlood flood-color="rgba(255, 255, 255, 0.4)" result="inset-color" />
-        <feComposite operator="in" in="inset-color" in2="inverse" result="inset" />
+        <feComposite
+          operator="in"
+          in="inset-color"
+          in2="inverse"
+          result="inset"
+        />
 
         <feMerge>
           <feMergeNode in="border" />
@@ -45,7 +70,7 @@ const segments = [
     </defs>
 
     <!-- Группа с отбрасываемой тенью -->
-    <g style="filter: drop-shadow(0px 6px 8px rgba(0, 0, 0, 0.2))">
+    <g style="filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.1))">
       <!-- 1. Базовые цветные сегменты -->
       <g filter="url(#glass-inset)">
         <circle
@@ -76,16 +101,31 @@ const segments = [
 }
 
 @keyframes spin-slow {
-  0% { transform: rotate(-90deg); }
-  100% { transform: rotate(270deg); }
+  0% {
+    transform: rotate(-90deg);
+  }
+  100% {
+    transform: rotate(270deg);
+  }
 }
 
-.skeleton-base { animation: stretch-base 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite; }
+.skeleton-base {
+  animation: stretch-base 3.5s cubic-bezier(0.4, 0, 0.2, 1) infinite;
+}
 
 /* Base (r=67, C=421) */
 @keyframes stretch-base {
-  0%   { stroke-dasharray: 0, 421; stroke-dashoffset: 0; }
-  50%  { stroke-dasharray: 60, 361; stroke-dashoffset: -500; }
-  100% { stroke-dasharray: 0, 421; stroke-dashoffset: -84.2; }
+  0% {
+    stroke-dasharray: 0, 421;
+    stroke-dashoffset: 0;
+  }
+  50% {
+    stroke-dasharray: 60, 361;
+    stroke-dashoffset: -500;
+  }
+  100% {
+    stroke-dasharray: 0, 421;
+    stroke-dashoffset: -84.2;
+  }
 }
 </style>

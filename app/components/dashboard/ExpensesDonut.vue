@@ -152,7 +152,7 @@ const { segments, radius, strokeWidth } = useDonutMath(
             </defs>
 
             <!-- Группа с отбрасываемой тенью -->
-            <g style="filter: drop-shadow(0px 6px 8px rgba(0, 0, 0, 0.2))">
+            <g style="filter: drop-shadow(0px 2px 4px rgba(0, 0, 0, 0.1))">
               <!-- 1. Базовые цветные сегменты -->
               <g filter="url(#glass-inset)">
                 <circle
@@ -181,8 +181,8 @@ const { segments, radius, strokeWidth } = useDonutMath(
                   :r="74"
                   fill="none"
                   stroke="black"
-                  :stroke-width="8"
-                  stroke-opacity="0.25"
+                  :stroke-width="6"
+                  stroke-opacity="0.15"
                   :stroke-dasharray="seg.shadowDasharray"
                   :stroke-dashoffset="seg.shadowDashoffset"
                   stroke-linecap="round"

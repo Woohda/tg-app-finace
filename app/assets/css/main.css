@@ -44,20 +44,8 @@
 }
 
 @layer base {
-  @keyframes gentleWave {
-    0% {
-      background-position: 100% 100%;
-    }
-    50% {
-      background-position: 0% 0%;
-    }
-    100% {
-      background-position: 100% 100%;
-    }
-  }
-
   body {
-    /* Голографический (Iridescent) градиент прямыми линиями по диагонали */
+    /* Голографический (Iridescent) градиент прямыми линиями по диагонали (статичный для максимальной производительности GPU) */
     background-color: #f7f9fa;
     background-image: linear-gradient(
       to bottom right,
@@ -70,8 +58,7 @@
       /* Нежный персиковый */ #f6e0d3 82%,
       /* Мягкий кремовый */ #fdf4dc 100%
     );
-    background-size: 120% 120%;
-    animation: gentleWave 10s ease-in-out infinite;
+    background-size: 100% 100%;
     background-attachment: fixed;
     color: var(--color-text-primary);
     min-height: 100vh;
@@ -110,8 +97,6 @@
   /* Класс glass-milky используется в навигации и аватаре, делаем их стеклянными */
   .glass-milky {
     background-color: rgba(255, 255, 255, 0.5) !important;
-    backdrop-filter: blur(35px);
-    -webkit-backdrop-filter: blur(35px);
     border: 1px solid rgba(255, 255, 255, 0.4);
     border-top: 1px solid rgba(255, 255, 255, 0.8);
     border-left: 1px solid rgba(255, 255, 255, 0.8);

@@ -72,14 +72,14 @@ const isLoading = useGlobalLoading();
       />
 
       <div
-        class="absolute left-1/2 -translate-x-1/2 w-full max-w-97 px-2.75 pointer-events-none transition-opacity duration-200"
+        class="absolute left-1/2 -translate-x-1/2 w-full max-w-100 px-4 pointer-events-none transition-opacity duration-200"
         :style="{
           bottom: 'calc(1rem + env(safe-area-inset-bottom))',
         }"
       >
         <nav
           aria-label="Основная навигация"
-          class="relative h-19 glass-milky rounded-[38px] px-4 flex items-center justify-between pointer-events-auto"
+          class="relative h-19 bg-white/70 glass-pill rounded-full px-3.75 flex items-center justify-between pointer-events-auto backdrop-blur-md"
         >
           <!-- Левый блок навигации -->
           <div class="flex items-center gap-px">
@@ -95,12 +95,12 @@ const isLoading = useGlobalLoading();
 
           <!-- Центральная кнопка (Добавить транзакцию) -->
           <div class="absolute left-1/2 -top-5 -translate-x-1/2">
-            <!-- Выпуклая матовая кнопка с блюром -->
+            <!-- Выпуклая матовая кнопка без тяжелого вложенного блюра -->
             <GlassButton
               type="button"
               variant="soft"
-              class="size-17 rounded-full flex items-center justify-center text-text-accent text-4xl font-light active:scale-90 transition-transform pointer-events-auto outline-none a11y-focus backdrop-blur-3xl"
-              style="background-color: rgba(242, 242, 242, 0.9)"
+              class="size-17 glass-pill not-[]:rounded-full flex items-center justify-center text-text-accent font-light active:scale-90 transition-transform pointer-events-auto outline-none a11y-focus"
+              style="background-color: rgb(248, 245, 248)"
               aria-label="Добавить операцию"
               @click="openModal()"
             >
