@@ -17,7 +17,12 @@ import type { SplitMember, SplitExpense } from "~/types/split";
 import { calculateHybridShares, roundCurrency } from "~/utils/splitAlgorithm";
 import { formatAmount } from "~/utils/format";
 import { RussianRuble } from "@lucide/vue";
-import { getNameInputError, getAmountInputError } from "~/utils/validation";
+import {
+  isSplitExpenseFormValid,
+  validateSplitExpenseForm,
+  getNameInputError,
+  getAmountInputError,
+} from "~/utils/validation";
 
 const props = defineProps<{
   isOpen: boolean;
@@ -205,20 +210,15 @@ const remainingAmount = computed(() => {
 });
 
 const isFormValid = computed(() => {
-  const trimmedTitle = title.value.trim();
-  if (
-    trimmedTitle.length < 1 ||
-    trimmedTitle.length > 30 ||
-    numAmount.value <= 0 ||
-    numAmount.value > 10_000_000
-  ) {
-    return false;
-  }
-  return true;
+  return isSplitExpenseFormValid(title.value, amount.value);
+});
+
+const isSubmitDisabled = computed(() => {
+  return !isFormValid.value || buttonState.value !== "idle";
 });
 
 const displayError = computed(() => {
-  const nameErr = getNameInputError(title.value);
+  const nameErr = getNameInputError(title.value, "Название расхода");
   if (nameErr) return nameErr;
 
   const amountErr = getAmountInputError(amount.value);
@@ -239,25 +239,21 @@ const toggleMember = (memberId: string) => {
 };
 
 const handleSubmit = async () => {
-  if (!isFormValid.value || buttonState.value === "loading") return;
+  if (!isFormValid.value || buttonState.value !== "idle") return;
 
-  if (!payerId.value) {
-    formError.value = "Выберите, кто оплатил";
+  const validationRes = validateSplitExpenseForm({
+    title: title.value,
+    amount: amount.value,
+    payerId: payerId.value,
+    memberIds: selectedMemberIds.value,
+    hasFixed: hasAnyFixed.value,
+    remainingAmount: remainingAmount.value,
+    weightedMembersCount: weightedMembersCount.value,
+  });
+
+  if (!validationRes.success) {
+    formError.value = validationRes.error;
     return;
-  }
-  if (selectedMemberIds.value.length === 0) {
-    formError.value = "Выберите участников расхода";
-    return;
-  }
-  if (hasAnyFixed.value) {
-    if (remainingAmount.value < -0.01) {
-      formError.value = "Сумма долей превышает чек";
-      return;
-    }
-    if (remainingAmount.value > 0.01 && weightedMembersCount.value === 0) {
-      formError.value = "Остаток некому распределить";
-      return;
-    }
   }
 
   buttonState.value = "loading";
@@ -273,9 +269,9 @@ const handleSubmit = async () => {
     });
 
     const payload = {
-      title: capitalizeFirstLetter(title.value.trim()) || title.value.trim(),
-      amount: numAmount.value,
-      payer_id: payerId.value,
+      title: validationRes.data.title,
+      amount: validationRes.data.amount,
+      payer_id: validationRes.data.payer_id,
       split_type: "shares" as const,
       shares: sharesPayload,
       date: props.expenseToEdit?.date || formatDateISO(),
@@ -510,7 +506,7 @@ const handleSubmit = async () => {
 
       <div
         v-if="displayError"
-        class="text-text-accent text-sm font-medium text-center -mt-1"
+        class="text-text-accent text-xs font-medium text-center -mt-1"
       >
         {{ displayError }}
       </div>
@@ -529,9 +525,9 @@ const handleSubmit = async () => {
           type="submit"
           size="sm"
           :state="buttonState"
-          :disabled="!isFormValid"
+          :disabled="isSubmitDisabled"
         >
-          <span class="text-base">{{
+          <span>{{
             isEditing ? "Сохранить изменения" : "Добавить расход"
           }}</span>
         </GlassMorphButton>

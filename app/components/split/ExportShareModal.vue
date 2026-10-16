@@ -19,8 +19,8 @@ import type { SplitExpense } from "~/types/split";
 import { formatAmount } from "~/utils/format";
 import {
   validateExportShareForm,
-  isExportShareFormValid,
-  getExportTitleInputError,
+  isValidText,
+  getNameInputError,
 } from "~/utils/validation";
 
 const props = defineProps<{
@@ -35,7 +35,11 @@ const emit = defineEmits<{
 }>();
 
 const { exportShareToTransaction } = useSplit();
-const { categories, isLoading: pending, fetchCategories } = useCategories();
+const {
+  categories,
+  isLoading: isCategoriesLoading,
+  fetchCategories,
+} = useCategories();
 
 const expenseTitle = ref("");
 const selectedCategoryId = ref("");
@@ -47,7 +51,7 @@ watch([expenseTitle, selectedCategoryId], () => {
 });
 
 const isFormValid = computed(() => {
-  return isExportShareFormValid(expenseTitle.value);
+  return isValidText(expenseTitle.value);
 });
 
 const isSubmitDisabled = computed(() => {
@@ -55,7 +59,7 @@ const isSubmitDisabled = computed(() => {
 });
 
 const displayError = computed(() => {
-  const titleErr = getExportTitleInputError(expenseTitle.value);
+  const titleErr = getNameInputError(expenseTitle.value, "Название траты");
   if (titleErr) return titleErr;
   return submitError.value;
 });
@@ -142,10 +146,10 @@ const handleExport = async () => {
         <GlassCategorySelect
           v-model="selectedCategoryId"
           :categories="expenseCategories"
-          :disabled="pending"
+          :disabled="isCategoriesLoading"
           label="В какую категорию добавить"
           :placeholder="
-            pending ? 'Загрузка категорий...' : 'Выберите категорию'
+            isCategoriesLoading ? 'Загрузка категорий...' : 'Выберите категорию'
           "
         />
       </div>
@@ -158,7 +162,7 @@ const handleExport = async () => {
 
       <div
         v-if="displayError"
-        class="text-text-accent text-sm font-medium text-center -mt-1"
+        class="text-text-accent text-xs font-medium text-center -mt-1"
       >
         {{ displayError }}
       </div>
@@ -180,7 +184,7 @@ const handleExport = async () => {
           :disabled="isSubmitDisabled"
           @click="handleExport"
         >
-          <span class="text-base">Добавить в траты</span>
+          <span>Добавить в траты</span>
           <template #success>
             <RussianRuble :stroke-width="2" />
           </template>

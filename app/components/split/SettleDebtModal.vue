@@ -17,7 +17,7 @@ import { RussianRuble } from "@lucide/vue";
 import type { SplitMember, SplitDebtTransfer } from "~/types/split";
 import {
   validateSettleDebtForm,
-  isSettleDebtFormValid,
+  isValidAmount,
   getAmountInputError,
 } from "~/utils/validation";
 
@@ -65,7 +65,7 @@ watch([amount, fromMemberId, toMemberId], () => {
 });
 
 const isFormValid = computed(() => {
-  return isSettleDebtFormValid(amount.value);
+  return isValidAmount(amount.value);
 });
 
 const isSubmitDisabled = computed(() => {
@@ -261,12 +261,13 @@ const handleFormSubmit = async () => {
           label="Сумма перевода (₽)"
           placeholder="0.00"
           required
+          :icon="RussianRuble"
         />
       </div>
 
       <div
         v-if="displayError"
-        class="text-text-accent text-sm font-medium text-center -mt-1"
+        class="text-text-accent text-xs font-medium text-center -mt-1"
       >
         {{ displayError }}
       </div>
@@ -287,7 +288,7 @@ const handleFormSubmit = async () => {
           :state="buttonState"
           :disabled="isSubmitDisabled"
         >
-          <span class="text-[15px]">Подтвердить перевод</span>
+          <span>Подтвердить перевод</span>
           <template #success>
             <RussianRuble :stroke-width="2" />
           </template>

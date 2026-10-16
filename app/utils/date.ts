@@ -88,7 +88,7 @@ export function getDayOfMonth(
 /**
  * Возвращает индекс месяца (0..11, где 0 — январь, 11 — декабрь).
  */
-export function getMonthIndex(
+function getMonthIndex(
   dateInput?: Date | string | number | null,
 ): number {
   return getMonth(toSafeDate(dateInput));

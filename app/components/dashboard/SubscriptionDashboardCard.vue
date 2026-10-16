@@ -15,7 +15,7 @@ import type { Subscription } from "~/composables/useSubscriptions";
 
 const {
   subscriptions,
-  pending,
+  isLoading,
   error,
   fetchSubscriptions,
   totalMonthly,
@@ -63,7 +63,7 @@ function closeEditModal() {
 
     <!-- Состояние 1: Загрузка первичных данных -->
     <div
-      v-if="pending && subscriptions.length === 0"
+      v-if="isLoading && subscriptions.length === 0"
       class="flex flex-col gap-2"
     >
       <div class="flex justify-between items-center py-1">

@@ -7,7 +7,7 @@
  * Схемы используются как на клиенте (для валидации форм), так и на сервере (для проверки входящих данных API).
  */
 import { z } from "zod";
-import { capitalizeFirstLetter } from "../utils/format";
+import { capitalizeFirstLetter } from "~/utils/format";
 
 // --- Categories ---
 export const categorySchema = z.object({
@@ -167,7 +167,7 @@ export const addSplitMemberSchema = z.object({
     .nullable(),
 });
 
-export const expenseShareInputSchema = z.object({
+const expenseShareInputSchema = z.object({
   member_id: z.string().uuid("Некорректный ID участника"),
   amount: z
     .number()

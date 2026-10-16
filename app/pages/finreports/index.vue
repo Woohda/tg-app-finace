@@ -20,7 +20,7 @@ import { formatAmount } from "~/utils/format";
 const { startDate, endDate, currentDate, prevMonth, nextMonth } =
   useDateFilter();
 const {
-  pending,
+  isLoading,
   transactions,
   error: txError,
   refresh: refreshTransactions,
@@ -76,7 +76,7 @@ const currentLabel = computed(() =>
     >
       <div class="z-10 relative pointer-events-none">
         <!-- Состояние загрузки: Скелетоны текста -->
-        <div v-if="pending" class="flex flex-col gap-2 py-1">
+        <div v-if="isLoading" class="flex flex-col gap-2 py-1">
           <Skeleton class="w-30 h-4" />
           <Skeleton class="w-40 h-9" />
           <Skeleton class="w-20 h-3" />
@@ -123,7 +123,7 @@ const currentLabel = computed(() =>
       :periods="periods"
       :transactions="filteredTransactions"
       :empty-message="emptyMessage"
-      :pending="pending"
+      :is-loading="isLoading"
       :total-count="transactions.length"
       :error="txError"
       @retry="refreshTransactions"

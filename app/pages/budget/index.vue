@@ -17,7 +17,7 @@ import { ref, watch, computed, onMounted } from "vue";
 import { RussianRuble } from "@lucide/vue";
 import {
   validateBudgetForm,
-  isBudgetFormValid,
+  isValidAmount,
   getAmountInputError,
 } from "~/utils/validation";
 import { isCurrentMonth } from "~/utils/date";
@@ -67,7 +67,7 @@ const displayError = computed(() => {
 
 const isSubmitDisabled = computed(() => {
   if (isBudgetLoading.value || buttonState.value === "loading") return true;
-  return !isBudgetFormValid(amount.value);
+  return !isValidAmount(amount.value);
 });
 
 watch(amount, () => {

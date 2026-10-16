@@ -15,7 +15,7 @@ import { ref } from "vue";
 import { useRouter } from "vue-router";
 import { useTransactionModal, type ScannedTransaction } from "~/composables/useTransactionModal";
 
-export type ReceiptScanStatus = "idle" | "scanning" | "navigating";
+type ReceiptScanStatus = "idle" | "scanning" | "navigating";
 
 export const useReceiptScanner = () => {
   const fileInput = ref<HTMLInputElement | null>(null);

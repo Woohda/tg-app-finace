@@ -33,7 +33,7 @@ interface Props {
   periods: PeriodOption[];
   searchQuery?: string;
   emptyMessage?: string;
-  pending?: boolean;
+  isLoading?: boolean;
   totalCount?: number;
   error?: string | null;
 }
@@ -41,7 +41,7 @@ interface Props {
 const props = withDefaults(defineProps<Props>(), {
   searchQuery: "",
   emptyMessage: "За этот период трат нет",
-  pending: false,
+  isLoading: false,
   totalCount: undefined,
   error: null,
 });
@@ -83,7 +83,7 @@ const {
   loadMore,
   filteredAmountText,
 } = useOperationsPagination(toRef(props, "transactions"), {
-  isPaused: toRef(props, "pending"),
+  isPaused: toRef(props, "isLoading"),
 });
 
 watch([() => props.activePeriod, () => props.searchQuery], () => {
@@ -166,7 +166,7 @@ const summaryBadgeText = computed(() => {
     </div>
 
     <!-- Скелетоны транзакций (загрузка) -->
-    <div v-if="pending" class="flex flex-col gap-3">
+    <div v-if="isLoading" class="flex flex-col gap-3">
       <TransactionsSkeletonList :count="4" mode="list" />
     </div>
 

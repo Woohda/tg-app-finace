@@ -71,7 +71,7 @@ onMounted(async () => {
 });
 
 const {
-  pending,
+  isLoading,
   totalSpent,
   prevTotalSpent,
   totalIncome,
@@ -208,7 +208,7 @@ const closeCategoryAnalytics = () => {
     />
 
     <!-- Лоадер -->
-    <div v-if="pending" class="flex flex-col gap-4">
+    <div v-if="isLoading" class="flex flex-col gap-4">
       <div class="flex gap-5">
         <Skeleton class="w-full h-25" rounded="3xl" />
         <Skeleton class="w-full h-25" rounded="3xl" />

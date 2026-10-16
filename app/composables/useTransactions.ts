@@ -60,7 +60,8 @@ export const useTransactions = (options?: {
     return `${start}_${end}`;
   });
 
-  const pending = ref(!txCache.value[cacheKey.value]);
+  const isLoading = ref(!txCache.value[cacheKey.value]);
+  const isLoaded = computed(() => Boolean(txCache.value[cacheKey.value]));
   const isMutating = ref(false);
   const error = ref<string | null>(null);
 
@@ -80,7 +81,7 @@ export const useTransactions = (options?: {
       return inFlight;
     }
 
-    pending.value = true;
+    isLoading.value = true;
     error.value = null;
 
     const promise = (async () => {
@@ -97,7 +98,7 @@ export const useTransactions = (options?: {
         error.value = parseApiError(err, "Не удалось загрузить транзакции");
         console.error("Ошибка загрузки транзакций:", err);
       } finally {
-        pending.value = false;
+        isLoading.value = false;
         inFlightTxFetches.delete(key);
       }
     })();
@@ -361,7 +362,8 @@ export const useTransactions = (options?: {
 
   return {
     transactions,
-    pending,
+    isLoading,
+    isLoaded,
     isMutating,
     error,
     refresh,

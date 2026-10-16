@@ -193,9 +193,11 @@ export const useCategories = () => {
     }
   };
 
+  const isLoading = computed(() => !isLoaded.value || isFetching.value);
+
   return {
     categories,
-    isLoading: computed(() => !isLoaded.value || isFetching.value),
+    isLoading,
     isLoaded,
     error,
     fetchCategories,

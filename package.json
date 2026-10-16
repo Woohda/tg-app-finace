@@ -16,9 +16,9 @@
     "@lucide/vue": "^1.46.0",
     "@nuxt/eslint": "1.17.0",
     "@nuxt/image": "2.1.0",
+    "@supabase/supabase-js": "^2.48.0",
     "@tailwindcss/vite": "^4.0.0",
     "@vueuse/core": "^14.4.0",
-    "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "date-fns": "^4.4.0",
     "eslint": "^9.0.0 || ^10.0.0",
@@ -33,7 +33,6 @@
     "zod": "^4.6.5"
   },
   "devDependencies": {
-    "@nuxtjs/supabase": "^2.0.10",
     "vue-tsc": "^3.3.11"
   }
 }

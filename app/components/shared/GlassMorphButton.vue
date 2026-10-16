@@ -109,7 +109,7 @@ watch(
     >
       <div
         v-if="state === 'idle'"
-        class="flex items-center justify-center gap-2 whitespace-nowrap text-sm tracking-wide font-medium"
+        class="flex items-center justify-center gap-2 whitespace-nowrap text-base tracking-wide font-medium"
       >
         <slot />
       </div>

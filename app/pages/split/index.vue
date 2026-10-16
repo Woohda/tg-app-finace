@@ -15,7 +15,7 @@ import { ref, computed, onMounted } from "vue";
 import { UserPlus } from "@lucide/vue";
 
 const router = useRouter();
-const { groups, fetchGroups, pending, error } = useSplit();
+const { groups, fetchGroups, isLoading, error } = useSplit();
 const { shareInvite } = useFriends();
 
 const isAddGroupOpen = ref(false);
@@ -52,7 +52,7 @@ const onGroupCreated = (groupId: string) => {
       class="p-4 flex flex-col gap-1 text-center items-center justify-center"
     >
       <!-- Скелетон загрузки -->
-      <template v-if="pending && groups.length === 0">
+      <template v-if="isLoading && groups.length === 0">
         <Skeleton class="w-44 h-3.5" rounded="md" />
         <Skeleton class="w-32 h-7 my-1" rounded="lg" />
         <Skeleton class="w-48 h-3" rounded="md" />
@@ -104,7 +104,7 @@ const onGroupCreated = (groupId: string) => {
     </GlassCard>
 
     <!-- Скелетон загрузки -->
-    <div v-if="pending && groups.length === 0" class="flex flex-col gap-2">
+    <div v-if="isLoading && groups.length === 0" class="flex flex-col gap-2">
       <GlassCard
         class="flex flex-col gap-3 items-center justify-between p-4 animate-pulse"
       >

@@ -61,7 +61,7 @@ const {
 } = useAnalyticsPeriod(localPeriod, modalAnchorDate);
 
 const {
-  pending,
+  isLoading,
   totalSpent,
   prevTotalSpent,
   currentExpenses,
@@ -323,7 +323,7 @@ const close = () => emit("close");
 
     <div class="flex flex-col gap-5">
       <!-- Лоадер -->
-      <div v-if="pending" class="flex flex-col gap-4">
+      <div v-if="isLoading" class="flex flex-col gap-4">
         <Skeleton class="w-full h-24" rounded="2xl" />
         <Skeleton class="w-full h-48" rounded="2xl" />
       </div>
@@ -415,7 +415,7 @@ const close = () => emit("close");
           :transactions="activeTransactions"
           :title="operationsTitle"
           :empty-text="emptyTransactionsText"
-          :pending="pending"
+          :is-loading="isLoading"
         />
       </div>
     </div>

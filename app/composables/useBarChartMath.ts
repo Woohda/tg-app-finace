@@ -1,9 +1,22 @@
+/**
+ * @module app/composables/useBarChartMath
+ * @fileoverview Логика вычисления параметров для столбчатого графика расходов.
+ * @description
+ * Этот composable вынесен из AnalyticsBarChart.vue для декомпозиции компонента.
+ * Рассчитывает геометрические параметры баров (колб), масштабирование значений,
+ * адаптивные отступы, прореживание дат и деления оси Y.
+ * ---
+ * ### Логика работы:
+ * 1. Расчет максимального значения и делений оси Y с шагом 20%.
+ * 2. Вычисление размеров, отступов и формы колб с волновыми масками.
+ * 3. Адаптивное прореживание подписей дат и позиционирование плавающих значений.
+ */
 import { computed, toValue, type MaybeRefOrGetter } from "vue";
 import type { ChartDataPoint } from "~/utils/analytics";
 import { formatAmount } from "~/utils/format";
 import { flaskPath, liquidWavePath } from "~/utils/svgPaths";
 
-export interface BarItem extends ChartDataPoint {
+interface BarItem extends ChartDataPoint {
   x: number;
   y: number;
   width: number;
@@ -18,7 +31,7 @@ export interface BarItem extends ChartDataPoint {
   textAnchor: "middle" | "start" | "end";
 }
 
-export interface YAxisTick {
+interface YAxisTick {
   fraction: number;
   y: number;
   topPercent: number;
@@ -26,19 +39,6 @@ export interface YAxisTick {
   isBase: boolean;
 }
 
-/**
- * @module app/composables/useBarChartMath
- * @fileoverview Логика вычисления параметров для столбчатого графика расходов.
- * @description
- * Этот composable вынесен из AnalyticsBarChart.vue для декомпозиции компонента.
- * Рассчитывает геометрические параметры баров (колб), масштабирование значений,
- * адаптивные отступы, прореживание дат и деления оси Y.
- * ---
- * ### Логика работы:
- * 1. Расчет максимального значения и делений оси Y с шагом 20%.
- * 2. Вычисление размеров, отступов и формы колб с волновыми масками.
- * 3. Адаптивное прореживание подписей дат и позиционирование плавающих значений.
- */
 export const useBarChartMath = (data: MaybeRefOrGetter<ChartDataPoint[]>) => {
   const points = computed(() => toValue(data) || []);
 

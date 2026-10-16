@@ -15,7 +15,7 @@ import { ref, computed, watch, onMounted, onUnmounted, type Ref } from "vue";
 import type { Transaction } from "~/composables/useTransactions";
 import { formatAmount } from "~/utils/format";
 
-export interface UseOperationsPaginationOptions {
+interface UseOperationsPaginationOptions {
   pageSize?: number;
   rootMargin?: string;
   isPaused?: Ref<boolean>;

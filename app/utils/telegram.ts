@@ -3,12 +3,16 @@
  * @fileoverview Вспомогательные функции для безопасной работы с Telegram WebApp SDK
  * @description
  * Предоставляет безопасные методы взаимодействия с Telegram WebApp с проверкой версии Bot API.
+ * ---
+ * ### Логика работы:
+ * 1. Проверяет поддержку управления вертикальными свайпами в Telegram WebApp (доступно с Bot API 7.7).
+ * 2. Безопасно включает или выключает вертикальные свайпы для предотвращения случайного закрытия шторки.
  */
 
 /**
  * Проверяет поддержку управления вертикальными свайпами (доступно с Bot API 7.7)
  */
-export const isVerticalSwipesSupported = (): boolean => {
+const isVerticalSwipesSupported = (): boolean => {
   if (typeof window === "undefined") return false;
   const tg = window.Telegram?.WebApp;
   return Boolean(

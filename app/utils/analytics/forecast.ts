@@ -28,7 +28,7 @@ import { calculateMedian } from "./math";
 /**
  * Параметры для расчета прогноза расходов по категории до конца месяца.
  */
-export interface CategoryForecastParams {
+interface CategoryForecastParams {
   currentExpenses: Transaction[];
   prevExpenses?: Transaction[];
   subscriptions?: Subscription[];
@@ -40,7 +40,7 @@ export interface CategoryForecastParams {
 /**
  * Результат сопоставления подписок с фактическими расходами.
  */
-export interface SubscriptionMatchResult {
+interface SubscriptionMatchResult {
   recordedIds: Set<string>;
   recordedExpenseIds: Set<string>;
   upcomingSubscriptions: Subscription[];
@@ -51,7 +51,7 @@ export interface SubscriptionMatchResult {
 /**
  * Результат разделения массива расходов на регулярные траты и выбросы.
  */
-export interface OutlierPartitionResult {
+interface OutlierPartitionResult {
   regular: Transaction[];
   outliers: Transaction[];
   regularTotal: number;
@@ -129,7 +129,7 @@ export function matchSubscriptionsWithExpenses(
  * 1. Превышает медианный чек категории более чем в 3 раза.
  * 2. Превышает медиану минимум на 1 500 ₽ (защита от ложных срабатываний на микро-платежах).
  */
-export function partitionOutliers(
+function partitionOutliers(
   transactions: Transaction[],
   referenceTransactions: Transaction[] = [],
 ): OutlierPartitionResult {
@@ -253,7 +253,7 @@ export function calculateCategoryForecast(
   return currentTotal + expectedFuture;
 }
 
-export interface CategoryGoalPacingParams {
+interface CategoryGoalPacingParams {
   /** Сумма установленного лимита (цели) на месяц в рублях */
   goal: number;
   /** Фактически потраченная сумма в категории за текущий месяц */
@@ -270,7 +270,7 @@ export interface CategoryGoalPacingParams {
   referenceDate?: Date;
 }
 
-export interface CategoryGoalPacingResult {
+interface CategoryGoalPacingResult {
   /** Безопасный суточный остаток трат (₽/день), чтобы уложиться в лимит */
   safeDailyAllowance: number;
   /** Количество оставшихся покупок по медианному чеку (если медиана доступна) */

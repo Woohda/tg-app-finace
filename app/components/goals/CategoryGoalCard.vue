@@ -37,8 +37,8 @@ import { getHapticFeedback } from "~/utils/haptics";
 import { calculateCategoryGoalPacing } from "~/utils/analytics";
 import {
   validateCategoryGoalForm,
-  isCategoryGoalFormValid,
-  getCategoryGoalInputError,
+  isValidAmount,
+  getAmountInputError,
 } from "~/utils/validation";
 
 interface Props {
@@ -104,14 +104,16 @@ const goalInputError = ref<string | null>(null);
 const isSubmittingGoal = ref(false);
 const buttonState = ref<"idle" | "loading" | "success">("idle");
 
-const isFormValid = computed(() => isCategoryGoalFormValid(goalInputValue.value));
+const isFormValid = computed(() => isValidAmount(goalInputValue.value));
 
 const isSubmitDisabled = computed(() => {
-  return isSubmittingGoal.value || buttonState.value !== "idle" || !isFormValid.value;
+  return (
+    isSubmittingGoal.value || buttonState.value !== "idle" || !isFormValid.value
+  );
 });
 
 const displayError = computed(() => {
-  const amountErr = getCategoryGoalInputError(goalInputValue.value);
+  const amountErr = getAmountInputError(goalInputValue.value);
   if (amountErr) return amountErr;
   return goalInputError.value;
 });
@@ -253,7 +255,7 @@ watch(
             :disabled="isSubmitDisabled"
             class="flex-1"
           >
-            <span class="text-[15px]">Сохранить</span>
+            <span>Сохранить</span>
           </GlassMorphButton>
         </div>
       </form>

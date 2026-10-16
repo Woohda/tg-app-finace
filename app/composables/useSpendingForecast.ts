@@ -19,7 +19,7 @@ import type { Ref, ComputedRef } from "vue";
 import type { Transaction } from "./useTransactions";
 import { matchSubscriptionsWithExpenses } from "~/utils/analytics";
 
-export interface SpendingForecastOptions {
+interface SpendingForecastOptions {
   isCurrentMonthPeriod: ComputedRef<boolean> | Ref<boolean>;
   totalSpent: ComputedRef<number> | Ref<number>;
   currentExpenses: ComputedRef<Transaction[]> | Ref<Transaction[]>;

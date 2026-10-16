@@ -3,7 +3,7 @@
  * @module app/components/categories/CategoryFormModal
  * @fileoverview Модальное окно для создания/редактирования категории
  * @description
- * Модальное окно, содержащее форму с валидацией (Zod). 
+ * Модальное окно, содержащее форму с валидацией (Zod).
  * Позволяет создать новую категорию расходов/доходов или обновить существующую.
  * ---
  * ### Логика работы:
@@ -41,6 +41,10 @@ const nameInputRef = ref<{ focus: () => void } | null>(null);
 
 const isFormValid = computed(() => {
   return isCategoryFormValid(formName.value, formIcon.value);
+});
+
+const isSubmitDisabled = computed(() => {
+  return !isFormValid.value || formButtonState.value !== "idle";
 });
 
 const displayError = computed(() => {
@@ -173,7 +177,7 @@ const submitForm = async () => {
 
       <GlassTypeSelector v-if="!isEditMode" v-model="formType" />
 
-      <div v-if="displayError" class="text-text-accent text-sm text-center">
+      <div v-if="displayError" class="text-text-accent text-xs text-center">
         {{ displayError }}
       </div>
 
@@ -181,11 +185,9 @@ const submitForm = async () => {
         type="submit"
         variant="primary"
         :state="formButtonState"
-        :disabled="!isFormValid"
+        :disabled="isSubmitDisabled"
       >
-        <span>{{
-          isEditMode ? "💾 Сохранить изменения" : "✨ Создать"
-        }}</span>
+        <span>{{ isEditMode ? "Сохранить изменения" : "Создать" }}</span>
         <template v-if="!isEditMode" #success>
           <SquarePen :stroke-width="1.5" />
         </template>

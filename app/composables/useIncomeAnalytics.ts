@@ -22,7 +22,7 @@ import {
 } from "~/utils/analytics";
 import { isCurrentMonth, getDayOfMonth } from "~/utils/date";
 
-export interface IncomeAnalyticsOptions {
+interface IncomeAnalyticsOptions {
   currentIncome: ComputedRef<Transaction[]> | Ref<Transaction[]>;
   prevIncome: ComputedRef<Transaction[]> | Ref<Transaction[]>;
   period: Ref<AnalyticsPeriodType>;

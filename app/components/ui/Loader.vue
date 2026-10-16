@@ -8,36 +8,36 @@
 </script>
 
 <template>
-  <div class="w-2 aspect-square rounded-full bg-current loader" />
+  <div class="w-1.75 aspect-square rounded-full bg-current loader" />
 </template>
 
 <style scoped lang="css">
 .loader {
   box-shadow:
-    -12px 0px,
-    12px 0px;
-  animation: load 1.1s infinite linear;
+    -11px 0px,
+    11px 0px;
+  animation: load 1.15s infinite linear;
 }
 @keyframes load {
   25% {
     box-shadow:
-      -12px -12px,
-      12px 12px;
+      -11px -11px,
+      11px 11px;
   }
   50% {
     box-shadow:
-      0px -12px,
-      0px 12px;
+      0px -11px,
+      0px 11px;
   }
   75% {
     box-shadow:
-      12px -12px,
-      -12px 12px;
+      11px -11px,
+      -11px 11px;
   }
   100% {
     box-shadow:
-      12px 0px,
-      -12px 0px;
+      11px 0px,
+      -11px 0px;
   }
 }
 </style>

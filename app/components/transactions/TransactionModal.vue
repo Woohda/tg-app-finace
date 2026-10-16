@@ -12,7 +12,7 @@
  * 2. Инициализирует дату формы в локальном формате `formatDateISO()` без сдвига по UTC.
  * 3. Если `editId` задан, работает в режиме редактирования (загружает данные транзакции).
  * 4. Отправляет данные через `useTransactions().addTransaction` или `updateTransaction`.
- * 5. Изолирует состояние загрузки категорий (`pending`) в селекторе и кнопке отправки.
+ * 5. Изолирует состояние загрузки категорий (`isCategoriesLoading`) в селекторе и кнопке отправки.
  */
 import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
@@ -40,7 +40,11 @@ const categoryId = ref<string>("");
 const name = ref<string>("");
 const date = ref<string>(formatDateISO()); // YYYY-MM-DD
 
-const { categories, isLoading: pending, fetchCategories } = useCategories();
+const {
+  categories,
+  isLoading: isCategoriesLoading,
+  fetchCategories,
+} = useCategories();
 
 const amountInputRef = ref<{ focus: () => void } | null>(null);
 
@@ -105,6 +109,14 @@ watch(
 
 const isFormValid = computed(() => {
   return isTransactionFormValid(amount.value, name.value);
+});
+
+const isSubmitDisabled = computed(() => {
+  return (
+    !isFormValid.value ||
+    buttonState.value !== "idle" ||
+    isCategoriesLoading.value
+  );
 });
 
 const displayError = computed(() => {
@@ -202,9 +214,11 @@ const {
       <GlassCategorySelect
         v-model="categoryId"
         :categories="filteredCategories"
-        :disabled="pending"
+        :disabled="isCategoriesLoading"
         label="Категория"
-        :placeholder="pending ? 'Загрузка категорий...' : 'Выберите категорию'"
+        :placeholder="
+          isCategoriesLoading ? 'Загрузка категорий...' : 'Выберите категорию'
+        "
       />
 
       <!-- Date -->
@@ -222,7 +236,7 @@ const {
 
       <div
         v-if="displayError"
-        class="text-text-accent text-sm font-medium text-center"
+        class="text-text-accent text-xs font-medium text-center"
       >
         {{ displayError }}
       </div>
@@ -234,12 +248,10 @@ const {
         type="submit"
         variant="primary"
         :state="buttonState"
-        :disabled="pending || !isFormValid"
+        :disabled="isSubmitDisabled"
       >
-        <span v-if="isEditMode">💾 Сохранить изменения</span>
-        <span v-else
-          >💸 Внести {{ type === "expense" ? "трату" : "доход" }}</span
-        >
+        <span v-if="isEditMode">Сохранить изменения</span>
+        <span v-else>Внести {{ type === "expense" ? "трату" : "доход" }}</span>
 
         <template v-if="!isEditMode" #success>
           <RussianRuble :stroke-width="2" />
@@ -267,7 +279,7 @@ const {
       </div>
       <div
         v-if="scanError"
-        class="text-text-accent text-sm font-medium text-center -mt-2"
+        class="text-text-accent text-xs font-medium text-center -mt-2"
       >
         {{ scanError }}
       </div>

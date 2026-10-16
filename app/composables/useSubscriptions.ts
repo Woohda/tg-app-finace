@@ -28,7 +28,7 @@ export interface Subscription {
   updated_at?: string;
 }
 
-export interface UpcomingSubscription extends Subscription {
+interface UpcomingSubscription extends Subscription {
   daysUntil: number; // 0 = сегодня, 1 = завтра, >1 = через N дней, <0 = прошло в этом месяце
   statusLabel: string;
   statusType: "today" | "soon" | "upcoming" | "past";
@@ -41,12 +41,15 @@ export const useSubscriptions = () => {
   const api = useApi();
   const toast = useAppToast();
   const notifications = useNotifications();
-  const subscriptions = useState<Subscription[]>("subscriptions:list", () => []);
+  const subscriptions = useState<Subscription[]>(
+    "subscriptions:list",
+    () => [],
+  );
   const isLoaded = useState<boolean>("subscriptions:isLoaded", () => false);
   const isFetching = ref(false);
   const error = ref<string | null>(null);
 
-  const pending = computed(() => !isLoaded.value || isFetching.value);
+  const isLoading = computed(() => !isLoaded.value || isFetching.value);
 
   const fetchSubscriptions = async (force = false) => {
     if (import.meta.server && !token.value) {
@@ -69,7 +72,10 @@ export const useSubscriptions = () => {
         isLoaded.value = true;
       } catch (e) {
         console.error("Ошибка загрузки регулярных платежей:", e);
-        error.value = parseApiError(e, "Не удалось загрузить регулярные платежи");
+        error.value = parseApiError(
+          e,
+          "Не удалось загрузить регулярные платежи",
+        );
       } finally {
         isFetching.value = false;
         inFlightSubscriptionsFetch = null;
@@ -234,7 +240,7 @@ export const useSubscriptions = () => {
 
   return {
     subscriptions,
-    pending,
+    isLoading,
     isLoaded,
     error,
     fetchSubscriptions,

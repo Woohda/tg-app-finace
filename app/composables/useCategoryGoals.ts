@@ -73,7 +73,10 @@ export const useCategoryGoals = () => {
     return goalsMap.value[categoryId] ?? null;
   };
 
-  const setGoal = async (categoryId: string, targetAmount: number): Promise<boolean> => {
+  const setGoal = async (
+    categoryId: string,
+    targetAmount: number,
+  ): Promise<boolean> => {
     if (isLoading.value) return false;
 
     const previousAmount = goalsMap.value[categoryId];

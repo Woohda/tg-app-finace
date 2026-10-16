@@ -13,7 +13,7 @@
 import { useLocalStorage } from "@vueuse/core";
 import { computed } from "vue";
 
-export interface NotificationItem {
+interface NotificationItem {
   id: string;
   title: string;
   message?: string;

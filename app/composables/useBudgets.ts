@@ -104,9 +104,11 @@ export const useBudgets = (options?: { monthlyExpense?: Ref<number> }) => {
     return remainder.value > 0 ? remainder.value / daysLeft.value : 0;
   });
 
+  const loadingState = computed(() => !isLoaded.value || isLoading.value);
+
   return {
     budget,
-    isLoading: computed(() => !isLoaded.value || isLoading.value),
+    isLoading: loadingState,
     isLoaded,
     error,
     fetchBudget,

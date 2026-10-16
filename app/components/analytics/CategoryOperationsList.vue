@@ -22,14 +22,16 @@ interface Props {
   transactions: Transaction[];
   title: string;
   emptyText: string;
-  pending?: boolean;
+  isLoading?: boolean;
   loading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
-  pending: false,
+  isLoading: false,
   loading: false,
 });
+
+const isEffectiveLoading = computed(() => props.isLoading || props.loading);
 
 const { deleteTransaction } = useTransactions();
 const { openModal } = useTransactionModal();
@@ -42,7 +44,7 @@ const {
   loadMore,
   filteredAmountText,
 } = useOperationsPagination(toRef(props, "transactions"), {
-  isPaused: computed(() => props.pending || props.loading),
+  isPaused: isEffectiveLoading,
 });
 
 const deletingId = ref<string | null>(null);
@@ -86,7 +88,7 @@ const summaryBadgeText = computed(() => {
     </div>
 
     <!-- Скелетоны транзакций при загрузке -->
-    <div v-if="pending || loading" class="flex flex-col">
+    <div v-if="isEffectiveLoading" class="flex flex-col">
       <TransactionsSkeletonList :count="3" mode="list" :show-icon="false" />
     </div>
 

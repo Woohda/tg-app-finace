@@ -29,10 +29,11 @@ const router = useRouter();
 const toast = useAppToast();
 const groupId = computed(() => route.params.id as string);
 
-const { currentGroup, fetchGroup, notifyDebtors, pending, error } = useSplit();
+const { currentGroup, fetchGroup, notifyDebtors, isLoading, error } =
+  useSplit();
 
 const isGroupLoading = computed(() => {
-  return pending.value || currentGroup.value?.id !== groupId.value;
+  return isLoading.value || currentGroup.value?.id !== groupId.value;
 });
 
 const isNotifying = ref(false);

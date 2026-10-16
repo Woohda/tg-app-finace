@@ -42,7 +42,7 @@ const dayOfMonth = ref<number | "">("");
 const categoryId = ref<string>("");
 const errorMsg = ref("");
 const buttonState = ref<"idle" | "loading" | "success">("idle");
-const pending = ref(false);
+const isSubmitting = ref(false);
 
 const nameInputRef = ref<{ focus: () => void } | null>(null);
 
@@ -52,6 +52,12 @@ const expenseCategories = computed(() =>
 
 const isFormValid = computed(() => {
   return isSubscriptionFormValid(name.value, amount.value, dayOfMonth.value);
+});
+
+const isSubmitDisabled = computed(() => {
+  return (
+    !isFormValid.value || buttonState.value !== "idle" || isSubmitting.value
+  );
 });
 
 const displayError = computed(() => {
@@ -118,7 +124,7 @@ const submit = async () => {
 
   errorMsg.value = "";
   buttonState.value = "loading";
-  pending.value = true;
+  isSubmitting.value = true;
 
   try {
     let res: { success: boolean; error?: string };
@@ -150,7 +156,7 @@ const submit = async () => {
       errorMsg.value = res.error || "Не удалось сохранить платёж";
     }
   } finally {
-    pending.value = false;
+    isSubmitting.value = false;
   }
 };
 </script>
@@ -215,7 +221,7 @@ const submit = async () => {
 
       <div
         v-if="displayError"
-        class="text-text-accent text-sm font-medium text-center"
+        class="text-text-accent text-xs font-medium text-center"
       >
         {{ displayError }}
       </div>
@@ -225,11 +231,11 @@ const submit = async () => {
         type="submit"
         variant="primary"
         :state="buttonState"
-        :disabled="pending || !isFormValid"
+        :disabled="isSubmitDisabled"
       >
-        <span v-if="isEditMode">💾 Сохранить изменения</span>
+        <span v-if="isEditMode">Сохранить изменения</span>
         <span v-else class="flex gap-px items-center">
-          <Plus :stroke-width="2" />
+          <Plus class="size-5" :stroke-width="2" />
           <span>Добавить регулярный платёж</span>
         </span>
 

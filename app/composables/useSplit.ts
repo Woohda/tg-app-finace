@@ -35,7 +35,7 @@ export const useSplit = () => {
   const groups = useGlobalSplitGroups();
   const currentGroup = useGlobalSplitCurrentGroup();
   const isLoaded = useState<boolean>("split:isLoaded", () => false);
-  const pending = ref(false);
+  const isLoading = ref(false);
   const error = ref<string | null>(null);
 
   /**
@@ -52,7 +52,7 @@ export const useSplit = () => {
       return inFlightGroupsFetch;
     }
 
-    pending.value = true;
+    isLoading.value = true;
     error.value = null;
 
     inFlightGroupsFetch = (async () => {
@@ -68,7 +68,7 @@ export const useSplit = () => {
         toast.error(msg);
         return [];
       } finally {
-        pending.value = false;
+        isLoading.value = false;
         inFlightGroupsFetch = null;
       }
     })();
@@ -97,7 +97,7 @@ export const useSplit = () => {
    * Загрузка полной информации о конкретной группе
    */
   const fetchGroup = async (id: string) => {
-    pending.value = true;
+    isLoading.value = true;
     error.value = null;
     try {
       const data = await api<SplitGroupDetail>(`/api/split/groups/${id}`);
@@ -111,7 +111,7 @@ export const useSplit = () => {
       toast.error(msg);
       return null;
     } finally {
-      pending.value = false;
+      isLoading.value = false;
     }
   };
 
@@ -394,7 +394,8 @@ export const useSplit = () => {
   return {
     groups,
     currentGroup,
-    pending,
+    isLoading,
+    isLoaded,
     error,
     fetchGroups,
     fetchGroup,

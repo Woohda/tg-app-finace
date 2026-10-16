@@ -21,7 +21,7 @@ const { hasUnread } = useNotifications();
 const { startDate, endDate } = useDateFilter();
 const {
   transactions,
-  pending,
+  isLoading: isTxLoading,
   error: txError,
   refresh: refreshTransactions,
   fetchTransactions,
@@ -93,7 +93,7 @@ const currentDate = computed(() => formatWeekdayAndDate());
 
     <!-- Ошибка загрузки дашборда -->
     <GlassErrorState
-      v-if="txError && transactions.length === 0 && !pending"
+      v-if="txError && transactions.length === 0 && !isTxLoading"
       compact
       title="Не удалось загрузить данные"
       :error="txError"
@@ -118,7 +118,7 @@ const currentDate = computed(() => formatWeekdayAndDate());
         :remainder="budgetRemainder"
         :daily-guideline="dailyGuideline"
         :last-day-of-month="lastDayOfMonth"
-        :is-loading="budgetLoading || pending"
+        :is-loading="budgetLoading || isTxLoading"
       />
     </div>
 
@@ -126,15 +126,15 @@ const currentDate = computed(() => formatWeekdayAndDate());
     <MonthlySummary
       :income="monthlyIncome"
       :expense="monthlyExpense"
-      :is-loading="pending"
+      :is-loading="isTxLoading"
     />
 
     <!-- Главный контент: Топ-5 категорий расходов -->
     <ExpensesDonut
-      v-if="pending || transactions.length > 0"
+      v-if="isTxLoading || transactions.length > 0"
       :categories="expensesByCategory"
       :total-expense="monthlyExpense"
-      :is-loading="pending"
+      :is-loading="isTxLoading"
     />
 
     <!-- Регулярные ежемесячные платежи -->

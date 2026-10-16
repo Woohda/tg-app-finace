@@ -45,5 +45,3 @@ export const Z_INDEX = {
   TOAST: 9999,
 } as const;
 
-export type ZIndexKey = keyof typeof Z_INDEX;
-export type ZIndexValue = (typeof Z_INDEX)[ZIndexKey];

@@ -1,21 +1,21 @@
 /**
  * @module server/utils/auth
- * @fileoverview Утилиты для statusless аутентификации Telegram Mini App.
+ * @fileoverview Утилиты для аутентификации Telegram Mini App и браузерного входа
  * @description
- * Этот модуль содержит криптографические функции для проверки подлинности
- * пользователей из Telegram и генерации сессионных токенов (JWT).
+ * Содержит криптографические функции для проверки подлинности данных инициализации
+ * Telegram WebApp, генерации сессионных JWT-токенов, а также выпуска и верификации
+ * одноразовых билетов входа (login tickets).
  * ---
  * ### Логика работы:
- * 1. `verifyTelegramWebAppData`: Проверка `initData` через HMAC-SHA256 (сверяет подпись с токеном бота).
- * 2. `generateJWT`: Генерация сессионного JWT токена с помощью библиотеки `jose`.
- *
- * ### Особенности архитектуры:
- * - Полностью совместимо с Cloudflare Workers / Edge Runtime (без Node.js `crypto`).
- * - Для криптографии используется нативный `crypto.subtle` (Web Crypto API).
- *
- * ### Примечания:
- * - Токен бота и секрет для JWT должны передаваться из переменных окружения (runtime config).
- * - Аутентификация является полностью stateless (без хранения сессий на сервере).
+ * 1. `verifyTelegramWebAppData`: проверка подписи `initData` через HMAC-SHA256 (сверяет подпись с токеном бота).
+ * 2. `generateJWT`: создание сессионного JWT-токена пользователя через `jose`.
+ * 3. `generateLoginTicket`: создание короткоживущего одноразового билета для входа через браузер.
+ * 4. `verifyLoginTicket`: валидация билета и проверка защиты от повторного использования.
+ * 
+ * ### Особенности:
+ * - Полная совместимость с Cloudflare Workers / Edge Runtime (без Node.js `crypto`).
+ * - Криптография на базе нативного `crypto.subtle` (Web Crypto API).
+ * - Аутентификация является полностью stateless.
  */
 import { SignJWT, jwtVerify } from "jose";
 
@@ -122,7 +122,7 @@ function cleanExpiredTickets() {
   }
 }
 
-export function isLoginTicketUsed(jti: string): boolean {
+function isLoginTicketUsed(jti: string): boolean {
   cleanExpiredTickets();
   return usedTicketJtis.has(jti);
 }

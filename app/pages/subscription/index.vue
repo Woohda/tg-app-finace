@@ -14,7 +14,7 @@ import type { Subscription } from "~/composables/useSubscriptions";
 
 const {
   subscriptions,
-  pending,
+  isLoading,
   error,
   fetchSubscriptions,
   deleteSubscription,
@@ -89,7 +89,7 @@ const handleDelete = async () => {
         <CalendarClock class="size-5 text-text-secondary" />
       </div>
       <div
-        v-if="pending && subscriptions.length === 0"
+        v-if="isLoading && subscriptions.length === 0"
         class="flex items-baseline gap-2 py-1 animate-pulse"
       >
         <Skeleton class="w-32 h-8" rounded="lg" />
@@ -110,7 +110,7 @@ const handleDelete = async () => {
     <div class="flex flex-col">
       <!-- Скелетон загрузки -->
       <div
-        v-if="pending && subscriptions.length === 0"
+        v-if="isLoading && subscriptions.length === 0"
         class="flex flex-col gap-2"
       >
         <GlassCard

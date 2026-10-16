@@ -11,8 +11,8 @@ import { Plus, Users } from "@lucide/vue";
 import type { UserFriend } from "~/types/friends";
 import {
   validateGroupForm,
-  isGroupFormValid,
-  getGroupNameInputError,
+  isValidText,
+  getNameInputError,
 } from "~/utils/validation";
 
 interface NewGroupMember {
@@ -43,7 +43,7 @@ watch(name, () => {
 });
 
 const isFormValid = computed(() => {
-  return isGroupFormValid(name.value);
+  return isValidText(name.value);
 });
 
 const isSubmitDisabled = computed(() => {
@@ -51,7 +51,7 @@ const isSubmitDisabled = computed(() => {
 });
 
 const displayError = computed(() => {
-  const nameErr = getGroupNameInputError(name.value);
+  const nameErr = getNameInputError(name.value, "Название группы");
   if (nameErr) return nameErr;
   return submitError.value;
 });
@@ -192,7 +192,8 @@ const handleSubmit = async () => {
               <span
                 v-if="isFriendSelected(friend)"
                 class="text-accent-success text-[10px]"
-              >✓</span>
+                >✓</span
+              >
               <Plus v-else class="size-3 text-text-secondary" />
             </button>
           </div>
@@ -219,13 +220,14 @@ const handleSubmit = async () => {
         </div>
 
         <p class="text-[11px] text-text-secondary mt-0.5">
-          💡 В созданную группу также можно будет пригласить любого друга по ссылке в Telegram.
+          💡 В созданную группу также можно будет пригласить любого друга по
+          ссылке в Telegram.
         </p>
       </div>
 
       <div
         v-if="displayError"
-        class="text-text-accent text-sm font-medium text-center -mt-1"
+        class="text-text-accent text-xs font-medium text-center -mt-1"
       >
         {{ displayError }}
       </div>
@@ -246,7 +248,7 @@ const handleSubmit = async () => {
           :state="buttonState"
           :disabled="isSubmitDisabled"
         >
-          <span class="text-base">Создать группу</span>
+          <span>Создать группу</span>
         </GlassMorphButton>
       </div>
     </form>

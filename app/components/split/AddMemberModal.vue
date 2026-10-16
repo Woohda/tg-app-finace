@@ -14,8 +14,8 @@ import type { SplitMember } from "~/types/split";
 import type { UserFriend } from "~/types/friends";
 import {
   validateAddMemberForm,
-  isAddMemberFormValid,
-  getMemberNameInputError,
+  isValidText,
+  getNameInputError,
 } from "~/utils/validation";
 
 const props = defineProps<{
@@ -43,7 +43,7 @@ watch([name, telegramUsername], () => {
 });
 
 const isFormValid = computed(() => {
-  return isAddMemberFormValid(name.value);
+  return isValidText(name.value);
 });
 
 const isSubmitDisabled = computed(() => {
@@ -51,7 +51,7 @@ const isSubmitDisabled = computed(() => {
 });
 
 const displayError = computed(() => {
-  const nameErr = getMemberNameInputError(name.value);
+  const nameErr = getNameInputError(name.value, "Имя участника");
   if (nameErr) return nameErr;
   return submitError.value;
 });
@@ -166,7 +166,9 @@ const handleSubmit = async () => {
           size="sm"
           variant="soft"
           class="h-auto px-3 py-1.5 gap-1.5 text-xs text-text-accent shrink-0"
-          @click="shareInvite({ groupId: props.groupId, groupName: props.groupName })"
+          @click="
+            shareInvite({ groupId: props.groupId, groupName: props.groupName })
+          "
         >
           <Share2 class="size-3.5" />
           <span>Ссылка</span>
@@ -192,7 +194,8 @@ const handleSubmit = async () => {
             <span
               v-if="addingFriendId === friend.id"
               class="text-[10px] opacity-70"
-            >...</span>
+              >...</span
+            >
             <Plus v-else class="size-3 text-text-secondary" />
           </button>
         </div>
@@ -230,7 +233,7 @@ const handleSubmit = async () => {
 
         <div
           v-if="displayError"
-          class="text-text-accent text-sm font-medium text-center -mt-1"
+          class="text-text-accent text-xs font-medium text-center -mt-1"
         >
           {{ displayError }}
         </div>
@@ -251,7 +254,7 @@ const handleSubmit = async () => {
             :state="buttonState"
             :disabled="isSubmitDisabled"
           >
-            <span class="text-base">Добавить</span>
+            <span>Добавить</span>
           </GlassMorphButton>
         </div>
       </form>

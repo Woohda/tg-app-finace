@@ -149,15 +149,15 @@ export function getInitials(name?: string | null): string {
   return trimmed.slice(0, 2).toUpperCase();
 }
 
-export type AmountSizeVariant = "card" | "hero" | "compact";
+type AmountSizeVariant = "card" | "hero" | "compact";
 
-export interface AmountSizeConfig {
+interface AmountSizeConfig {
   large: string;
   medium: string;
   small: string;
 }
 
-export interface AmountSizeOptions {
+interface AmountSizeOptions {
   variant?: AmountSizeVariant;
   classes?: AmountSizeConfig;
   mediumThreshold?: number;

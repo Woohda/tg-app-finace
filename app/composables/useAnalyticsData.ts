@@ -31,17 +31,18 @@ export const useAnalyticsData = (
   prevEndDate: Ref<Date>,
   categoryId?: Ref<string | null>,
 ) => {
-  const { transactions: currentTxs, pending: pendingCurrent } = useTransactions({
-    startDate,
-    endDate,
-  });
+  const { transactions: currentTxs, isLoading: loadingCurrent } =
+    useTransactions({
+      startDate,
+      endDate,
+    });
 
-  const { transactions: prevTxs, pending: pendingPrev } = useTransactions({
+  const { transactions: prevTxs, isLoading: loadingPrev } = useTransactions({
     startDate: prevStartDate,
     endDate: prevEndDate,
   });
 
-  const pending = computed(() => pendingCurrent.value || pendingPrev.value);
+  const isLoading = computed(() => loadingCurrent.value || loadingPrev.value);
 
   // Фильтрация транзакций по типам (расходы / доходы) и категории
   const currentExpenses = computed(() =>
@@ -100,18 +101,14 @@ export const useAnalyticsData = (
   });
 
   // 2. Аналитика доходов (суммы, расчет день-в-день MTD)
-  const {
-    totalIncome,
-    prevTotalIncome,
-    prevMtdIncome,
-    incomePercentChange,
-  } = useIncomeAnalytics({
-    currentIncome,
-    prevIncome,
-    period,
-    endDate,
-    currentDay,
-  });
+  const { totalIncome, prevTotalIncome, prevMtdIncome, incomePercentChange } =
+    useIncomeAnalytics({
+      currentIncome,
+      prevIncome,
+      period,
+      endDate,
+      currentDay,
+    });
 
   // 3. Распределение по категориям
   const categoryStats = computed<CategoryStat[]>(() =>
@@ -138,7 +135,7 @@ export const useAnalyticsData = (
   );
 
   return {
-    pending,
+    isLoading,
     totalSpent,
     prevTotalSpent,
     currentExpenses,

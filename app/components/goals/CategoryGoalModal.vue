@@ -19,8 +19,8 @@ import { getHapticFeedback } from "~/utils/haptics";
 import { Z_INDEX } from "~/utils/zIndex";
 import {
   validateCategoryGoalForm,
-  isCategoryGoalFormValid,
-  getCategoryGoalInputError,
+  isValidAmount,
+  getAmountInputError,
 } from "~/utils/validation";
 
 interface Props {
@@ -78,14 +78,14 @@ watch([categoryId, amountInput], () => {
 });
 
 const displayError = computed(() => {
-  const amountErr = getCategoryGoalInputError(amountInput.value);
+  const amountErr = getAmountInputError(amountInput.value);
   if (amountErr) return amountErr;
   return formError.value;
 });
 
 const isSubmitDisabled = computed(() => {
   if (isSubmitting.value || buttonState.value !== "idle") return true;
-  return !isCategoryGoalFormValid(amountInput.value);
+  return !isValidAmount(amountInput.value);
 });
 
 const selectedCategory = computed(() => {
@@ -228,7 +228,10 @@ const close = () => {
         :icon="RussianRuble"
       />
 
-      <div v-if="displayError" class="text-text-accent text-xs font-semibold px-2">
+      <div
+        v-if="displayError"
+        class="text-text-accent text-xs font-semibold px-2"
+      >
         {{ displayError }}
       </div>
 
@@ -254,7 +257,7 @@ const close = () => {
           "
           class="flex-1"
         >
-          <span class="text-[15px] font-semibold">Сохранить</span>
+          <span>Сохранить</span>
         </GlassMorphButton>
       </div>
     </form>

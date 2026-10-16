@@ -21,7 +21,7 @@ export const useFriends = () => {
   const { user, token } = useAuth();
 
   const friends = useGlobalFriends();
-  const pending = ref(false);
+  const isLoading = ref(false);
   const isLoaded = useState<boolean>("global_user_friends_loaded", () => false);
 
   /**
@@ -38,7 +38,7 @@ export const useFriends = () => {
       return inFlightFriendsFetch;
     }
 
-    pending.value = true;
+    isLoading.value = true;
     inFlightFriendsFetch = (async () => {
       try {
         const data = await api<UserFriend[]>("/api/friends");
@@ -49,7 +49,7 @@ export const useFriends = () => {
         console.warn("Ошибка загрузки списка друзей:", e);
         return [];
       } finally {
-        pending.value = false;
+        isLoading.value = false;
         inFlightFriendsFetch = null;
       }
     })();
@@ -105,7 +105,8 @@ export const useFriends = () => {
 
   return {
     friends,
-    pending,
+    isLoading,
+    isLoaded,
     fetchFriends,
     getInviteLink,
     shareInvite,

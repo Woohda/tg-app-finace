@@ -57,11 +57,25 @@ const filteredCategories = computed(() => {
 
 const isFormValid = computed(() => {
   if (!localItem.value) return false;
-  return isTransactionFormValid(
-    localItem.value.amount,
-    localItem.value.name,
-  );
+  return isTransactionFormValid(localItem.value.amount, localItem.value.name);
 });
+
+const isSubmitDisabled = computed(() => {
+  return !isFormValid.value;
+});
+
+watch(
+  () => [
+    localItem.value?.amount,
+    localItem.value?.categoryId,
+    localItem.value?.name,
+  ],
+  () => {
+    if (formError.value) {
+      formError.value = null;
+    }
+  },
+);
 
 const displayError = computed(() => {
   if (!localItem.value) return null;
@@ -108,7 +122,11 @@ const save = () => {
     :z-index="Z_INDEX.SCAN_EDIT"
     @close="emit('close')"
   >
-    <div v-if="localItem" class="flex flex-col gap-3 px-2">
+    <form
+      v-if="localItem"
+      class="flex flex-col gap-3 px-2"
+      @submit.prevent="save"
+    >
       <GlassInput
         v-model="localItem.name"
         type="text"
@@ -144,17 +162,17 @@ const save = () => {
 
       <GlassTypeSelector v-model="localItem.type" />
 
-      <div v-if="displayError" class="text-text-accent text-sm text-center">
+      <div v-if="displayError" class="text-text-accent text-xs text-center">
         {{ displayError }}
       </div>
 
       <GlassMorphButton
+        type="submit"
         variant="primary"
-        :disabled="!isFormValid"
-        @click="save"
+        :disabled="isSubmitDisabled"
       >
-        Сохранить изменения
+        <span>Сохранить изменения</span>
       </GlassMorphButton>
-    </div>
+    </form>
   </GlassModal>
 </template>
