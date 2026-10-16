@@ -49,9 +49,13 @@ export default defineNuxtConfig({
           "Cache-Control": "no-store, no-cache, must-revalidate",
         },
       },
+      "/": {
+        headers: {
+          "Cache-Control": "no-cache, must-revalidate",
+        },
+      },
       "/**": {
         headers: {
-          "Cache-Control": "no-cache, no-store, must-revalidate",
           "X-Content-Type-Options": "nosniff",
           "Referrer-Policy": "strict-origin-when-cross-origin",
           "X-XSS-Protection": "1; mode=block",
@@ -60,6 +64,9 @@ export default defineNuxtConfig({
         },
       },
     },
+  },
+  experimental: {
+    appManifest: false,
   },
   vite: {
     plugins: [tailwindcss()],

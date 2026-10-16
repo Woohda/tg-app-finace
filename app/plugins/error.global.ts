@@ -92,12 +92,16 @@ export default defineNuxtPlugin((nuxtApp) => {
 
   if (import.meta.client) {
     window.addEventListener("error", (event) => {
-      // Игнорируем браузерные кросс-доменные ошибки без контекста
+      const message = event.error ? (event.error.message || String(event.error)) : event.message;
       if (
-        event.message === "Script error." ||
-        event.message === "Script error" ||
+        message === "Script error." ||
+        message === "Script error" ||
         (!event.error && !event.filename)
       ) {
+        sendErrorLog(
+          `Script error (сбой сети/загрузки модуля): ${window.location.href}`,
+          "Script Error",
+        );
         return;
       }
       sendErrorLog(event.error || event.message, "Window Error");
@@ -108,8 +112,23 @@ export default defineNuxtPlugin((nuxtApp) => {
     });
 
     // Автоматическая перезагрузка страницы при устаревших чанках после деплоя
-    nuxtApp.hook("app:chunkError", () => {
-      window.location.replace(window.location.href);
+    // Защита от бесконечного цикла: не чаще 1 раза в 25 секунд
+    nuxtApp.hook("app:chunkError", ({ error }) => {
+      console.error("[app:chunkError] Ошибка загрузки чанка:", error);
+      sendErrorLog(error, "Chunk Load Error");
+
+      try {
+        const lastReload = Number(
+          sessionStorage.getItem("fino_chunk_reload_ts") || 0,
+        );
+        const now = Date.now();
+        if (now - lastReload > 25_000) {
+          sessionStorage.setItem("fino_chunk_reload_ts", String(now));
+          window.location.replace(window.location.href);
+        }
+      } catch {
+        // Игнорируем недоступность sessionStorage
+      }
     });
   }
 });
