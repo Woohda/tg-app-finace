@@ -19,19 +19,22 @@
 import type { User } from "~/composables/useAuth";
 
 export default defineNuxtPlugin((nuxtApp) => {
-  const { user } = useAuth();
-  const userCookie = useCookie<User | null>("auth_user");
-
   const resolveUserId = (): string => {
-    // 1. Попытка получить из реактивного состояния авторизации useAuth или сохраненной куки
-    const activeUser = user.value ?? userCookie.value;
-    if (activeUser) {
-      if (activeUser.telegram_id) {
-        return activeUser.username
-          ? `@${activeUser.username} (${activeUser.telegram_id})`
-          : String(activeUser.telegram_id);
+    try {
+      // 1. Попытка получить из реактивного состояния авторизации useAuth или сохраненной куки
+      const { user } = useAuth();
+      const userCookie = useCookie<User | null>("auth_user");
+      const activeUser = user.value ?? userCookie.value;
+      if (activeUser) {
+        if (activeUser.telegram_id) {
+          return activeUser.username
+            ? `@${activeUser.username} (${activeUser.telegram_id})`
+            : String(activeUser.telegram_id);
+        }
+        return activeUser.id || "Guest";
       }
-      return activeUser.id || "Guest";
+    } catch {
+      // Игнорируем ошибки при ранней инициализации Nuxt
     }
 
     // 2. Фоллбек: сырые данные пользователя из Telegram WebApp (если авторизация еще не завершена)

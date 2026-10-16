@@ -19,8 +19,7 @@
  * - `404 Not Found`: Пользователь не найден в базе данных.
  * - `500 Internal Server Error`: Ошибка конфигурации или базы данных.
  */
-import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "~/types/database.types";
+
 import {
   verifyLoginTicket,
   generateJWT,
@@ -59,7 +58,7 @@ export default defineEventHandler(async (event) => {
   // Сразу помечаем тикет использованным, предотвращая повторный вход (Replay attack)
   markLoginTicketUsed(ticketData.jti);
 
-  const supabase = serverSupabaseServiceRole<Database>(event);
+  const supabase = getBotSupabase();
 
   const { data: user, error: userError } = await supabase
     .from("users")

@@ -24,8 +24,7 @@
  * - Это единственный публичный эндпоинт, который не требует проверки JWT.
  * - Вся коммуникация с БД происходит от имени администратора (`serverSupabaseServiceRole`).
  */
-import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "~/types/database.types";
+
 
 export default defineEventHandler(async (event) => {
   const body = await readBody(event);
@@ -78,7 +77,7 @@ export default defineEventHandler(async (event) => {
   const firstName = tgUser.first_name || null;
   const photoUrl = tgUser.photo_url || null;
 
-  const supabase = serverSupabaseServiceRole<Database>(event);
+  const supabase = getBotSupabase();
 
   const response = await supabase
     .from("users")

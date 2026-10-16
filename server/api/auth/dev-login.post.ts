@@ -19,13 +19,11 @@
  * ### Особенности:
  * - Только для локальной разработки, чтобы можно было тестировать API без Telegram Web App.
  */
-import { serverSupabaseServiceRole } from "#supabase/server";
-import type { Database } from "~/types/database.types";
 
 const DEV_TELEGRAM_ID = 999999999;
 const DEV_USERNAME = "dev_user";
 
-export default defineEventHandler(async (event) => {
+export default defineEventHandler(async (_event) => {
   // Жёсткая блокировка для production
   if (!import.meta.dev) {
     throw createError({ statusCode: 404, statusMessage: "Not Found" });
@@ -41,7 +39,7 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const supabase = serverSupabaseServiceRole<Database>(event);
+  const supabase = getBotSupabase();
 
   // Ищем или создаём dev-пользователя
   const { data: existing } = await supabase
