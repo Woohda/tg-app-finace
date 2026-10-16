@@ -16,6 +16,7 @@ export default defineNuxtRouteMiddleware((to) => {
   const isTelegram = import.meta.server
     ? /telegram/i.test(useRequestHeaders(["user-agent"])["user-agent"] || "")
     : Boolean(window.Telegram?.WebApp?.initData) ||
+      (typeof window !== "undefined" && window.location.hash.includes("tgWebAppData")) ||
       /telegram/i.test(navigator.userAgent || "");
 
   setPageLayout(isTelegram ? "default" : "web");
