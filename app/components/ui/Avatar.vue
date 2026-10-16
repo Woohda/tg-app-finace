@@ -68,7 +68,7 @@ const initials = computed(() => getInitials(props.name));
       )
     "
   >
-    <img
+    <NuxtImg
       v-if="src && !hasImageError"
       :src="src"
       :alt="name ? `Аватар ${name}` : 'Аватар пользователя'"

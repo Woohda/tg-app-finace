@@ -103,5 +103,10 @@ export default defineNuxtPlugin((nuxtApp) => {
     window.addEventListener("unhandledrejection", (event) => {
       sendErrorLog(event.reason, "Unhandled Rejection");
     });
+
+    // Автоматическая перезагрузка страницы при устаревших чанках после деплоя
+    nuxtApp.hook("app:chunkError", () => {
+      window.location.reload();
+    });
   }
 });
