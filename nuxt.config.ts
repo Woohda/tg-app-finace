@@ -119,10 +119,6 @@ export default defineNuxtConfig({
         {
           src: "/telegram-web-app.js",
         },
-        {
-          innerHTML:
-            '(function(){var t=setTimeout(function(){if(window.__FINO_MOUNTED__)return;if(document.getElementById("fino-stalled-banner"))return;var b=document.createElement("div");b.id="fino-stalled-banner";b.style.cssText="position:fixed;inset:0;background:#0f172a;color:#fff;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:24px;text-align:center;font-family:system-ui,-apple-system,sans-serif;z-index:999999;";b.innerHTML=\'<div style="font-size:44px;margin-bottom:12px;">🐶</div><div style="font-size:18px;font-weight:600;margin-bottom:8px;">Медленный ответ сети</div><div style="font-size:13px;color:#94a3b8;line-height:1.5;max-width:280px;margin-bottom:24px;">Соединение с сервером нестабильно. Нажмите кнопку ниже для повторной попытки.</div><button onclick="window.location.reload(true)" style="background:#e11d48;color:#fff;border:none;padding:12px 28px;border-radius:99px;font-size:15px;font-weight:600;cursor:pointer;-webkit-tap-highlight-color:transparent;">Обновить страницу</button>\';document.body.appendChild(b);},5000);})();',
-        },
       ],
     },
   },

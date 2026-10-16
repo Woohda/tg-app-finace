@@ -106,7 +106,7 @@ export default defineNuxtPlugin((nuxtApp) => {
 
     // Автоматическая перезагрузка страницы при устаревших чанках после деплоя
     nuxtApp.hook("app:chunkError", () => {
-      window.location.reload();
+      window.location.replace(window.location.href);
     });
   }
 });

@@ -12,22 +12,12 @@
  * 2. Предоставляет глобальные контейнеры модалок и тостов.
  * 3. Отображает экранный индикатор загрузки при явной активации useGlobalLoading.
  */
-import { onMounted } from "vue";
-
 const isLoading = useGlobalLoading();
 const router = useRouter();
 
 // Гарантированный сброс блокирующего лоадера после любого перехода между страницами
 router.afterEach(() => {
   isLoading.value = false;
-});
-
-onMounted(() => {
-  if (import.meta.client) {
-    (window as unknown as { __FINO_MOUNTED__: boolean }).__FINO_MOUNTED__ = true;
-    const banner = document.getElementById("fino-stalled-banner");
-    if (banner) banner.remove();
-  }
 });
 </script>
 
