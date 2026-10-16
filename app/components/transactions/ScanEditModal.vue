@@ -13,21 +13,14 @@
  */
 import { computed, ref, watch } from "vue";
 import { RussianRuble } from "@lucide/vue";
-import type { Database } from "~/types/database.types";
-import { transactionSchema } from "~/types/validate";
-import { parseAmount } from "~/utils/format";
-import { formatZodError } from "~/utils/zod";
-
-type Category = Database["public"]["Tables"]["categories"]["Row"];
-interface ScannedTransaction {
-  id?: string;
-  type: "expense" | "income";
-  amount: number;
-  name: string;
-  suggestedCategory?: string;
-  categoryId?: string;
-  date?: string;
-}
+import type { Category } from "~/composables/useCategories";
+import type { ScannedTransaction } from "~/composables/useTransactionModal";
+import {
+  validateTransactionForm,
+  isTransactionFormValid,
+  getAmountInputError,
+  getNameInputError,
+} from "~/utils/validation";
 
 const props = defineProps<{
   isOpen: boolean;
@@ -62,32 +55,47 @@ const filteredCategories = computed(() => {
   return props.categories.filter((c) => c.type === localItem.value!.type);
 });
 
+const isFormValid = computed(() => {
+  if (!localItem.value) return false;
+  return isTransactionFormValid(
+    localItem.value.amount,
+    localItem.value.name,
+  );
+});
+
+const displayError = computed(() => {
+  if (!localItem.value) return null;
+  const amountErr = getAmountInputError(localItem.value.amount);
+  if (amountErr) return amountErr;
+
+  const nameErr = getNameInputError(localItem.value.name);
+  if (nameErr) return nameErr;
+
+  return formError.value;
+});
+
 const save = () => {
-  if (localItem.value) {
-    if (localItem.value.name) {
-      localItem.value.name = capitalizeFirstLetter(localItem.value.name) || "";
-    }
-    const parsedAmount = parseAmount(localItem.value.amount);
-    const result = transactionSchema.safeParse({
-      amount: parsedAmount,
-      category_id: localItem.value.categoryId || "",
-      date: localItem.value.date || "",
-      type: localItem.value.type,
-      name: localItem.value.name,
-    });
+  if (!localItem.value || !isFormValid.value) return;
 
-    if (!result.success) {
-      formError.value = formatZodError(result.error);
-      return;
-    }
+  const result = validateTransactionForm({
+    amount: localItem.value.amount,
+    categoryId: localItem.value.categoryId,
+    date: localItem.value.date,
+    type: localItem.value.type,
+    name: localItem.value.name,
+  });
 
-    formError.value = null;
-    emit("save", {
-      ...localItem.value,
-      name: result.data.name || localItem.value.name,
-      amount: parsedAmount,
-    });
+  if (!result.success) {
+    formError.value = result.error;
+    return;
   }
+
+  formError.value = null;
+  emit("save", {
+    ...localItem.value,
+    name: result.data.name || localItem.value.name,
+    amount: result.data.amount,
+  });
 };
 </script>
 
@@ -136,11 +144,15 @@ const save = () => {
 
       <GlassTypeSelector v-model="localItem.type" />
 
-      <div v-if="formError" class="text-text-accent text-sm text-center">
-        {{ formError }}
+      <div v-if="displayError" class="text-text-accent text-sm text-center">
+        {{ displayError }}
       </div>
 
-      <GlassMorphButton variant="primary" @click="save">
+      <GlassMorphButton
+        variant="primary"
+        :disabled="!isFormValid"
+        @click="save"
+      >
         Сохранить изменения
       </GlassMorphButton>
     </div>

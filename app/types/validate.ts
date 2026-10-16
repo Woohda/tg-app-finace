@@ -15,7 +15,7 @@ export const categorySchema = z.object({
   name: z
     .string()
     .min(1, "Введите название категории")
-    .max(50, "Название слишком длинное")
+    .max(30, "Название слишком длинное")
     .transform((val) => capitalizeFirstLetter(val)),
   icon: z.string().min(1, "Выберите эмодзи").max(10, "Иконка слишком длинная"),
   type: z.enum(["expense", "income"]),
@@ -25,7 +25,7 @@ export const categoryUpdateSchema = z.object({
   name: z
     .string()
     .min(1, "Введите название категории")
-    .max(50, "Название слишком длинное")
+    .max(30, "Название слишком длинное")
     .transform((val) => capitalizeFirstLetter(val)),
   icon: z.string().min(1, "Выберите эмодзи").max(10, "Иконка слишком длинная"),
 });
@@ -35,7 +35,8 @@ export const transactionSchema = z.object({
   id: z.string().uuid().optional(),
   amount: z
     .number("Введите корректную сумму")
-    .positive("Сумма должна быть больше 0"),
+    .positive("Сумма должна быть больше 0")
+    .max(10_000_000, "Слишком большая сумма"),
   category_id: z.string().min(1, "Выберите категорию"),
   date: z.string().min(1, "Выберите дату"),
   type: z.enum(["expense", "income"]),
@@ -51,6 +52,7 @@ export const transactionPatchSchema = z
     amount: z
       .number("Некорректная сумма")
       .positive("Некорректная сумма")
+      .max(10_000_000, "Слишком большая сумма")
       .optional(),
     category_id: z.string().min(1, "Не указана категория").optional(),
     type: z.enum(["income", "expense"]).optional(),
@@ -71,7 +73,8 @@ export const transactionPatchSchema = z
 export const budgetSchema = z.object({
   amount: z
     .number("Введите корректную сумму")
-    .positive("Бюджет должен быть больше 0"),
+    .positive("Бюджет должен быть больше 0")
+    .max(10_000_000, "Слишком большая сумма"),
 });
 
 // --- AI ---
@@ -96,10 +99,12 @@ export const subscriptionSchema = z.object({
   name: z
     .string()
     .min(1, "Введите название платежа")
-    .max(100, "Название слишком длинное"),
+    .max(30, "Название слишком длинное")
+    .transform((val) => capitalizeFirstLetter(val)),
   amount: z
     .number("Введите корректную сумму")
-    .positive("Введите корректную сумму"),
+    .positive("Введите корректную сумму")
+    .max(10_000_000, "Слишком большая сумма"),
   day_of_month: z
     .number("День должен быть числом")
     .int("День должен быть целым числом")
@@ -121,7 +126,7 @@ export const categoryGoalSchema = z.object({
   targetAmount: z
     .number("Введите корректную сумму")
     .positive("Цель должна быть больше 0")
-    .max(100_000_000, "Слишком большая сумма"),
+    .max(10_000_000, "Слишком большая сумма"),
 });
 
 // --- Split ---
@@ -129,13 +134,18 @@ export const createSplitGroupSchema = z.object({
   name: z
     .string()
     .min(1, "Введите название группы")
-    .max(80, "Название слишком длинное"),
+    .max(30, "Название слишком длинное")
+    .transform((val) => capitalizeFirstLetter(val)),
   initialMembers: z
     .array(
       z.union([
-        z.string().min(1, "Имя участника не может быть пустым").max(50),
+        z.string().min(1, "Имя участника не может быть пустым").max(30),
         z.object({
-          name: z.string().min(1, "Имя участника не может быть пустым").max(50),
+          name: z
+            .string()
+            .min(1, "Имя участника не может быть пустым")
+            .max(30)
+            .transform((val) => capitalizeFirstLetter(val)),
           user_id: z.string().uuid().optional().nullable(),
         }),
       ]),
@@ -147,9 +157,14 @@ export const addSplitMemberSchema = z.object({
   name: z
     .string()
     .min(1, "Введите имя участника")
-    .max(50, "Имя слишком длинное"),
+    .max(30, "Имя слишком длинное")
+    .transform((val) => capitalizeFirstLetter(val)),
   telegram_username: z.string().optional().nullable(),
-  user_id: z.string().uuid("Некорректный ID пользователя").optional().nullable(),
+  user_id: z
+    .string()
+    .uuid("Некорректный ID пользователя")
+    .optional()
+    .nullable(),
 });
 
 export const expenseShareInputSchema = z.object({
@@ -157,11 +172,13 @@ export const expenseShareInputSchema = z.object({
   amount: z
     .number()
     .nonnegative("Сумма не может быть отрицательной")
+    .max(10_000_000, "Слишком большая сумма")
     .optional()
     .nullable(),
   share_value: z
     .number()
     .positive("Доля должна быть больше 0")
+    .max(10_000_000, "Слишком большая доля")
     .optional()
     .nullable(),
   is_fixed: z.boolean().optional(),
@@ -171,8 +188,12 @@ export const addSplitExpenseSchema = z.object({
   title: z
     .string()
     .min(1, "Введите название расхода")
-    .max(120, "Название слишком длинное"),
-  amount: z.number().positive("Сумма должна быть больше 0"),
+    .max(30, "Название слишком длинное")
+    .transform((val) => capitalizeFirstLetter(val)),
+  amount: z
+    .number()
+    .positive("Сумма должна быть больше 0")
+    .max(10_000_000, "Слишком большая сумма"),
   payer_id: z.string().uuid("Выберите, кто оплатил"),
   date: z.string().optional(),
   split_type: z.enum(["equal", "exact", "shares"]),
@@ -184,7 +205,10 @@ export const addSplitExpenseSchema = z.object({
 export const addSplitSettlementSchema = z.object({
   from_member_id: z.string().uuid("Выберите должника"),
   to_member_id: z.string().uuid("Выберите получателя"),
-  amount: z.number().positive("Сумма перевода должна быть больше 0"),
+  amount: z
+    .number()
+    .positive("Сумма перевода должна быть больше 0")
+    .max(10_000_000, "Слишком большая сумма"),
   date: z.string().optional(),
 });
 
@@ -193,6 +217,7 @@ export const exportToTransactionSchema = z.object({
   title: z
     .string()
     .min(1, "Название не может быть пустым")
-    .max(120, "Название слишком длинное")
+    .max(30, "Название слишком длинное")
+    .transform((val) => capitalizeFirstLetter(val))
     .optional(),
 });

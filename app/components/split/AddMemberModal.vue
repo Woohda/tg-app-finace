@@ -12,6 +12,11 @@ import { ref, computed, watch } from "vue";
 import { Plus, Users, Share2 } from "@lucide/vue";
 import type { SplitMember } from "~/types/split";
 import type { UserFriend } from "~/types/friends";
+import {
+  validateAddMemberForm,
+  isAddMemberFormValid,
+  getMemberNameInputError,
+} from "~/utils/validation";
 
 const props = defineProps<{
   isOpen: boolean;
@@ -31,6 +36,25 @@ const name = ref("");
 const telegramUsername = ref("");
 const buttonState = ref<"idle" | "loading" | "success">("idle");
 const addingFriendId = ref<string | null>(null);
+const submitError = ref("");
+
+watch([name, telegramUsername], () => {
+  submitError.value = "";
+});
+
+const isFormValid = computed(() => {
+  return isAddMemberFormValid(name.value);
+});
+
+const isSubmitDisabled = computed(() => {
+  return !isFormValid.value || buttonState.value !== "idle";
+});
+
+const displayError = computed(() => {
+  const nameErr = getMemberNameInputError(name.value);
+  if (nameErr) return nameErr;
+  return submitError.value;
+});
 
 watch(
   () => props.isOpen,
@@ -38,6 +62,7 @@ watch(
     if (open) {
       buttonState.value = "idle";
       addingFriendId.value = null;
+      submitError.value = "";
       fetchFriends();
     }
   },
@@ -79,14 +104,24 @@ const handleAddFriend = async (friend: UserFriend) => {
 };
 
 const handleSubmit = async () => {
-  if (!name.value.trim() || buttonState.value === "loading") return;
+  if (!isFormValid.value || buttonState.value === "loading") return;
+
+  const validRes = validateAddMemberForm({
+    name: name.value,
+    telegramUsername: telegramUsername.value,
+  });
+
+  if (!validRes.success) {
+    submitError.value = validRes.error;
+    return;
+  }
 
   buttonState.value = "loading";
   try {
     const result = await addMember(
       props.groupId,
-      name.value.trim(),
-      telegramUsername.value.trim() || undefined,
+      validRes.data.name,
+      validRes.data.telegramUsername,
     );
 
     if (result) {
@@ -193,6 +228,13 @@ const handleSubmit = async () => {
           </p>
         </div>
 
+        <div
+          v-if="displayError"
+          class="text-text-accent text-sm font-medium text-center -mt-1"
+        >
+          {{ displayError }}
+        </div>
+
         <div class="flex items-center justify-end gap-2 pt-1">
           <GlassButton
             size="sm"
@@ -207,7 +249,7 @@ const handleSubmit = async () => {
             type="submit"
             size="sm"
             :state="buttonState"
-            :disabled="!name.trim()"
+            :disabled="isSubmitDisabled"
           >
             <span class="text-base">Добавить</span>
           </GlassMorphButton>

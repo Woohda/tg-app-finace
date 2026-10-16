@@ -17,6 +17,11 @@ import { Target, RussianRuble } from "@lucide/vue";
 import type { CategoryOption } from "~/components/categories/CategoryBottomSheet.vue";
 import { getHapticFeedback } from "~/utils/haptics";
 import { Z_INDEX } from "~/utils/zIndex";
+import {
+  validateCategoryGoalForm,
+  isCategoryGoalFormValid,
+  getCategoryGoalInputError,
+} from "~/utils/validation";
 
 interface Props {
   isOpen: boolean;
@@ -72,8 +77,15 @@ watch([categoryId, amountInput], () => {
   }
 });
 
+const displayError = computed(() => {
+  const amountErr = getCategoryGoalInputError(amountInput.value);
+  if (amountErr) return amountErr;
+  return formError.value;
+});
+
 const isSubmitDisabled = computed(() => {
-  return isSubmitting.value || buttonState.value !== "idle";
+  if (isSubmitting.value || buttonState.value !== "idle") return true;
+  return !isCategoryGoalFormValid(amountInput.value);
 });
 
 const selectedCategory = computed(() => {
@@ -95,37 +107,25 @@ const handleSave = async () => {
   const targetCategory = props.isEdit
     ? props.initialCategoryId
     : categoryId.value;
-  if (!targetCategory) {
-    formError.value = "Выберите категорию расходов";
-    haptics.notification("error");
-    return;
-  }
 
-  const raw = String(amountInput.value ?? "").trim();
-  if (!raw) {
-    formError.value = "Укажите сумму лимита";
-    haptics.notification("error");
-    return;
-  }
-
-  const num = Number(raw);
-  if (isNaN(num) || num <= 0) {
-    formError.value = "Сумма должна быть больше 0";
-    haptics.notification("error");
-    return;
-  }
-
-  if (num > 100_000_000) {
-    formError.value = "Сумма не может превышать 100 млн";
+  const validRes = validateCategoryGoalForm({
+    amount: amountInput.value,
+    categoryId: targetCategory,
+    requireCategory: true,
+  });
+  if (!validRes.success) {
+    formError.value = validRes.error;
     haptics.notification("error");
     return;
   }
 
   formError.value = null;
+  if (!validRes.data.categoryId) return;
+
   isSubmitting.value = true;
   buttonState.value = "loading";
 
-  const success = await setGoal(targetCategory, Math.round(num));
+  const success = await setGoal(validRes.data.categoryId, validRes.data.amount);
   isSubmitting.value = false;
 
   if (success) {
@@ -228,8 +228,8 @@ const close = () => {
         :icon="RussianRuble"
       />
 
-      <div v-if="formError" class="text-text-accent text-xs font-semibold px-2">
-        {{ formError }}
+      <div v-if="displayError" class="text-text-accent text-xs font-semibold px-2">
+        {{ displayError }}
       </div>
 
       <!-- Кнопки действий -->

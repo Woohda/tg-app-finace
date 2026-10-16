@@ -15,9 +15,11 @@
  */
 import { ref, watch, computed, onMounted } from "vue";
 import { RussianRuble } from "@lucide/vue";
-import { budgetSchema } from "~/types/validate";
-import { parseAmount } from "~/utils/format";
-import { formatZodError } from "~/utils/zod";
+import {
+  validateBudgetForm,
+  isBudgetFormValid,
+  getAmountInputError,
+} from "~/utils/validation";
 import { isCurrentMonth } from "~/utils/date";
 import type { GoalItemData } from "~/components/goals/CategoryGoalList.vue";
 
@@ -28,11 +30,13 @@ const {
   error: budgetError,
   fetchBudget,
 } = useBudgets();
+
 const {
   categories,
   fetchCategories,
   isLoading: isCategoriesLoading,
 } = useCategories();
+
 const {
   goalsMap,
   fetchGoals,
@@ -40,6 +44,7 @@ const {
   isLoaded: isGoalsLoaded,
   error: goalsError,
 } = useCategoryGoals();
+
 const { startDate, endDate } = useDateFilter();
 const { transactions } = useTransactions({ startDate, endDate });
 
@@ -54,10 +59,15 @@ const amount = ref<string | number>(budget.value || "");
 const buttonState = ref<"idle" | "loading" | "success">("idle");
 const localError = ref<string>("");
 
+const displayError = computed(() => {
+  const amountErr = getAmountInputError(amount.value);
+  if (amountErr) return amountErr;
+  return localError.value || budgetError.value;
+});
+
 const isSubmitDisabled = computed(() => {
-  if (isBudgetLoading.value) return true;
-  const parsed = parseAmount(amount.value);
-  return isNaN(parsed) || parsed <= 0;
+  if (isBudgetLoading.value || buttonState.value === "loading") return true;
+  return !isBudgetFormValid(amount.value);
 });
 
 watch(amount, () => {
@@ -73,18 +83,16 @@ watch(budget, (newVal) => {
 });
 
 onMounted(async () => {
-  await Promise.all([
-    fetchBudget(),
-    fetchCategories(),
-    fetchGoals(),
-  ]);
+  await Promise.all([fetchBudget(), fetchCategories(), fetchGoals()]);
 });
 
 const saveBudget = async () => {
-  const result = budgetSchema.safeParse({ amount: parseAmount(amount.value) });
+  if (isSubmitDisabled.value) return;
+
+  const result = validateBudgetForm({ amount: amount.value });
 
   if (!result.success) {
-    localError.value = formatZodError(result.error);
+    localError.value = result.error;
     return;
   }
 
@@ -226,10 +234,10 @@ const handleDeleteGoal = async (categoryId: string) => {
         />
 
         <div
-          v-if="localError || budgetError"
+          v-if="displayError"
           class="text-text-accent text-sm text-center"
         >
-          {{ localError || budgetError }}
+          {{ displayError }}
         </div>
 
         <GlassMorphButton

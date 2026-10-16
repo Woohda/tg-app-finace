@@ -17,6 +17,11 @@ import { ref, onMounted, computed, watch } from "vue";
 import { RussianRuble } from "@lucide/vue";
 import type { SplitExpense } from "~/types/split";
 import { formatAmount } from "~/utils/format";
+import {
+  validateExportShareForm,
+  isExportShareFormValid,
+  getExportTitleInputError,
+} from "~/utils/validation";
 
 const props = defineProps<{
   isOpen: boolean;
@@ -35,6 +40,25 @@ const { categories, isLoading: pending, fetchCategories } = useCategories();
 const expenseTitle = ref("");
 const selectedCategoryId = ref("");
 const buttonState = ref<"idle" | "loading" | "success">("idle");
+const submitError = ref("");
+
+watch([expenseTitle, selectedCategoryId], () => {
+  submitError.value = "";
+});
+
+const isFormValid = computed(() => {
+  return isExportShareFormValid(expenseTitle.value);
+});
+
+const isSubmitDisabled = computed(() => {
+  return !isFormValid.value || buttonState.value !== "idle";
+});
+
+const displayError = computed(() => {
+  const titleErr = getExportTitleInputError(expenseTitle.value);
+  if (titleErr) return titleErr;
+  return submitError.value;
+});
 
 onMounted(() => {
   fetchCategories();
@@ -45,6 +69,7 @@ watch(
   ([open, exp]) => {
     if (open) {
       buttonState.value = "idle";
+      submitError.value = "";
       expenseTitle.value = exp?.title || "";
       selectedCategoryId.value = "";
     }
@@ -63,21 +88,26 @@ const expenseCategories = computed(() =>
 );
 
 const handleExport = async () => {
-  if (
-    !props.expense ||
-    !selectedCategoryId.value ||
-    !expenseTitle.value.trim() ||
-    buttonState.value === "loading"
-  )
+  if (!isFormValid.value || buttonState.value === "loading") return;
+  if (!props.expense) return;
+
+  const validRes = validateExportShareForm({
+    title: expenseTitle.value,
+    categoryId: selectedCategoryId.value,
+  });
+
+  if (!validRes.success) {
+    submitError.value = validRes.error;
     return;
+  }
 
   buttonState.value = "loading";
   try {
     const success = await exportShareToTransaction(
       props.groupId,
       props.expense.id,
-      selectedCategoryId.value,
-      expenseTitle.value,
+      validRes.data.category_id,
+      validRes.data.title,
     );
 
     if (success) {
@@ -126,6 +156,13 @@ const handleExport = async () => {
         </span>
       </div>
 
+      <div
+        v-if="displayError"
+        class="text-text-accent text-sm font-medium text-center -mt-1"
+      >
+        {{ displayError }}
+      </div>
+
       <div class="flex items-center justify-end gap-2 pt-px">
         <GlassButton
           size="sm"
@@ -140,7 +177,7 @@ const handleExport = async () => {
           type="submit"
           size="sm"
           :state="buttonState"
-          :disabled="!selectedCategoryId || !expenseTitle.trim()"
+          :disabled="isSubmitDisabled"
           @click="handleExport"
         >
           <span class="text-base">Добавить в траты</span>

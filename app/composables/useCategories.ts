@@ -15,7 +15,7 @@ import { ref, computed } from "vue";
 import type { Database } from "~/types/database.types";
 import { parseApiError } from "~/utils/api";
 
-type Category = Database["public"]["Tables"]["categories"]["Row"];
+export type Category = Database["public"]["Tables"]["categories"]["Row"];
 
 let inFlightCategoriesFetch: Promise<void> | null = null;
 
@@ -102,7 +102,7 @@ export const useCategories = () => {
       categories.value.push(newCategory);
       sortCategories(categories.value);
       isLoaded.value = true;
-      
+
       toast.success("Категория добавлена");
       notifications.add("Новая категория", {
         message: newCategory.name,
@@ -141,13 +141,13 @@ export const useCategories = () => {
 
       useTransactionCache().value = {};
       useGlobalTransactionsVersion().value++;
-      
+
       toast.success("Категория обновлена");
       notifications.add("Категория изменена", {
         message: updated.name,
         type: "system",
       });
-      
+
       return true;
     } catch (e: unknown) {
       console.error("Ошибка обновления категории:", e);
@@ -174,7 +174,7 @@ export const useCategories = () => {
 
       useTransactionCache().value = {};
       useGlobalTransactionsVersion().value++;
-      
+
       toast.success("Категория удалена");
       if (cat) {
         notifications.add("Категория удалена", {
@@ -182,7 +182,7 @@ export const useCategories = () => {
           type: "system",
         });
       }
-      
+
       return true;
     } catch (e: unknown) {
       console.error("Ошибка удаления категории:", e);

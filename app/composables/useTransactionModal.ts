@@ -23,10 +23,13 @@ export interface EditTransactionData {
 }
 
 export interface ScannedTransaction {
+  id?: string;
   type: "expense" | "income";
   amount: number;
   name: string;
   suggestedCategory?: string;
+  categoryId?: string;
+  date?: string;
 }
 
 export const useTransactionModal = () => {

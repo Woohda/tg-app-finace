@@ -17,6 +17,7 @@ import type { SplitMember, SplitExpense } from "~/types/split";
 import { calculateHybridShares, roundCurrency } from "~/utils/splitAlgorithm";
 import { formatAmount } from "~/utils/format";
 import { RussianRuble } from "@lucide/vue";
+import { getNameInputError, getAmountInputError } from "~/utils/validation";
 
 const props = defineProps<{
   isOpen: boolean;
@@ -41,8 +42,15 @@ const memberWeights = ref<Record<string, number>>({});
 const memberFixed = ref<Record<string, boolean>>({});
 const memberFixedAmounts = ref<Record<string, number>>({});
 const buttonState = ref<"idle" | "loading" | "success">("idle");
+const formError = ref("");
 
 const isEditing = computed(() => Boolean(props.expenseToEdit));
+
+watch([payerId, selectedMemberIds, title, amount], () => {
+  if (formError.value) {
+    formError.value = "";
+  }
+});
 
 // Инициализация при открытии модального окна
 watch(
@@ -197,23 +205,26 @@ const remainingAmount = computed(() => {
 });
 
 const isFormValid = computed(() => {
-  if (!title.value.trim() || numAmount.value <= 0 || !payerId.value) {
+  const trimmedTitle = title.value.trim();
+  if (
+    trimmedTitle.length < 1 ||
+    trimmedTitle.length > 30 ||
+    numAmount.value <= 0 ||
+    numAmount.value > 10_000_000
+  ) {
     return false;
-  }
-  if (selectedMemberIds.value.length === 0) {
-    return false;
-  }
-  // Если зафиксированные суммы превышают общий чек
-  if (hasAnyFixed.value) {
-    if (remainingAmount.value < -0.01) {
-      return false;
-    }
-    // Если остаток есть, но некому его разделить
-    if (remainingAmount.value > 0.01 && weightedMembersCount.value === 0) {
-      return false;
-    }
   }
   return true;
+});
+
+const displayError = computed(() => {
+  const nameErr = getNameInputError(title.value);
+  if (nameErr) return nameErr;
+
+  const amountErr = getAmountInputError(amount.value);
+  if (amountErr) return amountErr;
+
+  return formError.value || null;
 });
 
 const toggleMember = (memberId: string) => {
@@ -229,6 +240,25 @@ const toggleMember = (memberId: string) => {
 
 const handleSubmit = async () => {
   if (!isFormValid.value || buttonState.value === "loading") return;
+
+  if (!payerId.value) {
+    formError.value = "Выберите, кто оплатил";
+    return;
+  }
+  if (selectedMemberIds.value.length === 0) {
+    formError.value = "Выберите участников расхода";
+    return;
+  }
+  if (hasAnyFixed.value) {
+    if (remainingAmount.value < -0.01) {
+      formError.value = "Сумма долей превышает чек";
+      return;
+    }
+    if (remainingAmount.value > 0.01 && weightedMembersCount.value === 0) {
+      formError.value = "Остаток некому распределить";
+      return;
+    }
+  }
 
   buttonState.value = "loading";
   try {
@@ -291,6 +321,7 @@ const handleSubmit = async () => {
           v-model="title"
           label="За что заплатили"
           placeholder="Например: Ужин, Такси, Отель..."
+          maxlength="30"
           required
           autofocus
         />
@@ -300,6 +331,7 @@ const handleSubmit = async () => {
           type="number"
           inputmode="decimal"
           step="0.01"
+          max="10000000"
           label="Сумма"
           placeholder="0.00"
           :icon="RussianRuble"
@@ -474,6 +506,13 @@ const handleSubmit = async () => {
           Остаток {{ formatAmount(remainingAmount) }} некому распределить —
           включите доли хотя бы одному участнику
         </p>
+      </div>
+
+      <div
+        v-if="displayError"
+        class="text-text-accent text-sm font-medium text-center -mt-1"
+      >
+        {{ displayError }}
       </div>
 
       <div class="flex items-center justify-end gap-2 pt-1">

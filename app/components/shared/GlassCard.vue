@@ -15,7 +15,7 @@ const props = defineProps<{
 </script>
 
 <template>
-  <div :class="cn('glass-milky rounded-3xl p-5', props.class)">
+  <div :class="cn('glass-milky rounded-4xl p-5', props.class)">
     <slot />
   </div>
 </template>

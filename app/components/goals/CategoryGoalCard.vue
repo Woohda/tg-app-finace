@@ -35,6 +35,11 @@ import { formatAmount } from "~/utils/format";
 import { formatDayMonth } from "~/utils/date";
 import { getHapticFeedback } from "~/utils/haptics";
 import { calculateCategoryGoalPacing } from "~/utils/analytics";
+import {
+  validateCategoryGoalForm,
+  isCategoryGoalFormValid,
+  getCategoryGoalInputError,
+} from "~/utils/validation";
 
 interface Props {
   categoryId: string | null;
@@ -99,8 +104,16 @@ const goalInputError = ref<string | null>(null);
 const isSubmittingGoal = ref(false);
 const buttonState = ref<"idle" | "loading" | "success">("idle");
 
+const isFormValid = computed(() => isCategoryGoalFormValid(goalInputValue.value));
+
 const isSubmitDisabled = computed(() => {
-  return isSubmittingGoal.value || buttonState.value !== "idle";
+  return isSubmittingGoal.value || buttonState.value !== "idle" || !isFormValid.value;
+});
+
+const displayError = computed(() => {
+  const amountErr = getCategoryGoalInputError(goalInputValue.value);
+  if (amountErr) return amountErr;
+  return goalInputError.value;
 });
 
 watch(goalInputValue, () => {
@@ -128,21 +141,13 @@ const cancelEditGoal = () => {
 const handleSaveGoal = async () => {
   if (!props.categoryId || buttonState.value !== "idle") return;
 
-  const raw = String(goalInputValue.value ?? "").trim();
-  if (!raw) {
-    goalInputError.value = "Укажите сумму лимита";
-    haptics.notification("error");
-    return;
-  }
+  const validRes = validateCategoryGoalForm({
+    amount: goalInputValue.value,
+    categoryId: props.categoryId,
+  });
 
-  const num = Number(raw);
-  if (isNaN(num) || num <= 0) {
-    goalInputError.value = "Сумма должна быть больше 0";
-    haptics.notification("error");
-    return;
-  }
-  if (num > 100_000_000) {
-    goalInputError.value = "Сумма не может превышать 100 млн";
+  if (!validRes.success) {
+    goalInputError.value = validRes.error;
     haptics.notification("error");
     return;
   }
@@ -151,7 +156,7 @@ const handleSaveGoal = async () => {
   isSubmittingGoal.value = true;
   buttonState.value = "loading";
 
-  const success = await setGoal(props.categoryId, Math.round(num));
+  const success = await setGoal(props.categoryId, validRes.data.amount);
   isSubmittingGoal.value = false;
 
   if (success) {
@@ -223,10 +228,10 @@ watch(
         />
 
         <div
-          v-if="goalInputError"
+          v-if="displayError"
           class="text-text-accent text-xs font-semibold px-2"
         >
-          {{ goalInputError }}
+          {{ displayError }}
         </div>
 
         <div class="flex items-center gap-2 mt-1">

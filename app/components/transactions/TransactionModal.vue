@@ -18,9 +18,12 @@ import { ref, computed, watch } from "vue";
 import { useRouter } from "vue-router";
 
 import { RussianRuble, Camera } from "@lucide/vue";
-import { transactionSchema } from "~/types/validate";
-import { parseAmount } from "~/utils/format";
-import { formatZodError } from "~/utils/zod";
+import {
+  validateTransactionForm,
+  isTransactionFormValid,
+  getAmountInputError,
+  getNameInputError,
+} from "~/utils/validation";
 
 const router = useRouter();
 const toast = useAppToast();
@@ -69,7 +72,7 @@ const filteredCategories = computed(() => {
 const buttonState = ref<"idle" | "loading" | "success">("idle");
 const errorMsg = ref("");
 
-watch(amount, () => {
+watch([amount, categoryId, name], () => {
   if (errorMsg.value) {
     errorMsg.value = "";
   }
@@ -100,23 +103,33 @@ watch(
   { immediate: true },
 );
 
+const isFormValid = computed(() => {
+  return isTransactionFormValid(amount.value, name.value);
+});
+
+const displayError = computed(() => {
+  const amountErr = getAmountInputError(amount.value);
+  if (amountErr) return amountErr;
+
+  const nameErr = getNameInputError(name.value);
+  if (nameErr) return nameErr;
+
+  return errorMsg.value;
+});
+
 const submit = async () => {
-  if (buttonState.value === "loading") return;
+  if (buttonState.value === "loading" || !isFormValid.value) return;
 
-  if (name.value && name.value.trim()) {
-    name.value = capitalizeFirstLetter(name.value.trim()) || "";
-  }
-
-  const result = transactionSchema.safeParse({
-    amount: parseAmount(amount.value),
-    category_id: categoryId.value,
+  const result = validateTransactionForm({
+    amount: amount.value,
+    categoryId: categoryId.value,
     date: date.value,
     type: type.value,
-    name: name.value || undefined,
+    name: name.value,
   });
 
   if (!result.success) {
-    errorMsg.value = formatZodError(result.error);
+    errorMsg.value = result.error;
     return;
   }
 
@@ -208,10 +221,10 @@ const {
       />
 
       <div
-        v-if="errorMsg"
+        v-if="displayError"
         class="text-text-accent text-sm font-medium text-center"
       >
-        {{ errorMsg }}
+        {{ displayError }}
       </div>
 
       <GlassTypeSelector v-model="type" />
@@ -221,7 +234,7 @@ const {
         type="submit"
         variant="primary"
         :state="buttonState"
-        :disabled="pending"
+        :disabled="pending || !isFormValid"
       >
         <span v-if="isEditMode">💾 Сохранить изменения</span>
         <span v-else

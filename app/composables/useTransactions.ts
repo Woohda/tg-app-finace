@@ -110,8 +110,8 @@ export const useTransactions = (options?: {
     return txCache.value[cacheKey.value] || [];
   });
 
-  const hasFilter = computed(
-    () => Boolean(options?.startDate?.value || options?.endDate?.value),
+  const hasFilter = computed(() =>
+    Boolean(options?.startDate?.value || options?.endDate?.value),
   );
 
   // Реактивный слушатель: реагирует на изменение дат (периода) и глобальной версии (CRUD).
@@ -133,7 +133,11 @@ export const useTransactions = (options?: {
   const getKnownTxIds = () => useLocalStorage<string[]>("app-known-tx-ids", []);
 
   // Синглтон-наблюдатель за новыми транзакциями для показа уведомлений (регистрируется единожды на клиенте)
-  if (import.meta.client && hasFilter.value && !isTxNotificationObserverAttached) {
+  if (
+    import.meta.client &&
+    hasFilter.value &&
+    !isTxNotificationObserverAttached
+  ) {
     isTxNotificationObserverAttached = true;
     const knownTxIds = getKnownTxIds();
 

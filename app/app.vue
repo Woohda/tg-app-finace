@@ -15,6 +15,8 @@
 const isLoading = useGlobalLoading();
 const router = useRouter();
 
+const { isOpen: isTxModalOpen } = useTransactionModal();
+
 // Гарантированный сброс блокирующего лоадера после любого перехода между страницами
 router.afterEach(() => {
   isLoading.value = false;
@@ -41,9 +43,9 @@ router.afterEach(() => {
     </NuxtErrorBoundary>
   </NuxtLayout>
 
-  <TransactionModal />
+  <LazyTransactionModal v-if="isTxModalOpen" />
   <ToastContainer />
-  <IosInstallPrompt />
+  <LazyIosInstallPrompt />
 
   <Transition name="fade">
     <div

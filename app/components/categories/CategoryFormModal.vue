@@ -11,10 +11,13 @@
  * 2. Валидация введенных данных (одно эмодзи, непустое имя).
  * 3. Отправка запроса на создание или обновление через глобальный composable.
  */
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { SquarePen } from "@lucide/vue";
-import { categorySchema } from "~/types/validate";
-import { formatZodError } from "~/utils/zod";
+import {
+  validateCategoryForm,
+  isCategoryFormValid,
+  getNameInputError,
+} from "~/utils/validation";
 
 const props = defineProps<{
   isOpen: boolean;
@@ -36,6 +39,16 @@ const formError = ref<string | null>(null);
 const formButtonState = ref<"idle" | "loading" | "success">("idle");
 const nameInputRef = ref<{ focus: () => void } | null>(null);
 
+const isFormValid = computed(() => {
+  return isCategoryFormValid(formName.value, formIcon.value);
+});
+
+const displayError = computed(() => {
+  const nameErr = getNameInputError(formName.value);
+  if (nameErr) return nameErr;
+  return formError.value;
+});
+
 watch(
   () => props.isOpen,
   (newVal) => {
@@ -52,6 +65,12 @@ watch(
   },
 );
 
+watch([formName, formIcon], () => {
+  if (formError.value) {
+    formError.value = null;
+  }
+});
+
 watch(formIcon, (newVal) => {
   if (newVal) {
     const glyphs = Array.from(newVal);
@@ -66,15 +85,16 @@ const closeForm = () => {
 };
 
 const submitForm = async () => {
-  formName.value = capitalizeFirstLetter(formName.value.trim());
-  const result = categorySchema.safeParse({
+  if (formButtonState.value === "loading" || !isFormValid.value) return;
+
+  const result = validateCategoryForm({
     name: formName.value,
-    icon: formIcon.value.trim(),
+    icon: formIcon.value,
     type: formType.value,
   });
 
   if (!result.success) {
-    formError.value = formatZodError(result.error);
+    formError.value = result.error;
     return;
   }
 
@@ -153,14 +173,15 @@ const submitForm = async () => {
 
       <GlassTypeSelector v-if="!isEditMode" v-model="formType" />
 
-      <div v-if="formError" class="text-text-accent text-sm text-center">
-        {{ formError }}
+      <div v-if="displayError" class="text-text-accent text-sm text-center">
+        {{ displayError }}
       </div>
 
       <GlassMorphButton
         type="submit"
         variant="primary"
         :state="formButtonState"
+        :disabled="!isFormValid"
       >
         <span>{{
           isEditMode ? "💾 Сохранить изменения" : "✨ Создать"

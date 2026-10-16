@@ -15,6 +15,11 @@
 import { ref, watch, computed } from "vue";
 import { RussianRuble } from "@lucide/vue";
 import type { SplitMember, SplitDebtTransfer } from "~/types/split";
+import {
+  validateSettleDebtForm,
+  isSettleDebtFormValid,
+  getAmountInputError,
+} from "~/utils/validation";
 
 const props = defineProps<{
   isOpen: boolean;
@@ -35,11 +40,6 @@ const amount = ref<string | number>("");
 const buttonState = ref<"idle" | "loading" | "success">("idle");
 const isCustomMode = ref(false);
 
-const numAmount = computed(() => {
-  const parsed = parseAmount(amount.value);
-  return isNaN(parsed) ? 0 : parsed;
-});
-
 const currentMemberId = computed(
   () => props.members.find((m) => m.is_current_user)?.id,
 );
@@ -58,13 +58,24 @@ const getToLabel = (t: SplitDebtTransfer): string => {
   return isMe ? "мне" : t.toMemberName;
 };
 
+const submitError = ref("");
+
+watch([amount, fromMemberId, toMemberId], () => {
+  submitError.value = "";
+});
+
 const isFormValid = computed(() => {
-  return (
-    numAmount.value > 0 &&
-    Boolean(fromMemberId.value) &&
-    Boolean(toMemberId.value) &&
-    fromMemberId.value !== toMemberId.value
-  );
+  return isSettleDebtFormValid(amount.value);
+});
+
+const isSubmitDisabled = computed(() => {
+  return !isFormValid.value || buttonState.value !== "idle";
+});
+
+const displayError = computed(() => {
+  const amountErr = getAmountInputError(amount.value);
+  if (amountErr) return amountErr;
+  return submitError.value;
 });
 
 watch(
@@ -72,6 +83,7 @@ watch(
   (open) => {
     if (open) {
       buttonState.value = "idle";
+      submitError.value = "";
       isCustomMode.value = false;
       if (props.defaultTransfer) {
         fromMemberId.value = props.defaultTransfer.fromMemberId;
@@ -116,12 +128,23 @@ const handleQuickConfirm = async () => {
 const handleFormSubmit = async () => {
   if (!isFormValid.value || buttonState.value === "loading") return;
 
+  const validRes = validateSettleDebtForm({
+    fromMemberId: fromMemberId.value,
+    toMemberId: toMemberId.value,
+    amount: amount.value,
+  });
+
+  if (!validRes.success) {
+    submitError.value = validRes.error;
+    return;
+  }
+
   buttonState.value = "loading";
   try {
     const result = await addSettlement(props.groupId, {
-      from_member_id: fromMemberId.value,
-      to_member_id: toMemberId.value,
-      amount: numAmount.value,
+      from_member_id: validRes.data.from_member_id,
+      to_member_id: validRes.data.to_member_id,
+      amount: validRes.data.amount,
       date: formatDateISO(),
     });
 
@@ -220,7 +243,6 @@ const handleFormSubmit = async () => {
           v-model="fromMemberId"
           label="Кто перевел (должник)"
           :members="members"
-          :disabled-ids="toMemberId ? [toMemberId] : []"
         />
 
         <!-- Кому перевел -->
@@ -228,7 +250,6 @@ const handleFormSubmit = async () => {
           v-model="toMemberId"
           label="Кому перевел (получатель)"
           :members="members"
-          :disabled-ids="fromMemberId ? [fromMemberId] : []"
         />
 
         <!-- Сумма -->
@@ -241,6 +262,13 @@ const handleFormSubmit = async () => {
           placeholder="0.00"
           required
         />
+      </div>
+
+      <div
+        v-if="displayError"
+        class="text-text-accent text-sm font-medium text-center -mt-1"
+      >
+        {{ displayError }}
       </div>
 
       <div class="flex items-center justify-end gap-2 pt-2">
@@ -257,7 +285,7 @@ const handleFormSubmit = async () => {
           type="submit"
           size="sm"
           :state="buttonState"
-          :disabled="!isFormValid"
+          :disabled="isSubmitDisabled"
         >
           <span class="text-[15px]">Подтвердить перевод</span>
           <template #success>

@@ -13,9 +13,13 @@
  */
 import { ref, computed, watch } from "vue";
 import { Calendar, RussianRuble, Plus, Sparkles } from "@lucide/vue";
-import { subscriptionSchema } from "~/types/validate";
-import { parseAmount } from "~/utils/format";
-import { formatZodError } from "~/utils/zod";
+import {
+  validateSubscriptionForm,
+  isSubscriptionFormValid,
+  getNameInputError,
+  getAmountInputError,
+  getDayOfMonthInputError,
+} from "~/utils/validation";
 import type { Subscription } from "~/composables/useSubscriptions";
 
 const props = defineProps<{
@@ -46,7 +50,24 @@ const expenseCategories = computed(() =>
   categories.value.filter((c) => c.type === "expense"),
 );
 
-watch(amount, () => {
+const isFormValid = computed(() => {
+  return isSubscriptionFormValid(name.value, amount.value, dayOfMonth.value);
+});
+
+const displayError = computed(() => {
+  const nameErr = getNameInputError(name.value);
+  if (nameErr) return nameErr;
+
+  const amountErr = getAmountInputError(amount.value);
+  if (amountErr) return amountErr;
+
+  const dayErr = getDayOfMonthInputError(dayOfMonth.value);
+  if (dayErr) return dayErr;
+
+  return errorMsg.value;
+});
+
+watch([name, amount, dayOfMonth], () => {
   if (errorMsg.value) {
     errorMsg.value = "";
   }
@@ -81,15 +102,17 @@ watch(
 );
 
 const submit = async () => {
-  const parseResult = subscriptionSchema.safeParse({
+  if (buttonState.value === "loading" || !isFormValid.value) return;
+
+  const parseResult = validateSubscriptionForm({
     name: name.value,
-    amount: parseAmount(amount.value),
-    day_of_month: Number(dayOfMonth.value),
-    category_id: categoryId.value || null,
+    amount: amount.value,
+    dayOfMonth: dayOfMonth.value,
+    categoryId: categoryId.value || null,
   });
 
   if (!parseResult.success) {
-    errorMsg.value = formatZodError(parseResult.error);
+    errorMsg.value = parseResult.error;
     return;
   }
 
@@ -191,10 +214,10 @@ const submit = async () => {
       </div>
 
       <div
-        v-if="errorMsg"
+        v-if="displayError"
         class="text-text-accent text-sm font-medium text-center"
       >
-        {{ errorMsg }}
+        {{ displayError }}
       </div>
 
       <!-- Кнопка сохранения -->
@@ -202,7 +225,7 @@ const submit = async () => {
         type="submit"
         variant="primary"
         :state="buttonState"
-        :disabled="pending"
+        :disabled="pending || !isFormValid"
       >
         <span v-if="isEditMode">💾 Сохранить изменения</span>
         <span v-else class="flex gap-px items-center">

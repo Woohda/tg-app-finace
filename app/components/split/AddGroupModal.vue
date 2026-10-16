@@ -6,9 +6,14 @@
  * Предоставляет форму ввода названия группы, быстрый выбор участников из списка друзей
  * и добавление новых участников с интерактивными чипсами перед сохранением в базе данных.
  */
-import { ref, watch } from "vue";
+import { ref, watch, computed } from "vue";
 import { Plus, Users } from "@lucide/vue";
 import type { UserFriend } from "~/types/friends";
+import {
+  validateGroupForm,
+  isGroupFormValid,
+  getGroupNameInputError,
+} from "~/utils/validation";
 
 interface NewGroupMember {
   name: string;
@@ -31,6 +36,25 @@ const name = ref("");
 const newMemberName = ref("");
 const members = ref<NewGroupMember[]>([]);
 const buttonState = ref<"idle" | "loading" | "success">("idle");
+const submitError = ref("");
+
+watch(name, () => {
+  submitError.value = "";
+});
+
+const isFormValid = computed(() => {
+  return isGroupFormValid(name.value);
+});
+
+const isSubmitDisabled = computed(() => {
+  return !isFormValid.value || buttonState.value !== "idle";
+});
+
+const displayError = computed(() => {
+  const nameErr = getGroupNameInputError(name.value);
+  if (nameErr) return nameErr;
+  return submitError.value;
+});
 
 watch(
   () => props.isOpen,
@@ -82,11 +106,20 @@ const removeMember = (_member: unknown, index: number) => {
 };
 
 const handleSubmit = async () => {
-  if (!name.value.trim() || buttonState.value === "loading") return;
+  if (!isFormValid.value || buttonState.value === "loading") return;
+
+  const validRes = validateGroupForm({
+    name: name.value,
+  });
+
+  if (!validRes.success) {
+    submitError.value = validRes.error;
+    return;
+  }
 
   buttonState.value = "loading";
   try {
-    const result = await createGroup(name.value.trim(), members.value);
+    const result = await createGroup(validRes.data.name, members.value);
     if (result) {
       buttonState.value = "success";
       setTimeout(() => {
@@ -118,6 +151,7 @@ const handleSubmit = async () => {
         v-model="name"
         label="Название группы"
         placeholder="Например: Поездка в горы, Бар..."
+        maxlength="30"
         autofocus
         required
       />
@@ -189,6 +223,13 @@ const handleSubmit = async () => {
         </p>
       </div>
 
+      <div
+        v-if="displayError"
+        class="text-text-accent text-sm font-medium text-center -mt-1"
+      >
+        {{ displayError }}
+      </div>
+
       <div class="flex items-center justify-end gap-2 pt-1">
         <GlassButton
           size="sm"
@@ -203,7 +244,7 @@ const handleSubmit = async () => {
           type="submit"
           size="sm"
           :state="buttonState"
-          :disabled="!name.trim()"
+          :disabled="isSubmitDisabled"
         >
           <span class="text-base">Создать группу</span>
         </GlassMorphButton>

@@ -42,12 +42,14 @@ const {
 } = useBudgets({ monthlyExpense });
 
 const { fetchSubscriptions } = useSubscriptions();
+const { fetchCategories } = useCategories();
 
 const retryAll = async () => {
   await Promise.all([
     refreshTransactions(),
     fetchBudget(true),
     fetchSubscriptions(true),
+    fetchCategories(true),
   ]);
 };
 
@@ -56,6 +58,7 @@ onMounted(async () => {
     fetchTransactions(),
     fetchBudget(),
     fetchSubscriptions(),
+    fetchCategories(),
   ]);
 });
 
