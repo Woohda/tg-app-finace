@@ -24,7 +24,9 @@ export default defineNuxtRouteMiddleware((to) => {
   if (
     typeof window !== "undefined" &&
     (window.Telegram?.WebApp?.initData ||
-      window.location.hash.includes("tgWebAppData"))
+      window.location.hash.includes("tgWebAppData") ||
+      Boolean(window.Telegram?.WebApp?.platform) ||
+      /telegram/i.test(navigator.userAgent || ""))
   ) {
     return;
   }

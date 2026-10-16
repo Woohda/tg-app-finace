@@ -51,6 +51,7 @@ export default defineNuxtConfig({
       },
       "/**": {
         headers: {
+          "Cache-Control": "no-cache, no-store, must-revalidate",
           "X-Content-Type-Options": "nosniff",
           "Referrer-Policy": "strict-origin-when-cross-origin",
           "X-XSS-Protection": "1; mode=block",
@@ -119,6 +120,10 @@ export default defineNuxtConfig({
         {
           src: "/telegram-web-app.js",
         },
+        {
+          innerHTML:
+            "try{if(window.Telegram&&window.Telegram.WebApp){window.Telegram.WebApp.ready();window.Telegram.WebApp.expand();}}catch(e){}",
+        },
       ],
     },
   },
@@ -126,7 +131,6 @@ export default defineNuxtConfig({
   modules: [
     "@nuxt/eslint",
     "@nuxt/image",
-    "@nuxtjs/supabase",
   ],
   components: [
     {
@@ -143,9 +147,5 @@ export default defineNuxtConfig({
     geminiApiKey2: process.env.GEMINI_API_KEY2,
     adminTgId: process.env.ADMIN_TG_ID,
     cronSecret: process.env.CRON_SECRET,
-  },
-  supabase: {
-    // Отключаем встроенный редирект на /login — авторизация через собственный JWT
-    redirect: false,
   },
 });

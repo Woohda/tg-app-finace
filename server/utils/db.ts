@@ -23,22 +23,11 @@ let supabaseInstance: ReturnType<typeof createClient<Database>> | null = null;
 export function getBotSupabase() {
   if (supabaseInstance) return supabaseInstance;
 
-  // Пытаемся получить конфиг через Nuxt, либо напрямую из process.env
-  let url = process.env.SUPABASE_URL;
-  let key = process.env.NUXT_SUPABASE_SECRET_KEY || process.env.SUPABASE_KEY;
-
-  try {
-    const config = useRuntimeConfig();
-    url = url || config.public?.supabase?.url;
-    // Используем secretKey или serviceKey в зависимости от того, как они определены в nuxt.config
-    type SupabaseConfig = { serviceKey?: string; secretKey?: string };
-    key =
-      key ||
-      (config.supabase as SupabaseConfig)?.serviceKey ||
-      (config.supabase as SupabaseConfig)?.secretKey;
-  } catch {
-    // Вне запроса useRuntimeConfig может выбросить ошибку
-  }
+  const url = process.env.SUPABASE_URL || process.env.NUXT_PUBLIC_SUPABASE_URL;
+  const key =
+    process.env.NUXT_SUPABASE_SECRET_KEY ||
+    process.env.SUPABASE_SERVICE_ROLE_KEY ||
+    process.env.SUPABASE_KEY;
 
   if (!url || !key) {
     throw new Error(
@@ -56,16 +45,8 @@ export function getBotSupabase() {
 }
 
 export function getUserSupabase(token: string) {
-  let url = process.env.SUPABASE_URL;
-  let key = process.env.SUPABASE_KEY;
-
-  try {
-    const config = useRuntimeConfig();
-    url = url || config.public?.supabase?.url;
-    key = key || config.public?.supabase?.key;
-  } catch {
-    // Вне запроса useRuntimeConfig может выбросить ошибку
-  }
+  const url = process.env.SUPABASE_URL || process.env.NUXT_PUBLIC_SUPABASE_URL;
+  const key = process.env.SUPABASE_KEY || process.env.SUPABASE_ANON_KEY;
 
   if (!url || !key) {
     throw new Error("Missing Supabase URL or Anon Key");

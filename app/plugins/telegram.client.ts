@@ -7,45 +7,24 @@
  * 2. Считывает криптографически подписанный `initData`.
  * 3. Если пользователь ещё не авторизован и `initData` доступен, выполняет фоновую авторизацию через `loginWithTelegram`.
  */
-import type { TelegramWebApp } from "~/types/telegram";
 
-async function resolveTelegramWebApp(
-  maxWaitMs = 1200,
-  stepMs = 30,
-): Promise<TelegramWebApp | null> {
-  const start = Date.now();
-  while (Date.now() - start < maxWaitMs) {
-    if (typeof window !== "undefined" && window.Telegram?.WebApp) {
-      return window.Telegram.WebApp;
-    }
-    await new Promise((resolve) => setTimeout(resolve, stepMs));
-  }
-  return typeof window !== "undefined" && window.Telegram?.WebApp
-    ? window.Telegram.WebApp
-    : null;
-}
-
-export default defineNuxtPlugin(async () => {
+export default defineNuxtPlugin(() => {
   if (!import.meta.client) return;
 
-  const tg = await resolveTelegramWebApp();
-  if (!tg) {
-    console.info(
-      "[Telegram Plugin] Telegram WebApp SDK не обнаружен (запуск в обычном браузере)",
-    );
-    return;
-  }
+  const tg = typeof window !== "undefined" ? window.Telegram?.WebApp : null;
 
   // Сообщаем Telegram о готовности интерфейса и раскрываем окно на максимум
-  try {
-    tg.ready();
-    tg.expand();
-    setTelegramVerticalSwipes(false);
-  } catch (err) {
-    console.warn(
-      "[Telegram Plugin] Ошибка при вызове ready/expand/disableVerticalSwipes:",
-      err,
-    );
+  if (tg) {
+    try {
+      tg.ready();
+      tg.expand();
+      setTelegramVerticalSwipes(false);
+    } catch (err) {
+      console.warn(
+        "[Telegram Plugin] Ошибка при вызове ready/expand/disableVerticalSwipes:",
+        err,
+      );
+    }
   }
 
   const { isAuthenticated, token, isJwtExpired, loginWithTelegram } = useAuth();
@@ -54,7 +33,7 @@ export default defineNuxtPlugin(async () => {
 
   // Получаем initData из SDK либо из хэша URL (если SDK ещё не распарсил хэш)
   const rawInitData =
-    tg.initData ||
+    tg?.initData ||
     (typeof window !== "undefined" &&
     window.location.hash.includes("tgWebAppData")
       ? new URLSearchParams(window.location.hash.substring(1)).get(
@@ -65,11 +44,16 @@ export default defineNuxtPlugin(async () => {
   if (rawInitData) {
     const isTokenValid = isAuthenticated.value && !isJwtExpired(token.value);
     if (!isTokenValid) {
-      // Первичный вход или токен истёк: ждем авторизации перед монтированием компонентов
-      const success = await loginWithTelegram(rawInitData);
-      if (success && route.path === "/login") {
-        router.replace("/");
-      }
+      // Запускаем авторизацию в фоне без блокировки монтирования Vue UI
+      loginWithTelegram(rawInitData)
+        .then((success) => {
+          if (success && route.path === "/login") {
+            router.replace("/");
+          }
+        })
+        .catch((err) => {
+          console.warn("[Telegram Plugin] Ошибка авторизации:", err);
+        });
     } else {
       // Пользователь уже вошел с валидным токеном: делаем фоновую тихую авторизацию и прогрев БД без блокировки UI
       loginWithTelegram(rawInitData).catch((err) => {
@@ -80,7 +64,7 @@ export default defineNuxtPlugin(async () => {
 
   // Обработка инвайт-ссылок совместных трат и друзей (join_groupId или friend_userId)
   const rawStartParam =
-    tg.initDataUnsafe?.start_param ||
+    tg?.initDataUnsafe?.start_param ||
     (typeof route.query.startapp === "string" ? route.query.startapp : undefined) ||
     (typeof route.query.tgWebAppStartParam === "string" ? route.query.tgWebAppStartParam : undefined);
 
@@ -90,27 +74,27 @@ export default defineNuxtPlugin(async () => {
       sessionStorage.setItem(sessionKey, "1");
       const api = useApi();
       const toast = useAppToast();
-      try {
-        const result = await api<import("~/types/friends").JoinInviteResult>("/api/friends/join", {
-          method: "POST",
-          body: { startParam: rawStartParam },
-        });
-
-        if (result.success) {
-          if (result.groupId) {
-            toast.success("Вы добавлены в группу!", result.groupName ? `«${result.groupName}»` : undefined);
-            if (route.path !== `/split/${result.groupId}`) {
-              router.push(`/split/${result.groupId}`);
+      api<import("~/types/friends").JoinInviteResult>("/api/friends/join", {
+        method: "POST",
+        body: { startParam: rawStartParam },
+      })
+        .then((result) => {
+          if (result.success) {
+            if (result.groupId) {
+              toast.success("Вы добавлены в группу!", result.groupName ? `«${result.groupName}»` : undefined);
+              if (route.path !== `/split/${result.groupId}`) {
+                router.push(`/split/${result.groupId}`);
+              }
+            } else if (result.friendName) {
+              toast.success("Новый друг!", `Вы добавили ${result.friendName} в список друзей`);
             }
-          } else if (result.friendName) {
-            toast.success("Новый друг!", `Вы добавили ${result.friendName} в список друзей`);
+          } else if (result.message) {
+            toast.info("Приглашение", result.message);
           }
-        } else if (result.message) {
-          toast.info("Приглашение", result.message);
-        }
-      } catch (err) {
-        console.warn("[Telegram Plugin] Ошибка обработки инвайт-ссылки:", err);
-      }
+        })
+        .catch((err) => {
+          console.warn("[Telegram Plugin] Ошибка обработки инвайт-ссылки:", err);
+        });
     }
   }
 
@@ -121,7 +105,7 @@ export default defineNuxtPlugin(async () => {
       if (document.visibilityState === "visible") {
         const now = Date.now();
         // Если прошло больше 60 секунд с последнего обращения и есть initData
-        if (now - lastWarmup > 60_000 && tg.initData) {
+        if (now - lastWarmup > 60_000 && tg?.initData) {
           lastWarmup = now;
           loginWithTelegram(tg.initData).catch(() => {});
         }
