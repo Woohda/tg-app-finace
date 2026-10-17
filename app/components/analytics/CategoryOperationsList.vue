@@ -28,15 +28,13 @@ interface Props {
   title: string;
   emptyText: string;
   isLoading?: boolean;
-  loading?: boolean;
 }
 
 const props = withDefaults(defineProps<Props>(), {
   isLoading: false,
-  loading: false,
 });
 
-const isEffectiveLoading = computed(() => props.isLoading || props.loading);
+const isEffectiveLoading = computed(() => props.isLoading);
 
 const { deleteTransaction } = useTransactions();
 const { openModal } = useTransactionModal();
@@ -45,7 +43,7 @@ const {
   displayedTransactions,
   hasMoreTransactions,
   remainingCount,
-  loadMoreTriggerRef,
+  setLoadMoreTrigger,
   loadMore,
   filteredAmountText,
 } = useOperationsPagination(toRef(props, "transactions"), {
@@ -90,7 +88,7 @@ function handleEdit(tx: Transaction) {
     tooth-width="20px"
     notch-radius="12.5px"
     notch-height="12.5px"
-    :on-trigger-mounted="(el) => (loadMoreTriggerRef = el)"
+    :on-trigger-mounted="setLoadMoreTrigger"
     class="relative z-10 w-full"
     @load-more="loadMore"
   >

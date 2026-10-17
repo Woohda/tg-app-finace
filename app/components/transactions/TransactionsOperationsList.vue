@@ -19,7 +19,7 @@
  * 4. Автоматически подгружает следующую порцию при скролле к триггеру в футере чека.
  * 5. Предоставляет свайп для удаления и открытие модального окна редактирования по тапу.
  */
-import { ref, computed, watch, toRef } from "vue";
+import { ref, computed, toRef } from "vue";
 import { Search, X } from "@lucide/vue";
 import type { Transaction } from "~/composables/useTransactions";
 import type {
@@ -75,16 +75,11 @@ const {
   displayedTransactions,
   hasMoreTransactions,
   remainingCount,
-  displayedLimit,
-  loadMoreTriggerRef,
+  setLoadMoreTrigger,
   loadMore,
   filteredAmountText,
 } = useOperationsPagination(toRef(props, "transactions"), {
   isPaused: toRef(props, "isLoading"),
-});
-
-watch([() => props.activePeriod, () => props.searchQuery], () => {
-  displayedLimit.value = 10;
 });
 
 const deletingTransaction = ref<Transaction | null>(null);
@@ -122,7 +117,7 @@ function handleEdit(tx: Transaction) {
     :amount-text="filteredAmountText"
     :has-more="hasMoreTransactions"
     :remaining-count="remainingCount"
-    :on-trigger-mounted="(el) => (loadMoreTriggerRef = el)"
+    :on-trigger-mounted="setLoadMoreTrigger"
     class="relative z-10 w-full"
     @load-more="loadMore"
   >

@@ -52,6 +52,18 @@ export function useOperationsPagination(
   const loadMoreTriggerRef = ref<HTMLElement | null>(null);
   let observer: IntersectionObserver | null = null;
 
+  const setLoadMoreTrigger = (el: HTMLElement | null) => {
+    loadMoreTriggerRef.value = el;
+  };
+
+  const observeTrigger = (el: HTMLElement | null) => {
+    if (!observer) return;
+    observer.disconnect();
+    if (el && hasMoreTransactions.value) {
+      observer.observe(el);
+    }
+  };
+
   onMounted(() => {
     if (typeof IntersectionObserver !== "undefined") {
       observer = new IntersectionObserver(
@@ -66,17 +78,24 @@ export function useOperationsPagination(
         },
         { rootMargin },
       );
+
+      if (loadMoreTriggerRef.value) {
+        observeTrigger(loadMoreTriggerRef.value);
+      }
     }
   });
 
   watch(loadMoreTriggerRef, (el) => {
-    if (observer) {
-      observer.disconnect();
-      if (el) {
-        observer.observe(el);
-      }
-    }
+    observeTrigger(el);
   });
+
+  if (options.isPaused) {
+    watch(options.isPaused, (isPaused) => {
+      if (!isPaused && loadMoreTriggerRef.value && observer) {
+        observeTrigger(loadMoreTriggerRef.value);
+      }
+    });
+  }
 
   onUnmounted(() => {
     if (observer) {
@@ -115,6 +134,7 @@ export function useOperationsPagination(
     remainingCount,
     displayedLimit,
     loadMoreTriggerRef,
+    setLoadMoreTrigger,
     loadMore,
     filteredExpense,
     filteredIncome,

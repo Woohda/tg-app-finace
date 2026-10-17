@@ -19,15 +19,16 @@ import { ChevronRight } from "@lucide/vue";
 interface Props {
   stat: CategoryStat;
   maxAmount: number;
+  goal?: number | null;
 }
 
-const props = defineProps<Props>();
+const props = withDefaults(defineProps<Props>(), {
+  goal: null,
+});
 
 const emit = defineEmits<{
   (e: "click"): void;
 }>();
-
-const { getGoal } = useCategoryGoals();
 
 interface CategoryProgress {
   hasGoal: boolean;
@@ -38,7 +39,7 @@ interface CategoryProgress {
 }
 
 const progress = computed<CategoryProgress>(() => {
-  const goal = getGoal(props.stat.categoryId);
+  const goal = props.goal;
   if (goal && goal > 0) {
     const percent = Math.round((props.stat.amount / goal) * 100);
     const isOverspent = props.stat.amount > goal;

@@ -65,6 +65,17 @@ export const useTransactions = (options?: {
   const isMutating = ref(false);
   const error = ref<string | null>(null);
 
+  // Реактивная синхронизация состояния загрузки с глобальным кэшем транзакций
+  watch(
+    () => txCache.value[cacheKey.value],
+    (cached) => {
+      if (cached !== undefined) {
+        isLoading.value = false;
+      }
+    },
+    { immediate: true },
+  );
+
   const { token } = useAuth();
 
   const fetchTransactions = async (force = false): Promise<void> => {
@@ -74,11 +85,18 @@ export const useTransactions = (options?: {
 
     const key = cacheKey.value;
     if (!force && txCache.value[key]) {
+      isLoading.value = false;
       return;
     }
     const inFlight = inFlightTxFetches.get(key);
     if (inFlight) {
-      return inFlight;
+      isLoading.value = true;
+      try {
+        await inFlight;
+      } finally {
+        isLoading.value = false;
+      }
+      return;
     }
 
     isLoading.value = true;
@@ -121,6 +139,9 @@ export const useTransactions = (options?: {
     [cacheKey, txVersion],
     () => {
       if (hasFilter.value) {
+        if (!txCache.value[cacheKey.value]) {
+          isLoading.value = true;
+        }
         fetchTransactions();
       }
     },

@@ -169,9 +169,11 @@ const periodOptions = [
   { id: "3M", label: "3 Мес" },
 ];
 
+const isCategoryModalMounted = ref(false);
 const selectedCategoryId = ref<string | null>(null);
 
 const openCategoryAnalytics = (id: string) => {
+  isCategoryModalMounted.value = true;
   selectedCategoryId.value = id;
 };
 
@@ -347,6 +349,7 @@ const closeCategoryAnalytics = () => {
 
     <!-- Модалка детальной аналитики категории -->
     <CategoryAnalyticsModal
+      v-if="isCategoryModalMounted"
       :is-open="selectedCategoryId !== null"
       :category-id="selectedCategoryId"
       :period="period"
