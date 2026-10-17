@@ -301,6 +301,11 @@ const handleSubmit = async () => {
     buttonState.value = "idle";
   }
 };
+
+const handleClose = () => {
+  if (buttonState.value !== "idle") return;
+  emit("close");
+};
 </script>
 
 <template>
@@ -308,7 +313,8 @@ const handleSubmit = async () => {
     :is-open="isOpen"
     :title="isEditing ? 'Редактировать платеж' : 'Новый совместный платеж'"
     position="bottom"
-    @close="emit('close')"
+    :disable-close="buttonState !== 'idle'"
+    @close="handleClose"
   >
     <form class="flex flex-col gap-3" @submit.prevent="handleSubmit">
       <!-- Название и сумма -->
@@ -517,7 +523,8 @@ const handleSubmit = async () => {
           size="sm"
           type="button"
           variant="soft"
-          @click="emit('close')"
+          :disabled="buttonState !== 'idle'"
+          @click="handleClose"
         >
           Отмена
         </GlassButton>

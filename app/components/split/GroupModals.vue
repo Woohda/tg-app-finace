@@ -118,7 +118,13 @@ const handleDeleteMemberConfirm = async () => {
 };
 
 const handleDeleteGroupConfirm = async () => {
-  return await deleteGroup(props.group.id);
+  const success = await deleteGroup(props.group.id);
+  if (success) {
+    setTimeout(() => {
+      emit("groupDeleted");
+    }, 600);
+  }
+  return success;
 };
 
 export interface GroupModalsExpose {
@@ -236,11 +242,6 @@ defineExpose<GroupModalsExpose>({
     <ConfirmDeleteModal
       :is-open="isDeleteMemberOpen"
       title="Удаление участника"
-      :description="
-        memberToDelete?.name
-          ? `Вы уверены, что хотите удалить участника ${memberToDelete.name} из группы?`
-          : 'Вы уверены, что хотите удалить этого участника?'
-      "
       warning="Участника можно удалить только в том случае, если он не оплачивал расходы и не участвует в текущих долях затрат группы."
       confirm-text="Удалить"
       :on-confirm="handleDeleteMemberConfirm"
@@ -249,33 +250,49 @@ defineExpose<GroupModalsExpose>({
         memberToDelete = null;
       "
       @deleted="emit('refresh')"
-    />
+    >
+      <p class="text-[17px] text-text-primary">
+        <template v-if="memberToDelete?.name">
+          Вы уверены, что хотите удалить участника
+          <strong class="text-text-accent font-semibold">{{
+            memberToDelete.name
+          }}</strong>
+          из группы?
+        </template>
+        <template v-else>
+          Вы уверены, что хотите удалить этого участника?
+        </template>
+      </p>
+    </ConfirmDeleteModal>
 
     <!-- Модалка подтверждения удаления всей группы -->
     <ConfirmDeleteModal
       :is-open="isDeleteGroupOpen"
       title="Удаление группы"
-      :description="
-        group.name
-          ? `Вы уверены, что хотите удалить группу «${group.name}»?`
-          : 'Вы уверены, что хотите удалить эту группу?'
-      "
       warning="Все записанные совместные платежи, доли участников и история расчетов будут безвозвратно удалены."
       confirm-text="Удалить"
       :on-confirm="handleDeleteGroupConfirm"
       @close="isDeleteGroupOpen = false"
-      @deleted="emit('groupDeleted')"
-    />
+      @deleted="
+        isDeleteGroupOpen = false;
+        emit('groupDeleted');
+      "
+    >
+      <p class="text-[17px] text-text-primary">
+        <template v-if="group.name">
+          Вы уверены, что хотите удалить группу
+          <strong class="text-text-accent font-semibold"
+            >«{{ group.name }}»</strong
+          >?
+        </template>
+        <template v-else> Вы уверены, что хотите удалить эту группу? </template>
+      </p>
+    </ConfirmDeleteModal>
 
     <!-- Модалка подтверждения удаления расхода в группе -->
     <ConfirmDeleteModal
       :is-open="isDeleteExpenseOpen"
       title="Удаление платёжа"
-      :description="
-        expenseToDelete
-          ? `Вы уверены, что хотите удалить расход «${expenseToDelete.title}» на сумму ${formatAmount(expenseToDelete.amount)}?`
-          : 'Вы уверены, что хотите удалить этот расход?'
-      "
       warning="Связанные доли участников чека и балансы будут автоматически пересчитаны."
       confirm-text="Удалить"
       :on-confirm="handleDeleteExpenseConfirm"
@@ -284,6 +301,23 @@ defineExpose<GroupModalsExpose>({
         expenseToDelete = null;
       "
       @deleted="emit('refresh')"
-    />
+    >
+      <p class="text-[17px] text-text-primary">
+        <template v-if="expenseToDelete">
+          Вы уверены, что хотите удалить расход
+          <strong class="text-text-accent"
+            >«{{ expenseToDelete.title }}»</strong
+          >
+          на сумму
+          <strong class="text-text-primary">{{
+            formatAmount(expenseToDelete.amount)
+          }}</strong
+          >?
+        </template>
+        <template v-else>
+          Вы уверены, что хотите удалить этот расход?
+        </template>
+      </p>
+    </ConfirmDeleteModal>
   </div>
 </template>

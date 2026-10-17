@@ -44,19 +44,18 @@ const currentMemberId = computed(
   () => props.members.find((m) => m.is_current_user)?.id,
 );
 
-const getFromLabel = (t: SplitDebtTransfer): string => {
-  const isMe =
-    (currentMemberId.value && t.fromMemberId === currentMemberId.value) ||
-    t.fromMemberName.trim().toLowerCase() === "я";
-  return isMe ? "я" : t.fromMemberName;
+const isMe = (memberId: string, memberName: string): boolean => {
+  return Boolean(
+    (currentMemberId.value && memberId === currentMemberId.value) ||
+    memberName.trim().toLowerCase() === "я",
+  );
 };
 
-const getToLabel = (t: SplitDebtTransfer): string => {
-  const isMe =
-    (currentMemberId.value && t.toMemberId === currentMemberId.value) ||
-    t.toMemberName.trim().toLowerCase() === "я";
-  return isMe ? "мне" : t.toMemberName;
-};
+const getFromLabel = (t: SplitDebtTransfer): string =>
+  isMe(t.fromMemberId, t.fromMemberName) ? "я" : t.fromMemberName;
+
+const getToLabel = (t: SplitDebtTransfer): string =>
+  isMe(t.toMemberId, t.toMemberName) ? "мне" : t.toMemberName;
 
 const submitError = ref("");
 
@@ -99,15 +98,15 @@ watch(
   { immediate: true },
 );
 
-const handleQuickConfirm = async () => {
-  if (!props.defaultTransfer || buttonState.value === "loading") return;
-
+const saveSettlement = async (payload: {
+  from_member_id: string;
+  to_member_id: string;
+  amount: number;
+}) => {
   buttonState.value = "loading";
   try {
     const result = await addSettlement(props.groupId, {
-      from_member_id: props.defaultTransfer.fromMemberId,
-      to_member_id: props.defaultTransfer.toMemberId,
-      amount: props.defaultTransfer.amount,
+      ...payload,
       date: formatDateISO(),
     });
 
@@ -125,8 +124,17 @@ const handleQuickConfirm = async () => {
   }
 };
 
-const handleFormSubmit = async () => {
-  if (!isFormValid.value || buttonState.value === "loading") return;
+const handleQuickConfirm = () => {
+  if (!props.defaultTransfer || buttonState.value !== "idle") return;
+  saveSettlement({
+    from_member_id: props.defaultTransfer.fromMemberId,
+    to_member_id: props.defaultTransfer.toMemberId,
+    amount: props.defaultTransfer.amount,
+  });
+};
+
+const handleFormSubmit = () => {
+  if (!isFormValid.value || buttonState.value !== "idle") return;
 
   const validRes = validateSettleDebtForm({
     fromMemberId: fromMemberId.value,
@@ -139,27 +147,12 @@ const handleFormSubmit = async () => {
     return;
   }
 
-  buttonState.value = "loading";
-  try {
-    const result = await addSettlement(props.groupId, {
-      from_member_id: validRes.data.from_member_id,
-      to_member_id: validRes.data.to_member_id,
-      amount: validRes.data.amount,
-      date: formatDateISO(),
-    });
+  saveSettlement(validRes.data);
+};
 
-    if (result) {
-      buttonState.value = "success";
-      setTimeout(() => {
-        emit("saved");
-        emit("close");
-      }, 500);
-    } else {
-      buttonState.value = "idle";
-    }
-  } catch {
-    buttonState.value = "idle";
-  }
+const handleClose = () => {
+  if (buttonState.value !== "idle") return;
+  emit("close");
 };
 </script>
 
@@ -172,29 +165,27 @@ const handleFormSubmit = async () => {
         : 'Зафиксировать перевод'
     "
     position="bottom"
-    @close="emit('close')"
+    :disable-close="buttonState !== 'idle'"
+    @close="handleClose"
   >
     <!-- Быстрое подтверждение в 1 клик -->
     <div v-if="defaultTransfer && !isCustomMode" class="flex flex-col gap-4">
-      <div class="flex flex-col items-center gap-2 text-center">
-        <h3 class="text-text-primary font-bold text-lg">
-          Зафиксировать перевод?
-        </h3>
-        <p class="text-text-secondary text-sm leading-relaxed max-w-xs">
-          Зафиксировать, что
-          <span class="font-bold text-text-accent">{{
-            getFromLabel(defaultTransfer)
-          }}</span>
-          перевел
-          <span class="font-bold text-accent-success">{{
-            getToLabel(defaultTransfer)
-          }}</span>
-
-          <span class="font-bold text-text-primary">
-            &nbsp;{{ formatAmount(defaultTransfer.amount) }}</span
-          >?
-        </p>
-      </div>
+      <p
+        class="text-text-secondary text-sm leading-relaxed max-w-xs text-center mx-auto"
+      >
+        Зафиксировать, что
+        <strong class="text-text-accent">{{
+          getFromLabel(defaultTransfer)
+        }}</strong>
+        перевел
+        <strong class="text-accent-success">{{
+          getToLabel(defaultTransfer)
+        }}</strong>
+        &nbsp;
+        <strong class="text-text-primary">
+          {{ formatAmount(defaultTransfer.amount) }}</strong
+        >?
+      </p>
 
       <div class="flex flex-col gap-2">
         <div class="flex items-center gap-2">
@@ -203,8 +194,8 @@ const handleFormSubmit = async () => {
             variant="soft"
             size="sm"
             class="px-6.5"
-            :disabled="buttonState === 'loading'"
-            @click="emit('close')"
+            :disabled="buttonState !== 'idle'"
+            @click="handleClose"
           >
             Отмена
           </GlassButton>
@@ -214,10 +205,7 @@ const handleFormSubmit = async () => {
             :state="buttonState"
             @click="handleQuickConfirm"
           >
-            <span class="text-base">Подтвердить</span>
-            <template #success>
-              <RussianRuble :stroke-width="2" />
-            </template>
+            <span>Подтвердить</span>
           </GlassMorphButton>
         </div>
 
@@ -258,7 +246,7 @@ const handleFormSubmit = async () => {
           type="number"
           inputmode="decimal"
           step="0.01"
-          label="Сумма перевода (₽)"
+          label="Сумма перевода"
           placeholder="0.00"
           required
           :icon="RussianRuble"
@@ -278,7 +266,8 @@ const handleFormSubmit = async () => {
           variant="soft"
           size="sm"
           class="px-6.5"
-          @click="defaultTransfer ? (isCustomMode = false) : emit('close')"
+          :disabled="buttonState !== 'idle'"
+          @click="defaultTransfer ? (isCustomMode = false) : handleClose()"
         >
           {{ defaultTransfer ? "Назад" : "Отмена" }}
         </GlassButton>
@@ -288,10 +277,7 @@ const handleFormSubmit = async () => {
           :state="buttonState"
           :disabled="isSubmitDisabled"
         >
-          <span>Подтвердить перевод</span>
-          <template #success>
-            <RussianRuble :stroke-width="2" />
-          </template>
+          <span class="text-sm">Подтвердить перевод</span>
         </GlassMorphButton>
       </div>
     </form>

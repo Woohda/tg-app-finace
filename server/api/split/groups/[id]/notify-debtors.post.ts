@@ -1,43 +1,41 @@
 /**
  * @module server/api/split/groups/[id]/notify-debtors.post
- * @fileoverview Отправка Telegram-уведомлений должникам группы через бота FINO
+ * @fileoverview Отправка персонального Telegram-напоминания должнику через бота FINO
  * @description
- * Рассчитывает оптимизированные долги группы и отправляет персональное сообщение
- * каждому должнику, зарегистрированному в FINO (имеющему `telegram_id`),
- * с указанием точной суммы долга и имени участника, которому необходимо сделать перевод.
+ * Направляет персональное сообщение конкретному должнику группы в Telegram
+ * с указанием точной суммы перевода и имени участника-получателя (кредитора).
+ * Отправка разрешена только получателю перевода (кредитору) либо владельцу группы.
+ * Кулдаун 24 часа действует строго индивидуально для каждого перевода.
  * ---
  * ### Логика работы:
  * 1. Проверка аутентификации через `requireAuth`.
- * 2. Получение `id` группы и проверка доступа.
- * 3. Загрузка участников с джойном `users` для извлечения `telegram_id`.
- * 4. Загрузка расходов и взаиморасчетов группы.
- * 5. Расчет текущих балансов и вычисление оптимизированных переводов (`simplifyDebts`).
- * 6. Инициализация Telegram-бота через `getBot()`.
- * 7. Итеративная отправка сообщений должникам с обработкой ошибок доставки.
- * 8. Возврат статистики отправки: `notifiedCount` и `skippedCount`.
- * 
- * ### Параметры запроса:
- * - `id` (route param) — UUID группы совместных трат.
- * 
- * ### Ошибки:
- * - `400 Bad Request`: параметр `id` отсутствует.
- * - `401 Unauthorized`: неавторизованный запрос.
- * - `404 Not Found`: группа не найдена.
- * - `500 Internal Server Error`: ошибка базы данных или Telegram API.
- * 
- * ### Особенности:
- * - Уведомления получают только участники с привязанным `telegram_id`; участники без FINO аккаунта учитываются в `skippedCount`.
+ * 2. Получение `id` группы и валидация тела запроса `{ fromMemberId, toMemberId }`.
+ * 3. Загрузка данных группы и участников.
+ * 4. Проверка прав (только кредитор или владелец).
+ * 5. Проверка 24-часового персонального кулдауна для пары (должник -> кредитор).
+ * 6. Расчет оптимизированных долгов (`simplifyDebts`) и поиск перевода.
+ * 7. Отправка персонального Telegram-сообщения должнику через бота.
+ * 8. Фиксация времени отправки в сервере для кулдауна.
  */
 import { getUserSupabase, getBotSupabase } from "~~/server/utils/db";
 import { getBot } from "~~/server/utils/bot";
 import { escapeHtml } from "~~/server/utils/format";
+import {
+  getSplitDebtorNotificationCooldown,
+  recordSplitDebtorNotification,
+} from "~~/server/utils/splitNotification";
 import { calculateMemberBalances, simplifyDebts } from "~/utils/splitAlgorithm";
 import type { SplitMember, SplitExpense, SplitSettlement } from "~/types/split";
-import type { Database } from "~/types/database.types";
+
+interface NotifyDebtorsBody {
+  fromMemberId: string;
+  toMemberId: string;
+}
 
 export default defineEventHandler(async (event) => {
   const { userId, token } = await requireAuth(event);
   const groupId = getRouterParam(event, "id");
+  const body = await readBody<NotifyDebtorsBody>(event).catch(() => null);
 
   if (!groupId) {
     throw createError({
@@ -46,54 +44,47 @@ export default defineEventHandler(async (event) => {
     });
   }
 
-  const supabase = getUserSupabase(token);
-
-  // 1. Получаем группу с поддержкой last_notified_at
-  let group: {
-    id: string;
-    name: string;
-    user_id: string;
-    last_notified_at?: string | null;
-  };
-
-  const fullGroupQuery = await supabase
-    .from("split_groups")
-    .select("id, name, user_id, last_notified_at")
-    .eq("id", groupId)
-    .single();
-
-  if (!fullGroupQuery.error && fullGroupQuery.data) {
-    group = fullGroupQuery.data as unknown as typeof group;
-  } else {
-    const fallbackQuery = await supabase
-      .from("split_groups")
-      .select("id, name, user_id")
-      .eq("id", groupId)
-      .single();
-
-    if (fallbackQuery.error || !fallbackQuery.data) {
-      throw createError({
-        statusCode: 404,
-        statusMessage: "Группа не найдена",
-      });
-    }
-    group = fallbackQuery.data;
-  }
-
-  // Защита от спама: отправка напоминаний должникам разрешена не чаще одного раза в сутки
-  const { isCooldown, remainingHours } = getSplitGroupNotificationCooldown(
-    groupId,
-    group.last_notified_at,
-  );
-
-  if (isCooldown) {
+  if (!body?.fromMemberId || !body?.toMemberId) {
     throw createError({
-      statusCode: 429,
-      statusMessage: `Напоминание можно отправлять не чаще одного раза в сутки. Следующая отправка будет доступна через ${remainingHours} ч.`,
+      statusCode: 400,
+      statusMessage: "Не указаны участники перевода для напоминания",
     });
   }
 
-  // 2. Получаем участников группы
+  const supabase = getUserSupabase(token);
+
+  // 1. Получаем группу
+  const { data: group, error: groupError } = await supabase
+    .from("split_groups")
+    .select("id, name, user_id")
+    .eq("id", groupId)
+    .single();
+
+  if (groupError || !group) {
+    throw createError({
+      statusCode: 404,
+      statusMessage: "Группа не найдена",
+    });
+  }
+
+  // 2. Проверяем индивидуальный кулдаун (24 часа)
+  const { isCooldown, remainingHours, remainingMinutes } =
+    getSplitDebtorNotificationCooldown(
+      groupId,
+      body.fromMemberId,
+      body.toMemberId,
+    );
+
+  if (isCooldown) {
+    const cooldownTime =
+      remainingHours > 0 ? `${remainingHours} ч.` : `${remainingMinutes} мин.`;
+    throw createError({
+      statusCode: 429,
+      statusMessage: `Напоминание этому должнику можно отправлять не чаще одного раза в сутки. Повтор будет доступен через ${cooldownTime}`,
+    });
+  }
+
+  // 3. Получаем участников группы
   const { data: rawMembers } = await supabase
     .from("split_members")
     .select("id, group_id, name, user_id, is_current_user, created_at")
@@ -109,11 +100,23 @@ export default defineEventHandler(async (event) => {
     });
   }
 
+  // Только получатель перевода (кредитор) или создатель группы может отправить напоминание
+  const currentMember = (rawMembers || []).find((m) => m.user_id === userId);
+  const isCreditor = currentMember?.id === body.toMemberId;
+  if (!isCreditor && !isOwner) {
+    throw createError({
+      statusCode: 403,
+      statusMessage:
+        "Только участник, которому предназначен перевод, может отправлять напоминание",
+    });
+  }
+
   const userIds = Array.from(
-    new Set([
-      group.user_id,
-      ...(rawMembers || []).map((m) => m.user_id),
-    ].filter(Boolean)),
+    new Set(
+      [group.user_id, ...(rawMembers || []).map((m) => m.user_id)].filter(
+        Boolean,
+      ),
+    ),
   ) as string[];
 
   const userMap = new Map<
@@ -140,6 +143,10 @@ export default defineEventHandler(async (event) => {
     const effectiveUserId =
       m.user_id || (isOwner && m.is_current_user ? group.user_id : null);
     const u = effectiveUserId ? userMap.get(effectiveUserId) : null;
+    const isCurrentUser = Boolean(
+      (userId && m.user_id === userId) ||
+        (!m.user_id && isOwner && m.is_current_user),
+    );
     const profileName = u?.first_name?.trim();
     const displayName =
       (m.name === "Я" || m.name.toLowerCase() === "я") && profileName
@@ -151,17 +158,19 @@ export default defineEventHandler(async (event) => {
       group_id: m.group_id,
       name: displayName,
       user_id: m.user_id,
-      is_current_user: Boolean(
-        (userId && m.user_id === userId) ||
-          (!m.user_id && isOwner && m.is_current_user),
-      ),
+      is_current_user: isCurrentUser,
       created_at: m.created_at,
       telegram_id: u?.telegram_id ?? null,
     };
   });
 
-  // 3. Получаем расходы
-  const { data: rawExpenses } = await supabase
+  const memberNameMap = new Map<string, string>();
+  for (const m of members) {
+    memberNameMap.set(m.id, m.name);
+  }
+
+  // 4. Получаем расходы и расчеты
+  const { data: rawExpenses, error: expensesError } = await supabase
     .from("split_expenses")
     .select(
       `
@@ -174,12 +183,22 @@ export default defineEventHandler(async (event) => {
       split_type,
       created_at,
       split_expense_shares (
+        id,
+        expense_id,
         member_id,
-        amount
+        amount,
+        share_value
       )
     `,
     )
     .eq("group_id", groupId);
+
+  if (expensesError) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Ошибка загрузки расходов группы",
+    });
+  }
 
   const expenses: SplitExpense[] = (rawExpenses || []).map((e) => ({
     id: e.id,
@@ -190,22 +209,30 @@ export default defineEventHandler(async (event) => {
     date: e.date,
     split_type: e.split_type as "equal" | "exact" | "shares",
     created_at: e.created_at,
+    payerName: memberNameMap.get(e.payer_id) || "Неизвестно",
     shares: (e.split_expense_shares || []).map((s) => ({
-      id: "",
-      expense_id: e.id,
+      id: s.id,
+      expense_id: s.expense_id,
       member_id: s.member_id,
       amount: Number(s.amount),
-      share_value: null,
+      share_value: s.share_value !== null ? Number(s.share_value) : null,
+      memberName: memberNameMap.get(s.member_id) || "Участник",
     })),
   }));
 
-  // 4. Получаем взаиморасчеты
-  const { data: rawSettlements } = await supabase
+  const { data: rawSettlements, error: settlementsError } = await supabase
     .from("split_settlements")
     .select(
       "id, group_id, from_member_id, to_member_id, amount, date, created_at",
     )
     .eq("group_id", groupId);
+
+  if (settlementsError) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Ошибка загрузки расчетов группы",
+    });
+  }
 
   const settlements: SplitSettlement[] = (rawSettlements || []).map((s) => ({
     id: s.id,
@@ -215,25 +242,39 @@ export default defineEventHandler(async (event) => {
     amount: Number(s.amount),
     date: s.date,
     created_at: s.created_at,
+    fromMemberName: memberNameMap.get(s.from_member_id) || "Неизвестно",
+    toMemberName: memberNameMap.get(s.to_member_id) || "Неизвестно",
   }));
 
-  // 5. Оптимизируем долги
+  // 5. Расчет текущих долгов
   const balances = calculateMemberBalances(members, expenses, settlements);
   const transfers = simplifyDebts(balances);
 
-  if (transfers.length === 0) {
+  // Ищем конкретный перевод, по которому запрошено напоминание
+  const targetTransfer = transfers.find(
+    (t) =>
+      t.fromMemberId === body.fromMemberId &&
+      t.toMemberId === body.toMemberId,
+  );
+
+  if (!targetTransfer) {
     return {
       success: true,
-      notifiedCount: 0,
-      totalDebtsCount: 0,
-      message: "Все долги в группе закрыты, уведомлять некого",
+      notified: false,
+      message: "Указанный долг уже закрыт или не найден",
     };
   }
 
-  // 6. Отправляем уведомления должникам через бота
-  let notifiedCount = 0;
-  let bot: ReturnType<typeof getBot> | null = null;
+  if (!targetTransfer.fromTelegramId) {
+    return {
+      success: true,
+      notified: false,
+      message: "У должника не найден привязанный Telegram-аккаунт",
+    };
+  }
 
+  // 6. Отправляем персональное сообщение в Telegram через бота
+  let bot: ReturnType<typeof getBot> | null = null;
   try {
     bot = getBot();
   } catch (err) {
@@ -243,68 +284,36 @@ export default defineEventHandler(async (event) => {
     );
   }
 
-  if (bot) {
-    for (const t of transfers) {
-      if (t.fromTelegramId) {
-        try {
-          const safeGroupName = escapeHtml(group.name);
-          const safeToMemberName = escapeHtml(t.toMemberName);
-          const messageText =
-            `👋 <b>FINO: Расчет в группе «${safeGroupName}»</b>\n\n` +
-            `Тебе необходимо перевести <b>${t.amount.toLocaleString("ru-RU")} ₽</b> участнику <b>${safeToMemberName}</b>.\n\n` +
-            `<i>Пожалуйста, переведи указанную сумму и подтверди расчет.</i>`;
-
-          await bot.api.sendMessage(t.fromTelegramId, messageText, {
-            parse_mode: "HTML",
-          });
-          notifiedCount++;
-        } catch (sendErr) {
-          console.warn(
-            `[Telegram Bot] Не удалось отправить уведомление пользователю ${t.fromTelegramId}:`,
-            sendErr,
-          );
-        }
-      }
-    }
+  if (!bot) {
+    throw createError({
+      statusCode: 500,
+      statusMessage: "Сервис Telegram-бота временно недоступен",
+    });
   }
+
+  const safeGroupName = escapeHtml(group.name);
+  const safeToMemberName = escapeHtml(targetTransfer.toMemberName);
+  const messageText =
+    `👋 <b>FINO: Расчет в группе «${safeGroupName}»</b>\n\n` +
+    `Тебе необходимо перевести <b>${targetTransfer.amount.toLocaleString("ru-RU")} ₽</b> участнику <b>${safeToMemberName}</b>.\n\n` +
+    `<i>Пожалуйста, переведи указанную сумму и подтверди расчет.</i>`;
+
+  await bot.api.sendMessage(targetTransfer.fromTelegramId, messageText, {
+    parse_mode: "HTML",
+  });
 
   const now = Date.now();
-
-  if (notifiedCount > 0) {
-    recordSplitGroupNotification(groupId, now);
-
-    // Фиксируем штамп в БД (если колонка last_notified_at существует)
-    try {
-      type SplitGroupUpdateWithNotification =
-        Database["public"]["Tables"]["split_groups"]["Update"] & {
-          last_notified_at?: string;
-        };
-      const untypedTable = supabase.from("split_groups") as unknown as {
-        update: (values: SplitGroupUpdateWithNotification) => {
-          eq: (col: string, val: string) => Promise<unknown>;
-        };
-      };
-      await untypedTable
-        .update({ last_notified_at: new Date(now).toISOString() })
-        .eq("id", groupId);
-    } catch {
-      // Игнорируем ошибку обновления, если колонка еще не мигрирована в БД
-    }
-  }
-
-  const effectiveNotifiedAt =
-    notifiedCount > 0
-      ? new Date(now).toISOString()
-      : getSplitGroupLastNotifiedAt(groupId, group.last_notified_at);
+  recordSplitDebtorNotification(
+    groupId,
+    body.fromMemberId,
+    body.toMemberId,
+    now,
+  );
 
   return {
     success: true,
-    notifiedCount,
-    totalDebtsCount: transfers.length,
-    notifiedAt: effectiveNotifiedAt,
-    message:
-      notifiedCount > 0
-        ? `Отправлено ${notifiedCount} уведомлений в Telegram`
-        : "Ни у одного из должников не найден привязанный Telegram-аккаунт",
+    notified: true,
+    notifiedAt: new Date(now).toISOString(),
+    message: "Напоминание успешно отправлено должнику в Telegram",
   };
 });

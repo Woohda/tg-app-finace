@@ -52,7 +52,7 @@ const handleBackClick = () => {
 
 <template>
   <header
-    class="flex items-center justify-center gap-3 relative min-h-12 shrink-0 mt-1.5"
+    class="flex items-center justify-center gap-3 relative min-h-12 shrink-0 mt-2"
   >
     <!-- Левая кнопка (Назад) -->
     <slot name="back">

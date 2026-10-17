@@ -18,14 +18,21 @@
  * 6. Перенаправление на список групп при удалении группы.
  */
 import { ref, computed, onMounted } from "vue";
-import { Plus, Users, HandCoins, Receipt, Scale } from "@lucide/vue";
-import type { SplitSettlement } from "~/types/split";
+import {
+  Plus,
+  Users,
+  HandCoins,
+  Receipt,
+  ArrowRightLeft,
+  Check,
+  Copy,
+} from "@lucide/vue";
+import type { SplitSettlement, SplitDebtTransfer } from "~/types/split";
 import type { GroupModalsExpose } from "~/components/split/GroupModals.vue";
 import { formatTelegramSplitReport } from "~/utils/splitAlgorithm";
 import { formatAmount } from "~/utils/format";
 
 const route = useRoute();
-const router = useRouter();
 const toast = useAppToast();
 const groupId = computed(() => route.params.id as string);
 
@@ -81,8 +88,12 @@ const formatSettlementParticipants = (s: SplitSettlement): string => {
   return `${fromName} ➔ ${toName}`;
 };
 
-const handleGroupDeleted = () => {
-  router.replace("/split");
+let isDeletingGroup = false;
+const handleGroupDeleted = async () => {
+  if (isDeletingGroup) return;
+  isDeletingGroup = true;
+  currentGroup.value = null;
+  await navigateTo("/split", { replace: true });
 };
 
 const handleCopyReport = async () => {
@@ -116,17 +127,25 @@ const handleCopyReport = async () => {
   }
 };
 
-const handleNotify = async () => {
+const notifyingTransferKey = ref<string | null>(null);
+
+const handleNotifyTransfer = async (transfer: SplitDebtTransfer) => {
   if (!groupId.value || isNotifying.value) return;
-  const last = currentGroup.value?.last_notified_at;
-  if (last && Date.now() - new Date(last).getTime() < 24 * 60 * 60 * 1000) {
-    return;
-  }
+
+  notifyingTransferKey.value = `${groupId.value}:${transfer.fromMemberId}:${transfer.toMemberId}`;
   isNotifying.value = true;
   try {
-    await notifyDebtors(groupId.value);
+    const res = await notifyDebtors(groupId.value, {
+      fromMemberId: transfer.fromMemberId,
+      toMemberId: transfer.toMemberId,
+    });
+    if (res && res.notified && typeof window !== "undefined") {
+      const key = `fino_split_notify_${groupId.value}_${transfer.fromMemberId}_${transfer.toMemberId}`;
+      window.localStorage.setItem(key, String(Date.now()));
+    }
   } finally {
     isNotifying.value = false;
+    notifyingTransferKey.value = null;
   }
 };
 </script>
@@ -145,9 +164,9 @@ const handleNotify = async () => {
       <!-- Скелетон шапки: название и количество участников -->
       <div
         v-else-if="isGroupLoading"
-        class="ml-16 flex flex-col min-w-0 flex-1 justify-center gap-1.5 py-1"
+        class="flex flex-col items-center gap-1.5"
       >
-        <Skeleton class="h-6.5 w-45" rounded="lg" />
+        <Skeleton class="h-6.5 w-50" rounded="xl" />
         <Skeleton class="h-3.5 w-25" rounded="md" />
       </div>
     </PageHeader>
@@ -158,13 +177,13 @@ const handleNotify = async () => {
       class="flex flex-col gap-4 animate-pulse"
     >
       <!-- Сводная карточка группы (аватары, плашки баланса, кнопки) -->
-      <div class="flex flex-col gap-2.5">
+      <div class="flex flex-col gap-5">
         <!-- Стек аватаров и кнопка добавления -->
-        <div class="flex items-center ml-1">
+        <div class="flex items-center justify-center ml-1">
           <div class="flex items-center -space-x-3 rounded-full">
-            <Skeleton v-for="i in 5" :key="i" class="size-11" rounded="full" />
+            <Skeleton v-for="i in 6" :key="i" class="size-9.5" rounded="full" />
           </div>
-          <Skeleton class="h-9.5 w-30 ml-1" rounded="full" />
+          <Skeleton class="h-8.5 w-30 ml-1" rounded="full" />
         </div>
 
         <!-- Две плашки балансов в ряд -->
@@ -179,18 +198,17 @@ const handleNotify = async () => {
           </GlassCard>
         </div>
 
-        <!-- Кнопки действий: Напомнить и Отчет -->
+        <!-- Кнопки вкладок -->
         <div class="flex items-center gap-2.5">
-          <Skeleton class="h-7.5 flex-1" rounded="full" />
-          <Skeleton class="h-7.5 flex-1" rounded="full" />
+          <Skeleton class="h-7 flex-1" rounded="full" />
         </div>
       </div>
 
       <!-- Секция отчета: оптимизированные переводы -->
       <div class="flex flex-col gap-2">
         <div class="flex items-center justify-between px-1">
-          <Skeleton class="h-3.5 w-44" rounded="md" />
-          <Skeleton class="h-3 w-16" rounded="sm" />
+          <Skeleton class="h-3.5 w-20" rounded="md" />
+          <Skeleton class="h-5 w-35" rounded="xl" />
         </div>
 
         <GlassCard v-for="i in 2" :key="i" class="flex flex-col px-3.5 py-2.5">
@@ -240,13 +258,9 @@ const handleNotify = async () => {
       <!-- Сводная карточка группы -->
       <GroupSummaryCard
         :group="currentGroup"
-        :is-notifying="isNotifying"
-        :is-copied="isCopied"
         :current-auth-avatar-url="currentAuthAvatarUrl"
         @open-members="modalsRef?.openMembers()"
         @add-member="modalsRef?.openAddMember()"
-        @notify="handleNotify"
-        @copy-report="handleCopyReport"
       />
 
       <!-- Переключатель вкладок -->
@@ -295,18 +309,32 @@ const handleNotify = async () => {
             <span
               class="text-xs font-bold text-text-primary flex items-center gap-1.5 tracking-wide"
             >
-              <Scale class="size-4 text-text-accent" />
-              Оптимизированные переводы
+              <ArrowRightLeft class="size-4 text-text-accent" />
+              Переводы
             </span>
-            <span class="text-[11px] text-text-secondary">
-              {{ currentGroup.optimizedDebts.length }} операций
-            </span>
+            <GlassButton
+              variant="soft"
+              class="h-auto min-w-0 py-1 px-3 flex items-center justify-center gap-1.25 text-xs"
+              @click="handleCopyReport"
+            >
+              <component
+                :is="isCopied ? Check : Copy"
+                class="size-3.5 shrink-0"
+                :class="isCopied ? 'text-accent-success' : 'text-text-accent'"
+                :stroke-width="1.5"
+              />
+              <span>{{ isCopied ? "Скопировано!" : "Скопировать отчет" }}</span>
+            </GlassButton>
           </div>
 
           <DebtsOptimizedList
             :transfers="currentGroup.optimizedDebts"
             :current-member-id="currentMember?.id"
+            :group-id="currentGroup.id"
+            :is-notifying="isNotifying"
+            :notifying-transfer-key="notifyingTransferKey"
             @settle="modalsRef?.openSettle($event)"
+            @notify="handleNotifyTransfer($event)"
           />
         </div>
 
@@ -334,7 +362,7 @@ const handleNotify = async () => {
 
           <GlassButton
             variant="soft"
-            class="h-auto text-xs py-1.5 px-4 gap-1"
+            class="h-auto text-sm py-1 px-4 gap-1"
             @click="modalsRef?.openAddExpense()"
           >
             <Plus class="size-3.5 text-text-accent" :stroke-width="1.5" />
@@ -364,7 +392,7 @@ const handleNotify = async () => {
 
           <GlassButton
             variant="soft"
-            class="h-auto text-xs py-1.5 px-4 gap-1"
+            class="h-auto text-sm py-1 px-4 gap-1"
             @click="modalsRef?.openSettle()"
           >
             <Plus class="size-3.5 text-text-accent" :stroke-width="1.5" />
@@ -383,7 +411,7 @@ const handleNotify = async () => {
         <GlassCard
           v-for="s in currentGroup.settlements"
           :key="s.id"
-          class="p-4 flex items-center justify-between"
+          class="py-4 px-5 flex items-center justify-between"
         >
           <div class="flex flex-col">
             <span class="text-sm font-bold text-text-primary">

@@ -92,7 +92,7 @@ const expenseCategories = computed(() =>
 );
 
 const handleExport = async () => {
-  if (!isFormValid.value || buttonState.value === "loading") return;
+  if (!isFormValid.value || buttonState.value !== "idle") return;
   if (!props.expense) return;
 
   const validRes = validateExportShareForm({
@@ -127,6 +127,11 @@ const handleExport = async () => {
     buttonState.value = "idle";
   }
 };
+
+const handleClose = () => {
+  if (buttonState.value !== "idle") return;
+  emit("close");
+};
 </script>
 
 <template>
@@ -134,7 +139,8 @@ const handleExport = async () => {
     :is-open="isOpen"
     title="Внести в свои расходы"
     position="bottom"
-    @close="emit('close')"
+    :disable-close="buttonState !== 'idle'"
+    @close="handleClose"
   >
     <div class="flex flex-col gap-4">
       <GlassInput
@@ -173,7 +179,8 @@ const handleExport = async () => {
           type="button"
           variant="soft"
           class="px-6.5"
-          @click="emit('close')"
+          :disabled="buttonState !== 'idle'"
+          @click="handleClose"
         >
           Отмена
         </GlassButton>

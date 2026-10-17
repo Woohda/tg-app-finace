@@ -157,9 +157,6 @@ export const useSplit = () => {
       });
       toast.success("Группа удалена");
       groups.value = groups.value.filter((g) => g.id !== id);
-      if (currentGroup.value?.id === id) {
-        currentGroup.value = null;
-      }
       return true;
     } catch (e) {
       console.error("Ошибка удаления группы:", e);
@@ -322,36 +319,35 @@ export const useSplit = () => {
   };
 
   /**
-   * Отправка персональных Telegram-уведомлений должникам группы
+   * Отправка персонального Telegram-напоминания должнику о переводе
    */
-  const notifyDebtors = async (groupId: string) => {
+  const notifyDebtors = async (
+    groupId: string,
+    target: { fromMemberId: string; toMemberId: string },
+  ) => {
     try {
       const result = await api<{
         success: boolean;
-        notifiedCount: number;
-        totalDebtsCount: number;
+        notified: boolean;
         notifiedAt?: string | null;
         message: string;
       }>(`/api/split/groups/${groupId}/notify-debtors`, {
         method: "POST",
+        body: target,
       });
 
-      if (result.notifiedCount > 0) {
-        if (currentGroup.value && currentGroup.value.id === groupId) {
-          currentGroup.value.last_notified_at =
-            result.notifiedAt || new Date().toISOString();
-        }
+      if (result.notified) {
         toast.success(
-          "Уведомления отправлены",
-          `Отправлено ${result.notifiedCount} должникам через @vfino_bot`,
+          "Уведомление отправлено",
+          "Должник получил напоминание о переводе в @vfino_bot",
         );
       } else {
-        toast.info("Уведомления", result.message);
+        toast.info("Уведомление", result.message);
       }
       return result;
     } catch (e) {
-      console.error("Ошибка отправки уведомлений:", e);
-      toast.error(parseApiError(e, "Не удалось отправить уведомления"));
+      console.error("Ошибка отправки уведомления:", e);
+      toast.error(parseApiError(e, "Не удалось отправить уведомление"));
       return null;
     }
   };

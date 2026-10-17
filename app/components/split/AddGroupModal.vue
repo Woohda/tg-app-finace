@@ -106,7 +106,7 @@ const removeMember = (_member: unknown, index: number) => {
 };
 
 const handleSubmit = async () => {
-  if (!isFormValid.value || buttonState.value === "loading") return;
+  if (!isFormValid.value || buttonState.value !== "idle") return;
 
   const validRes = validateGroupForm({
     name: name.value,
@@ -137,6 +137,11 @@ const handleSubmit = async () => {
     buttonState.value = "idle";
   }
 };
+
+const handleClose = () => {
+  if (buttonState.value !== "idle") return;
+  emit("close");
+};
 </script>
 
 <template>
@@ -144,7 +149,8 @@ const handleSubmit = async () => {
     :is-open="isOpen"
     title="Новая группа трат"
     position="bottom"
-    @close="emit('close')"
+    :disable-close="buttonState !== 'idle'"
+    @close="handleClose"
   >
     <form class="flex flex-col gap-3" @submit.prevent="handleSubmit">
       <GlassInput
@@ -215,7 +221,7 @@ const handleSubmit = async () => {
             class="px-2.75 shrink-0"
             @click="addMember"
           >
-            <Plus class="size-5 text-text-accent" :stroke-width="1.5" />
+            <Plus class="size-5 text-text-accent" :stroke-width="2" />
           </GlassButton>
         </div>
 
@@ -238,7 +244,8 @@ const handleSubmit = async () => {
           type="button"
           variant="soft"
           class="px-6.5"
-          @click="emit('close')"
+          :disabled="buttonState !== 'idle'"
+          @click="handleClose"
         >
           Отмена
         </GlassButton>

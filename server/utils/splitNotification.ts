@@ -1,81 +1,76 @@
 /**
  * @module server/utils/splitNotification
- * @fileoverview Управление и синхронизация времени напоминаний должникам о переводах
+ * @fileoverview Управление и синхронизация времени персональных напоминаний должникам
  * @description
- * Обеспечивает разделяемое состояние времени отправки напоминаний должникам между
- * API получения группы ([id].get) и API рассылки уведомлений (notify-debtors.post).
- * Гарантирует корректный расчет 24-часового лимита даже в случае, если колонка
- * `last_notified_at` еще не мигрирована в таблице `split_groups` в базе данных Supabase.
+ * Обеспечивает разделяемый расчет 24-часового периода кулдауна для персональных
+ * напоминаний должникам о возврате долга в Telegram. Кулдаун рассчитывается строго
+ * для конкретной пары (группа + должник + получатель перевода).
  * ---
  * ### Логика работы:
- * 1. Получение эффективной отметки времени последнего напоминания (БД или память сервера).
- * 2. Фиксация времени отправки уведомления в локальном кеше.
- * 3. Расчет остатка 24-часового периода кулдауна для предотвращения спама.
- * 
- * ### Особенности:
- * - Внутреннее состояние памяти используется как временный fallback для сред без обновленной схемы БД.
+ * 1. Формирование уникального ключа `${groupId}:${fromMemberId}:${toMemberId}`.
+ * 2. Проверка, не отправлялось ли напоминание менее 24 часов назад.
+ * 3. Фиксация времени успешной отправки в памяти сервера.
  */
 
-const splitGroupNotificationTimes = new Map<string, number>();
+const splitDebtorNotificationTimes = new Map<string, number>();
 
-const NOTIFICATION_COOLDOWN_MS = 24 * 60 * 60 * 1000; // Раз в сутки (24 часа)
+const NOTIFICATION_COOLDOWN_MS = 24 * 60 * 60 * 1000; // 24 часа
 
-/**
- * Получение эффективной отметки времени последнего напоминания (БД или память сервера)
- */
-export const getSplitGroupLastNotifiedAt = (
+const getDebtorKey = (
   groupId: string,
-  dbTime?: string | null,
-): string | null => {
-  const dbMs = dbTime ? new Date(dbTime).getTime() : 0;
-  const memMs = splitGroupNotificationTimes.get(groupId) || 0;
-  const effectiveMs = Math.max(dbMs, memMs);
-  return effectiveMs > 0 ? new Date(effectiveMs).toISOString() : null;
+  fromMemberId: string,
+  toMemberId?: string | null,
+): string => {
+  return toMemberId
+    ? `${groupId}:${fromMemberId}:${toMemberId}`
+    : `${groupId}:${fromMemberId}`;
 };
 
 /**
- * Фиксация времени последнего напоминания
+ * Фиксация времени отправки персонального напоминания должнику
  */
-export const recordSplitGroupNotification = (
+export const recordSplitDebtorNotification = (
   groupId: string,
+  fromMemberId: string,
+  toMemberId?: string | null,
   timeMs: number = Date.now(),
 ) => {
-  splitGroupNotificationTimes.set(groupId, timeMs);
+  splitDebtorNotificationTimes.set(
+    getDebtorKey(groupId, fromMemberId, toMemberId),
+    timeMs,
+  );
 };
 
 /**
- * Проверка, находится ли отправка уведомлений в периоде кулдауна (24 часа)
+ * Проверка, находится ли отправка напоминания конкретному должнику в периоде кулдауна (24 часа)
  */
-export const getSplitGroupNotificationCooldown = (
+export const getSplitDebtorNotificationCooldown = (
   groupId: string,
-  dbTime?: string | null,
+  fromMemberId: string,
+  toMemberId?: string | null,
 ): {
   isCooldown: boolean;
   remainingHours: number;
-  effectiveLastNotifiedMs: number;
+  remainingMinutes: number;
 } => {
-  const dbMs = dbTime ? new Date(dbTime).getTime() : 0;
-  const memMs = splitGroupNotificationTimes.get(groupId) || 0;
-  const effectiveLastNotifiedMs = Math.max(dbMs, memMs);
+  const key = getDebtorKey(groupId, fromMemberId, toMemberId);
+  const lastNotifiedMs = splitDebtorNotificationTimes.get(key) || 0;
   const now = Date.now();
 
-  if (
-    effectiveLastNotifiedMs > 0 &&
-    now - effectiveLastNotifiedMs < NOTIFICATION_COOLDOWN_MS
-  ) {
-    const remainingMs =
-      NOTIFICATION_COOLDOWN_MS - (now - effectiveLastNotifiedMs);
+  if (lastNotifiedMs > 0 && now - lastNotifiedMs < NOTIFICATION_COOLDOWN_MS) {
+    const remainingMs = NOTIFICATION_COOLDOWN_MS - (now - lastNotifiedMs);
     const remainingHours = Math.ceil(remainingMs / (60 * 60 * 1000));
+    const remainingMinutes = Math.ceil(remainingMs / (60 * 1000));
     return {
       isCooldown: true,
       remainingHours,
-      effectiveLastNotifiedMs,
+      remainingMinutes,
     };
   }
 
   return {
     isCooldown: false,
     remainingHours: 0,
-    effectiveLastNotifiedMs,
+    remainingMinutes: 0,
   };
 };

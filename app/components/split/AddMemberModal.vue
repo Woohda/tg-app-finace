@@ -104,7 +104,7 @@ const handleAddFriend = async (friend: UserFriend) => {
 };
 
 const handleSubmit = async () => {
-  if (!isFormValid.value || buttonState.value === "loading") return;
+  if (!isFormValid.value || buttonState.value !== "idle") return;
 
   const validRes = validateAddMemberForm({
     name: name.value,
@@ -139,6 +139,11 @@ const handleSubmit = async () => {
     buttonState.value = "idle";
   }
 };
+
+const handleClose = () => {
+  if (buttonState.value !== "idle") return;
+  emit("close");
+};
 </script>
 
 <template>
@@ -146,7 +151,8 @@ const handleSubmit = async () => {
     :is-open="isOpen"
     title="Новый участник"
     position="bottom"
-    @close="emit('close')"
+    :disable-close="buttonState !== 'idle'"
+    @close="handleClose"
   >
     <div class="flex flex-col gap-4">
       <!-- 1. Приглашение по ссылке -->
@@ -244,7 +250,8 @@ const handleSubmit = async () => {
             type="button"
             variant="soft"
             class="px-6.5"
-            @click="emit('close')"
+            :disabled="buttonState !== 'idle'"
+            @click="handleClose"
           >
             Отмена
           </GlassButton>

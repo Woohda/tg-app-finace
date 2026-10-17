@@ -4,75 +4,39 @@
  * @fileoverview Сводная hero-карточка группы совместных трат
  * @description
  * Отображает ключевые показатели группы в стиле Glassmorphism:
- * - Круглая стеклянная плашка с акцентной коралловой иконкой группы;
- * - Название группы и интерактивный счетчик участников;
  * - Горизонтальный стек аватаров участников с бейджем оставшихся (+N) и кнопкой быстрого добавления;
- * - Две плашки балансов в ряд («Общий» расход и «Ваш баланс» с цветовой дифференциацией);
- * - Кнопки действий: отправка напоминаний должникам (с 24ч cooldown) и копирование отчёта.
+ * - Две плашки балансов в ряд («Всего потрачено» и «Ваш баланс» с цветовой дифференциацией).
  * ---
  * ### Логика работы:
- * 1. Прием детального объекта группы `SplitGroupDetail` и состояний загрузки/копирования.
- * 2. Вычисление отображаемых участников (первые 5) и количества оставшихся (+N).
- * 3. Расчет тайм-аута cooldown (24 часа) для защиты от спам-уведомлений.
- * 4. Отправка событий `openMembers`, `addMember`, `notify` и `copyReport`.
+ * 1. Прием детального объекта группы `SplitGroupDetail` и аватара текущего пользователя.
+ * 2. Вычисление отображаемых участников (первые 6) и количества оставшихся (+N).
+ * 3. Отправка событий `openMembers` и `addMember`.
  */
 import { computed } from "vue";
-import { Bell, Check, Copy, UserPlus } from "@lucide/vue";
+import { UserPlus } from "@lucide/vue";
 import type { SplitGroupDetail } from "~/types/split";
 import { formatAmount, getAmountTextSize } from "~/utils/format";
 
 const props = withDefaults(
   defineProps<{
     group: SplitGroupDetail;
-    isNotifying?: boolean;
-    isCopied?: boolean;
     currentAuthAvatarUrl?: string | null;
   }>(),
   {
-    isNotifying: false,
-    isCopied: false,
     currentAuthAvatarUrl: null,
   },
 );
 
 const emit = defineEmits<{
-  (e: "openMembers" | "addMember" | "notify" | "copyReport"): void;
+  (e: "openMembers" | "addMember"): void;
 }>();
 
 const visibleMembers = computed(() => {
-  return props.group.members.slice(0, 5);
+  return props.group.members.slice(0, 6);
 });
 
 const remainingMembersCount = computed(() => {
-  return Math.max(0, props.group.members.length - 5);
-});
-
-const isNotifiedRecently = computed(() => {
-  const last = props.group.last_notified_at;
-  if (!last) return false;
-  const time = new Date(last).getTime();
-  if (isNaN(time)) return false;
-  return Date.now() - time < 24 * 60 * 60 * 1000;
-});
-
-const remainingCooldownHours = computed(() => {
-  const last = props.group.last_notified_at;
-  if (!last) return 0;
-  const time = new Date(last).getTime();
-  if (isNaN(time)) return 0;
-  const elapsed = Date.now() - time;
-  const cooldown = 24 * 60 * 60 * 1000;
-  if (elapsed >= cooldown) return 0;
-  return Math.ceil((cooldown - elapsed) / (60 * 60 * 1000));
-});
-
-const notifyButtonTooltip = computed(() => {
-  if (isNotifiedRecently.value) {
-    return remainingCooldownHours.value > 0
-      ? `Напоминание уже отправлено за сегодня (повтор через ${remainingCooldownHours.value} ч.)`
-      : "Напоминание уже отправлено за сегодня";
-  }
-  return "Отправить напоминание должникам в Telegram";
+  return Math.max(0, props.group.members.length - 6);
 });
 
 const amountsTextSize = computed(() => {
@@ -86,7 +50,7 @@ const amountsTextSize = computed(() => {
 <template>
   <div class="flex flex-col gap-2.5">
     <!-- Стек аватаров участников -->
-    <div class="flex items-center ml-1">
+    <div class="flex items-center justify-center">
       <div
         class="flex items-center -space-x-3 cursor-pointer a11y-focus rounded-full"
         role="button"
@@ -105,13 +69,13 @@ const amountsTextSize = computed(() => {
           "
           :name="m.name"
           size="sm"
-          class="size-11 glass-pill bg-white/50 backdrop-blur-sm"
+          class="size-9.5 glass-pill bg-white/50 backdrop-blur-sm"
         />
 
         <!-- Бейдж оставшихся участников (+N) -->
         <div
           v-if="remainingMembersCount > 0"
-          class="size-11 rounded-full flex items-center justify-center font-bold text-xs text-text-secondary/70 glass-pill bg-white/50 backdrop-blur-xl select-none"
+          class="size-9.5 rounded-full flex items-center justify-center font-bold text-xs text-text-secondary/70 glass-pill bg-white/50 backdrop-blur-xl select-none"
         >
           +{{ remainingMembersCount }}
         </div>
@@ -122,12 +86,12 @@ const amountsTextSize = computed(() => {
         size="sm"
         type="button"
         variant="soft"
-        class="h-auto ml-0.5 px-4 py-2 flex gap-1 text-text-accent"
+        class="h-auto ml-0.5 px-4.5 py-1.75 flex gap-1 text-text-accent text-sm"
         title="Добавить участника"
         aria-label="Добавить участника"
         @click="emit('addMember')"
       >
-        <UserPlus class="size-5" :stroke-width="2" />
+        <UserPlus class="size-4.5" :stroke-width="2" />
         <span>Добавить</span>
       </GlassButton>
     </div>
@@ -176,48 +140,6 @@ const amountsTextSize = computed(() => {
           0&nbsp;₽
         </span>
       </GlassCard>
-    </div>
-
-    <!-- Кнопки действий: Напомнить и Отчет -->
-    <div class="flex items-center gap-2.5">
-      <GlassButton
-        variant="soft"
-        class="h-auto flex-1 min-w-0 py-1.5 px-3 flex items-center justify-center gap-1 text-xs font-medium"
-        :class="isNotifiedRecently && 'disabled:opacity-75'"
-        :disabled="isNotifying || isNotifiedRecently"
-        :title="notifyButtonTooltip"
-        @click="emit('notify')"
-      >
-        <component
-          :is="isNotifiedRecently ? Check : Bell"
-          class="size-3.5 shrink-0"
-          :class="
-            isNotifiedRecently ? 'text-accent-success' : 'text-text-accent'
-          "
-          :stroke-width="isNotifiedRecently ? 2 : 1.5"
-        />
-        <span class="truncate">{{
-          isNotifying
-            ? "Сообщаю..."
-            : isNotifiedRecently
-              ? "Уже напомнили сегодня"
-              : "Напомнить о долгах"
-        }}</span>
-      </GlassButton>
-
-      <GlassButton
-        variant="soft"
-        class="h-auto flex-1 min-w-0 py-1.5 px-3 flex items-center justify-center gap-1.25 text-xs font-medium"
-        @click="emit('copyReport')"
-      >
-        <component
-          :is="isCopied ? Check : Copy"
-          class="size-3.5 shrink-0"
-          :class="isCopied ? 'text-accent-success' : 'text-text-accent'"
-          :stroke-width="1.5"
-        />
-        <span>{{ isCopied ? "Скопировано!" : "Скопировать отчет" }}</span>
-      </GlassButton>
     </div>
   </div>
 </template>

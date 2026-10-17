@@ -12,41 +12,52 @@
 import type { SplitGroupDetail } from "~/types/split";
 import { pluralize } from "~/utils/format";
 
-withDefaults(
-  defineProps<{
-    group: SplitGroupDetail;
-    currentAuthAvatarUrl?: string | null;
-  }>(),
-  {
-    currentAuthAvatarUrl: null,
-  },
-);
+defineProps<{
+  group: SplitGroupDetail;
+}>();
 
 const emit = defineEmits<{
-  (e: "openMembers" | "addMember"): void;
+  (e: "openMembers"): void;
 }>();
 </script>
 
 <template>
-  <!-- Заголовок, количество участников и стек аватарок -->
-  <div class="ml-16 flex flex-col min-w-0 flex-1 justify-center">
-    <h1
-      class="text-[22px] font-bold text-text-primary tracking-wide truncate"
-      :title="group.name"
+  <div class="w-full flex flex-col justify-center min-w-0">
+    <!-- Заголовок: строго по центру экрана с ограничением 15px от кнопки «Назад» слева и 5px справа -->
+    <div
+      class="grid grid-cols-[minmax(55px,1fr)_auto_minmax(5px,1fr)] items-center w-full min-w-0"
     >
-      {{ group.name }}
-    </h1>
+      <div aria-hidden="true" />
+      <h1
+        class="text-[21px] font-bold text-text-primary tracking-wide truncate text-center min-w-0"
+        :title="group.name"
+      >
+        {{ group.name }}
+      </h1>
+      <div aria-hidden="true" />
+    </div>
 
-    <button
-      type="button"
-      class="text-sm text-text-secondary hover:text-text-primary transition-colors text-left w-fit cursor-pointer select-none a11y-focus tracking-wide"
-      title="Открыть список участников"
-      @click="emit('openMembers')"
+    <!-- Количество участников (также центрировано) -->
+    <div
+      class="grid grid-cols-[minmax(55px,1fr)_auto_minmax(5px,1fr)] items-center w-full min-w-0"
     >
-      {{ group.members.length }}
-      {{
-        pluralize(group.members.length, ["участник", "участника", "участников"])
-      }}
-    </button>
+      <div aria-hidden="true" />
+      <button
+        type="button"
+        class="text-sm text-text-secondary hover:text-text-primary transition-colors text-center w-fit mx-auto cursor-pointer select-none a11y-focus tracking-wide truncate min-w-0"
+        title="Открыть список участников"
+        @click="emit('openMembers')"
+      >
+        {{ group.members.length }}
+        {{
+          pluralize(group.members.length, [
+            "участник",
+            "участника",
+            "участников",
+          ])
+        }}
+      </button>
+      <div aria-hidden="true" />
+    </div>
   </div>
 </template>
