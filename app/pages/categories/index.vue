@@ -76,8 +76,8 @@ const isDeleteModalOpen = ref(false);
 const deletingCategoryId = ref<string | null>(null);
 const categoryDeleteError = ref<string | null>(null);
 
-const deletingCategory = computed(() =>
-  categories.value.find((c) => c.id === deletingCategoryId.value) ?? null,
+const deletingCategory = computed(
+  () => categories.value.find((c) => c.id === deletingCategoryId.value) ?? null,
 );
 
 const confirmDelete = (id: string) => {
@@ -188,12 +188,8 @@ const handleDeleteCategory = async () => {
     <ConfirmDeleteModal
       :is-open="isDeleteModalOpen"
       title="Удаление категории"
-      :description="
-        deletingCategory
-          ? `Вы уверены, что хотите удалить категорию «${deletingCategory.name}»?`
-          : 'Вы уверены, что хотите удалить эту категорию?'
-      "
-      confirm-text="🧨 Сжечь"
+      :item-name="deletingCategory?.name"
+      confirm-text="Удалить"
       position="center"
       :z-index="Z_INDEX.CATEGORY_DELETE"
       :error="categoryDeleteError"

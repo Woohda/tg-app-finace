@@ -85,11 +85,12 @@ watch(formIcon, (newVal) => {
 });
 
 const closeForm = () => {
+  if (formButtonState.value !== "idle") return;
   emit("close");
 };
 
 const submitForm = async () => {
-  if (formButtonState.value === "loading" || !isFormValid.value) return;
+  if (formButtonState.value !== "idle" || !isFormValid.value) return;
 
   const result = validateCategoryForm({
     name: formName.value,
@@ -151,6 +152,7 @@ const submitForm = async () => {
     :title="isEditMode ? 'Редактировать' : 'Новая категория'"
     position="bottom"
     :z-index="Z_INDEX.CATEGORY_FORM"
+    :disable-close="formButtonState !== 'idle'"
     @close="closeForm"
   >
     <form class="flex flex-col gap-4" @submit.prevent="submitForm">

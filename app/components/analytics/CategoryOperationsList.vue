@@ -47,15 +47,27 @@ const {
   isPaused: isEffectiveLoading,
 });
 
-const deletingId = ref<string | null>(null);
+const deletingTransaction = ref<Transaction | null>(null);
+const transactionDeleteError = ref<string | null>(null);
 
-async function handleDelete(id: string) {
-  deletingId.value = id;
-  try {
-    await deleteTransaction(id);
-  } finally {
-    deletingId.value = null;
+function confirmDelete(tx: Transaction) {
+  deletingTransaction.value = tx;
+  transactionDeleteError.value = null;
+}
+
+function cancelDelete() {
+  deletingTransaction.value = null;
+  transactionDeleteError.value = null;
+}
+
+async function handleDeleteTransaction() {
+  if (!deletingTransaction.value) return false;
+  const res = await deleteTransaction(deletingTransaction.value.id);
+  if (!res.success) {
+    transactionDeleteError.value = res.error || "Не удалось удалить операцию";
+    return false;
   }
+  return true;
 }
 
 function handleEdit(tx: Transaction) {
@@ -103,7 +115,6 @@ const summaryBadgeText = computed(() => {
           tx.name,
           tx.date,
           tx.type,
-          deletingId === tx.id,
         ]"
         variant="analytics"
         :title="tx.name || tx.categoryName"
@@ -111,11 +122,8 @@ const summaryBadgeText = computed(() => {
         :type="tx.type"
         :date="tx.date"
         interactive
-        :class="{
-          'opacity-50 pointer-events-none': deletingId === tx.id,
-        }"
         @click="handleEdit(tx)"
-        @delete="handleDelete(tx.id)"
+        @delete="confirmDelete(tx)"
       />
 
       <!-- Ленивая подгрузка (триггер скролла / кнопка) -->
@@ -139,4 +147,34 @@ const summaryBadgeText = computed(() => {
       {{ emptyText }}
     </p>
   </GlassCard>
+
+  <!-- Модалка удаления транзакции -->
+  <ConfirmDeleteModal
+    :is-open="Boolean(deletingTransaction)"
+    title="Удаление транзакции"
+    confirm-text="Удалить"
+    position="center"
+    :error="transactionDeleteError"
+    :on-confirm="handleDeleteTransaction"
+    @close="cancelDelete"
+  >
+    <p class="text-[17px] text-text-primary">
+      <template v-if="deletingTransaction">
+        Вы уверены, что хотите удалить транзакцию
+        <strong class="text-text-accent font-semibold"
+          >«{{
+            deletingTransaction.name || deletingTransaction.categoryName
+          }}»</strong
+        >
+        на сумму
+        <strong class="text-text-primary">{{
+          formatAmount(deletingTransaction.amount)
+        }}</strong
+        >?
+      </template>
+      <template v-else>
+        Вы уверены, что хотите удалить эту транзакцию?
+      </template>
+    </p>
+  </ConfirmDeleteModal>
 </template>

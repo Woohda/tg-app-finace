@@ -217,6 +217,7 @@ const saveAll = async () => {
 };
 
 const cancelAll = () => {
+  if (isSaving.value) return;
   scanResults.value = [];
   router.push("/");
 };
@@ -301,8 +302,13 @@ const cancelAll = () => {
       </template>
     </GlassMorphButton>
 
-    <GlassButton variant="soft" class="w-full font-medium" @click="cancelAll">
-      Отменить
+    <GlassButton
+      variant="soft"
+      class="w-full font-medium"
+      :disabled="isSaving"
+      @click="cancelAll"
+    >
+      Отмена
     </GlassButton>
 
     <ScanEditModal

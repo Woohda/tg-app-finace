@@ -134,10 +134,10 @@ const startEditGoal = () => {
 };
 
 const cancelEditGoal = () => {
+  if (buttonState.value !== "idle") return;
   isEditingGoal.value = false;
   goalInputValue.value = "";
   goalInputError.value = null;
-  buttonState.value = "idle";
 };
 
 const handleSaveGoal = async () => {
@@ -212,6 +212,7 @@ watch(
           size="sm"
           class="h-9 px-1.75 shadow-xs"
           aria-label="Отменить"
+          :disabled="buttonState !== 'idle'"
           @click="cancelEditGoal"
         >
           <X class="w-5 h-5" :stroke-width="1.5" />
@@ -242,6 +243,7 @@ watch(
             variant="soft"
             size="sm"
             class="flex-1 h-10 px-1.75 shadow-xs text-[15px]"
+            :disabled="buttonState !== 'idle'"
             @click="cancelEditGoal"
           >
             Отмена

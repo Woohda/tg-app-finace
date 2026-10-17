@@ -66,7 +66,7 @@ const displayError = computed(() => {
 });
 
 const isSubmitDisabled = computed(() => {
-  if (isBudgetLoading.value || buttonState.value === "loading") return true;
+  if (isBudgetLoading.value || buttonState.value !== "idle") return true;
   return !isValidAmount(amount.value);
 });
 

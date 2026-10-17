@@ -78,6 +78,7 @@ watch(
 );
 
 const handleCancel = () => {
+  if (currentButtonState.value !== "idle") return;
   emit("cancel");
   emit("close");
 };
@@ -117,6 +118,7 @@ const handleConfirm = async () => {
     :position="position"
     :z-index="zIndex"
     :show-close="true"
+    :disable-close="currentButtonState !== 'idle'"
     @close="handleCancel"
   >
     <div class="flex flex-col gap-3.5">
@@ -129,13 +131,17 @@ const handleConfirm = async () => {
           {{ activeError }}
         </p>
         <slot v-else>
-          <p class="text-[17px] text-text-primary">
-            {{
-              description ||
-              (itemName
-                ? `Вы уверены, что хотите удалить «${itemName}»?`
-                : "Вы уверены, что хотите удалить этот элемент?")
-            }}
+          <p v-if="description" class="text-[17px] text-text-primary">
+            {{ description }}
+          </p>
+          <p v-else-if="itemName" class="text-[17px] text-text-primary">
+            Вы уверены, что хотите удалить
+            <strong class="text-text-accent font-semibold"
+              >«{{ itemName }}»</strong
+            >?
+          </p>
+          <p v-else class="text-[17px] text-text-primary">
+            Вы уверены, что хотите удалить этот элемент?
           </p>
         </slot>
       </div>
@@ -183,7 +189,7 @@ const handleConfirm = async () => {
             :disabled="currentButtonState !== 'idle'"
             @click="handleConfirm"
           >
-            <span class="text-base">{{ confirmText }}</span>
+            <span>{{ confirmText }}</span>
             <template #success>
               <Flame :stroke-width="1.5" />
             </template>

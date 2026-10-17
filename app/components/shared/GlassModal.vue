@@ -43,6 +43,7 @@ interface Props {
   title?: string;
   position?: "center" | "bottom";
   showClose?: boolean;
+  disableClose?: boolean;
   zIndex?: number;
   backdropClass?: string;
 }
@@ -52,6 +53,7 @@ const props = withDefaults(defineProps<Props>(), {
   title: undefined,
   position: "center",
   showClose: true,
+  disableClose: false,
   zIndex: Z_INDEX.MODAL_BASE,
   backdropClass: undefined,
 });
@@ -61,6 +63,7 @@ const emit = defineEmits<{
 }>();
 
 const close = () => {
+  if (props.disableClose) return;
   emit("close");
 };
 
@@ -180,6 +183,7 @@ onUnmounted(() => {
               size="sm"
               aria-label="Закрыть"
               class="shrink-0!"
+              :disabled="disableClose"
               @click="close"
             >
               <X :stroke-width="1.5" />

@@ -130,7 +130,7 @@ const displayError = computed(() => {
 });
 
 const submit = async () => {
-  if (buttonState.value === "loading" || !isFormValid.value) return;
+  if (buttonState.value !== "idle" || !isFormValid.value) return;
 
   const result = validateTransactionForm({
     amount: amount.value,
@@ -187,6 +187,16 @@ const {
   triggerScan,
   handleFileUpload,
 } = useReceiptScanner();
+
+const handleClose = () => {
+  if (buttonState.value !== "idle") return;
+  closeModal();
+};
+
+const handleScan = () => {
+  if (buttonState.value !== "idle") return;
+  triggerScan();
+};
 </script>
 
 <template>
@@ -195,7 +205,8 @@ const {
     position="bottom"
     :title="isEditMode ? 'Редактирование' : 'Новая операция'"
     :z-index="Z_INDEX.TRANSACTION"
-    @close="closeModal"
+    :disable-close="buttonState !== 'idle'"
+    @close="handleClose"
   >
     <form class="flex flex-col gap-3" @submit.prevent="submit">
       <!-- Amount -->
@@ -271,7 +282,8 @@ const {
           label="Сканировать чек"
           variant="soft"
           class="w-full flex items-center gap-1.5"
-          @click.prevent="triggerScan"
+          :disabled="buttonState !== 'idle'"
+          @click.prevent="handleScan"
         >
           <Camera :stroke-width="1.5" class="text-text-accent size-7 pb-1" />
           <span class="text-sm text-text-accent">Загрузить скриншот</span>

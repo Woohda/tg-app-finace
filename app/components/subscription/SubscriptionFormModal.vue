@@ -108,7 +108,7 @@ watch(
 );
 
 const submit = async () => {
-  if (buttonState.value === "loading" || !isFormValid.value) return;
+  if (buttonState.value !== "idle" || !isFormValid.value) return;
 
   const parseResult = validateSubscriptionForm({
     name: name.value,
@@ -159,6 +159,11 @@ const submit = async () => {
     isSubmitting.value = false;
   }
 };
+
+const handleClose = () => {
+  if (buttonState.value !== "idle") return;
+  emit("close");
+};
 </script>
 
 <template>
@@ -167,7 +172,8 @@ const submit = async () => {
     position="bottom"
     :title="isEditMode ? 'Редактировать платёж' : 'Новый регулярный платёж'"
     :z-index="Z_INDEX.SUBSCRIPTION_FORM"
-    @close="emit('close')"
+    :disable-close="buttonState !== 'idle'"
+    @close="handleClose"
   >
     <form class="flex flex-col gap-4" @submit.prevent="submit">
       <!-- Название -->

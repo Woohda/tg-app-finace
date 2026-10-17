@@ -141,6 +141,7 @@ const handleSave = async () => {
 };
 
 const close = () => {
+  if (buttonState.value !== "idle") return;
   emit("close");
 };
 </script>
@@ -150,6 +151,7 @@ const close = () => {
     :is-open="isOpen"
     position="bottom"
     :z-index="Z_INDEX.MODAL_BASE"
+    :disable-close="buttonState !== 'idle'"
     @close="close"
   >
     <template #header>
@@ -242,6 +244,7 @@ const close = () => {
           variant="soft"
           size="sm"
           class="flex-1 h-10 shadow-xs text-[15px]"
+          :disabled="buttonState !== 'idle'"
           @click="close"
         >
           Отмена
