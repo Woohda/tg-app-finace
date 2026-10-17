@@ -42,7 +42,7 @@ const emit = defineEmits<{
       compact
         ? 'p-3.5 flex items-center justify-between gap-3'
         : asCard
-          ? 'p-6 flex flex-col items-center justify-center text-center gap-3'
+          ? 'flex flex-col items-center justify-center text-center gap-2'
           : 'flex flex-col items-center justify-center text-center py-4 gap-2',
     ]"
   >
@@ -107,7 +107,7 @@ const emit = defineEmits<{
         v-if="showRetry"
         variant="soft"
         size="sm"
-        class="px-3.5"
+        class="px-5"
         @click="emit('retry')"
       >
         {{ retryText }}

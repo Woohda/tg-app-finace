@@ -28,16 +28,13 @@ router.afterEach(() => {
     <NuxtErrorBoundary>
       <NuxtPage />
       <template #error="{ error, clearError }">
-        <div
-          class="p-6 text-center text-text-primary flex flex-col items-center justify-center min-h-[50vh]"
-        >
-          <p class="font-bold text-lg mb-2">Что-то пошло не так</p>
-          <p class="text-xs text-text-secondary mb-4 max-w-xs">
-            {{ error?.message || "Не удалось загрузить страницу" }}
-          </p>
-          <GlassButton variant="primary" size="sm" @click="clearError">
-            Попробовать снова
-          </GlassButton>
+        <div class="flex items-center justify-center min-h-[50vh]">
+          <GlassErrorState
+            title="Что-то пошло не так"
+            :error="error?.message || 'Не удалось загрузить страницу'"
+            retry-text="Попробовать снова"
+            @retry="clearError"
+          />
         </div>
       </template>
     </NuxtErrorBoundary>

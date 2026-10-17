@@ -19,7 +19,7 @@
 import { computed } from "vue";
 import { Bell, Check, Copy, UserPlus } from "@lucide/vue";
 import type { SplitGroupDetail } from "~/types/split";
-import { formatAmount, pluralize, getAmountTextSize } from "~/utils/format";
+import { formatAmount, getAmountTextSize } from "~/utils/format";
 
 const props = withDefaults(
   defineProps<{
@@ -84,87 +84,52 @@ const amountsTextSize = computed(() => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-3">
-    <!-- Верхняя часть: круглая иконка + название + участники + аватары -->
-    <div class="flex items-center gap-2.5">
-      <!-- Круглая стеклянная плашка с градиентной иконкой группы -->
+  <div class="flex flex-col gap-2.5">
+    <!-- Стек аватаров участников -->
+    <div class="flex items-center ml-1">
       <div
-        class="-mt-2 size-24 rounded-full glass-pill bg-white/50 backdrop-blur-xl flex items-center justify-center shrink-0"
+        class="flex items-center -space-x-3 cursor-pointer a11y-focus rounded-full"
+        role="button"
+        tabindex="0"
+        title="Участники группы"
+        aria-label="Участники группы"
+        @click="emit('openMembers')"
+        @keydown.enter="emit('openMembers')"
+        @keydown.space.prevent="emit('openMembers')"
       >
-        <GroupIcon class="size-18" :stroke-width="12" />
-      </div>
+        <Avatar
+          v-for="m in visibleMembers"
+          :key="m.id"
+          :src="
+            m.photo_url || (m.is_current_user ? currentAuthAvatarUrl : null)
+          "
+          :name="m.name"
+          size="sm"
+          class="size-11 glass-pill bg-white/50 backdrop-blur-sm"
+        />
 
-      <!-- Заголовок, количество участников и стек аватарок -->
-      <div class="mt-1 flex flex-col min-w-0 flex-1 justify-center">
-        <h1
-          class="text-2xl font-bold text-text-primary tracking-wide truncate"
-          :title="group.name"
+        <!-- Бейдж оставшихся участников (+N) -->
+        <div
+          v-if="remainingMembersCount > 0"
+          class="size-11 rounded-full flex items-center justify-center font-bold text-xs text-text-secondary/70 glass-pill bg-white/50 backdrop-blur-xl select-none"
         >
-          {{ group.name }}
-        </h1>
-
-        <button
-          type="button"
-          class="text-xs text-text-secondary hover:text-text-primary transition-colors text-left w-fit cursor-pointer select-none a11y-focus tracking-wide"
-          title="Открыть список участников"
-          @click="emit('openMembers')"
-        >
-          {{ group.members.length }}
-          {{
-            pluralize(group.members.length, [
-              "участник",
-              "участника",
-              "участников",
-            ])
-          }}
-        </button>
-
-        <!-- Стек аватаров участников -->
-        <div class="flex items-center">
-          <div
-            class="flex items-center -space-x-3 cursor-pointer a11y-focus rounded-full"
-            role="button"
-            tabindex="0"
-            title="Участники группы"
-            aria-label="Участники группы"
-            @click="emit('openMembers')"
-            @keydown.enter="emit('openMembers')"
-            @keydown.space.prevent="emit('openMembers')"
-          >
-            <Avatar
-              v-for="m in visibleMembers"
-              :key="m.id"
-              :src="
-                m.photo_url || (m.is_current_user ? currentAuthAvatarUrl : null)
-              "
-              :name="m.name"
-              size="xs"
-              class="size-10 glass-pill bg-white/50 backdrop-blur-xl"
-            />
-
-            <!-- Бейдж оставшихся участников (+N) -->
-            <div
-              v-if="remainingMembersCount > 0"
-              class="size-10 rounded-full flex items-center justify-center font-bold text-xs text-text-secondary/70 glass-pill bg-white/50 backdrop-blur-xl select-none"
-            >
-              +{{ remainingMembersCount }}
-            </div>
-          </div>
-
-          <!-- Кнопка быстрого добавления участника -->
-          <GlassButton
-            size="sm"
-            type="button"
-            variant="soft"
-            class="h-auto ml-0.5 p-2.25"
-            title="Добавить участника"
-            aria-label="Добавить участника"
-            @click="emit('addMember')"
-          >
-            <UserPlus class="size-5 text-text-accent" :stroke-width="2" />
-          </GlassButton>
+          +{{ remainingMembersCount }}
         </div>
       </div>
+
+      <!-- Кнопка быстрого добавления участника -->
+      <GlassButton
+        size="sm"
+        type="button"
+        variant="soft"
+        class="h-auto ml-0.5 px-4 py-2 flex gap-1 text-text-accent"
+        title="Добавить участника"
+        aria-label="Добавить участника"
+        @click="emit('addMember')"
+      >
+        <UserPlus class="size-5" :stroke-width="2" />
+        <span>Добавить</span>
+      </GlassButton>
     </div>
 
     <!-- Две плашки балансов в ряд -->

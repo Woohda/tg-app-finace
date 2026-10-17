@@ -132,66 +132,95 @@ const handleNotify = async () => {
 </script>
 
 <template>
-  <div class="flex flex-col gap-4">
+  <div class="flex flex-col gap-1.5">
     <!-- Шапка страницы -->
-    <PageHeader back-to="/split" back-aria-label="Назад к группам" />
+    <PageHeader back-to="/split" back-aria-label="Назад к группам">
+      <GroupHeader
+        v-if="currentGroup && !isGroupLoading"
+        :group="currentGroup"
+        :current-auth-avatar-url="currentAuthAvatarUrl"
+        @open-members="modalsRef?.openMembers()"
+        @add-member="modalsRef?.openAddMember()"
+      />
+      <!-- Скелетон шапки: название и количество участников -->
+      <div
+        v-else-if="isGroupLoading"
+        class="ml-16 flex flex-col min-w-0 flex-1 justify-center gap-1.5 py-1"
+      >
+        <Skeleton class="h-6.5 w-45" rounded="lg" />
+        <Skeleton class="h-3.5 w-25" rounded="md" />
+      </div>
+    </PageHeader>
 
     <!-- Скелетон загрузки -->
     <div
       v-if="isGroupLoading && !error"
       class="flex flex-col gap-4 animate-pulse"
     >
-      <!-- Сводная карточка группы -->
-      <div class="flex flex-col gap-3">
-        <div class="flex items-center gap-2.5">
-          <Skeleton class="size-22 shrink-0 -mt-1" rounded="full" />
-          <div class="flex flex-col gap-2 min-w-0 flex-1 justify-center">
-            <Skeleton class="h-6 w-40" rounded="lg" />
-            <Skeleton class="h-3 w-20 -mt-px" rounded="md" />
-            <div class="flex items-center -space-x-1.5 -mt-px">
-              <Skeleton
-                v-for="i in 5"
-                :key="i"
-                class="size-10"
-                rounded="full"
-              />
-            </div>
+      <!-- Сводная карточка группы (аватары, плашки баланса, кнопки) -->
+      <div class="flex flex-col gap-2.5">
+        <!-- Стек аватаров и кнопка добавления -->
+        <div class="flex items-center ml-1">
+          <div class="flex items-center -space-x-3 rounded-full">
+            <Skeleton v-for="i in 5" :key="i" class="size-11" rounded="full" />
           </div>
+          <Skeleton class="h-9.5 w-30 ml-1" rounded="full" />
         </div>
 
         <!-- Две плашки балансов в ряд -->
         <div class="grid grid-cols-2 gap-2.5 mt-1">
-          <Skeleton class="h-20 w-full" rounded="3xl" />
-          <Skeleton class="h-20 w-full" rounded="3xl" />
+          <GlassCard class="flex-1 p-4 flex flex-col justify-center gap-1.5">
+            <Skeleton class="h-3 w-30" rounded="md" />
+            <Skeleton class="h-6 w-24 mt-0.5" rounded="lg" />
+          </GlassCard>
+          <GlassCard class="flex-1 p-4 flex flex-col justify-center gap-1.5">
+            <Skeleton class="h-3 w-20" rounded="md" />
+            <Skeleton class="h-6 w-20 mt-0.5" rounded="lg" />
+          </GlassCard>
         </div>
 
-        <!-- Кнопки действий -->
-        <div class="flex items-center gap-1.5 pt-0.5">
-          <Skeleton class="h-8 flex-1" rounded="xl" />
-          <Skeleton class="h-8 w-20" rounded="xl" />
+        <!-- Кнопки действий: Напомнить и Отчет -->
+        <div class="flex items-center gap-2.5">
+          <Skeleton class="h-7.5 flex-1" rounded="full" />
+          <Skeleton class="h-7.5 flex-1" rounded="full" />
         </div>
       </div>
 
-      <!-- Переключатель вкладок -->
-      <div class="flex justify-center px-5">
-        <Skeleton class="h-8 w-full" rounded="2xl" />
-      </div>
-
-      <!-- Список элементов -->
+      <!-- Секция отчета: оптимизированные переводы -->
       <div class="flex flex-col gap-2">
-        <GlassCard
-          v-for="i in 3"
-          :key="i"
-          class="p-3.5 flex items-center justify-between"
-        >
-          <div class="flex items-center gap-2">
-            <Skeleton class="size-8 shrink-0" rounded="full" />
-            <div class="flex flex-col gap-1.5">
-              <Skeleton class="h-4 w-28" />
-              <Skeleton class="h-3 w-16" />
+        <div class="flex items-center justify-between px-1">
+          <Skeleton class="h-3.5 w-44" rounded="md" />
+          <Skeleton class="h-3 w-16" rounded="sm" />
+        </div>
+
+        <GlassCard v-for="i in 2" :key="i" class="flex flex-col px-3.5 py-2.5">
+          <div class="flex items-center justify-between gap-2.5">
+            <Skeleton class="size-10 shrink-0" rounded="full" />
+            <div class="flex flex-col gap-1.5 flex-1 min-w-0">
+              <Skeleton class="h-4 w-32" rounded="md" />
+              <Skeleton class="h-3 w-20" rounded="sm" />
             </div>
+            <Skeleton class="h-6 w-16" rounded="lg" />
           </div>
-          <Skeleton class="h-5 w-20" rounded="lg" />
+        </GlassCard>
+      </div>
+
+      <!-- Секция отчета: балансы участников -->
+      <div class="flex flex-col gap-2 pt-2">
+        <Skeleton class="h-3.5 w-40 ml-1" rounded="md" />
+
+        <GlassCard class="p-4 pb-2 flex flex-col gap-3">
+          <div
+            v-for="i in 3"
+            :key="i"
+            class="flex items-center justify-between gap-3 pb-2 border-b border-black/5 last:border-none"
+          >
+            <div class="flex flex-col gap-1.5 flex-1">
+              <Skeleton class="h-4 w-24" rounded="md" />
+              <Skeleton class="h-2.5 w-36" rounded="sm" />
+            </div>
+            <Skeleton class="h-5 w-16" rounded="md" />
+          </div>
         </GlassCard>
       </div>
     </div>

@@ -52,7 +52,7 @@ const handleBackClick = () => {
 
 <template>
   <header
-    class="flex items-center justify-center gap-3 relative min-h-12 shrink-0"
+    class="flex items-center justify-center gap-3 relative min-h-12 shrink-0 mt-1.5"
   >
     <!-- Левая кнопка (Назад) -->
     <slot name="back">
@@ -60,7 +60,7 @@ const handleBackClick = () => {
         v-if="backTo && backTo !== 'back'"
         :to="backTo"
         :aria-label="backAriaLabel"
-        class="w-12 h-12 absolute left-0 top-1/2 -translate-y-1/2 rounded-full glass-pill flex items-center justify-center shrink-0 active:scale-95 transition-transform a11y-focus"
+        class="w-12 h-12 absolute left-0 top-4.5 -translate-y-1/2 rounded-full glass-pill flex items-center justify-center shrink-0 active:scale-95 transition-transform a11y-focus"
         @click="emit('back')"
       >
         <ChevronLeft class="text-text-primary -ml-px" :stroke-width="1.5" />
@@ -101,7 +101,7 @@ const handleBackClick = () => {
     <!-- Правая область действий -->
     <div
       v-if="$slots.action || showAction"
-      class="absolute right-0 top-1/2 -translate-y-1/2 flex items-center gap-1"
+      class="absolute right-0 top-4.5 -translate-y-1/2 flex items-center gap-1"
     >
       <slot name="action">
         <GlassButton
