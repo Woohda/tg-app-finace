@@ -13,6 +13,9 @@ import { cn } from "~/utils/cn";
 interface Props {
   class?: HTMLAttributes["class"];
   sideCutOffset?: string;
+  toothWidth?: string;
+  notchRadius?: string;
+  notchHeight?: string;
   title?: string;
   count?: number;
   amountText?: string;
@@ -23,7 +26,10 @@ interface Props {
 
 const props = withDefaults(defineProps<Props>(), {
   class: undefined,
-  sideCutOffset: "56.5px",
+  sideCutOffset: "56px",
+  toothWidth: "23px",
+  notchRadius: "14px",
+  notchHeight: "13px",
   title: undefined,
   count: undefined,
   amountText: undefined,
@@ -45,7 +51,12 @@ const emit = defineEmits<{
       :style="{ '--receipt-cut-offset': sideCutOffset }"
     >
       <GlassCard
-        class="receipt-card p-0 relative text-text-primary transition-all duration-300 rounded-none"
+        class="receipt-card p-0 relative text-text-primary transition-all duration-300 rounded-none shadow-none"
+        :style="{
+          '--receipt-tooth-width': toothWidth,
+          '--receipt-notch-radius': notchRadius,
+          '--receipt-notch-height': notchHeight,
+        }"
       >
         <!-- Шапка чека -->
         <slot name="header">
@@ -58,7 +69,7 @@ const emit = defineEmits<{
             <div class="w-full px-5">
               <div class="flex flex-col gap-px">
                 <h2
-                  class="text-[15px] text-center font-semibold text-black tracking-[0.2em] uppercase truncate"
+                  class="text-[15px] text-center font-semibold text-black tracking-widest uppercase truncate"
                 >
                   {{ title }}
                 </h2>
@@ -140,14 +151,14 @@ const emit = defineEmits<{
 .receipt-side-cuts {
   -webkit-mask-image:
     radial-gradient(
-      circle 16px at 0 calc(100% - var(--receipt-cut-offset, 55px)),
-      transparent 15.5px,
-      #000 16px
+      circle 18px at 0 calc(100% - var(--receipt-cut-offset, 55px)),
+      transparent 17.5px,
+      #000 18px
     ),
     radial-gradient(
-      circle 16px at 100% calc(100% - var(--receipt-cut-offset, 55px)),
-      transparent 15.5px,
-      #000 16px
+      circle 18px at 100% calc(100% - var(--receipt-cut-offset, 55px)),
+      transparent 17.5px,
+      #000 18px
     );
   -webkit-mask-size:
     50% 100%,
@@ -159,14 +170,14 @@ const emit = defineEmits<{
 
   mask-image:
     radial-gradient(
-      circle 16px at 0 calc(100% - var(--receipt-cut-offset, 55px)),
-      transparent 15.5px,
-      #000 16px
+      circle 18px at 0 calc(100% - var(--receipt-cut-offset, 55px)),
+      transparent 17.5px,
+      #000 18px
     ),
     radial-gradient(
-      circle 16px at 100% calc(100% - var(--receipt-cut-offset, 55px)),
-      transparent 15.5px,
-      #000 16px
+      circle 18px at 100% calc(100% - var(--receipt-cut-offset, 55px)),
+      transparent 17.5px,
+      #000 18px
     );
   mask-size:
     50% 100%,
@@ -179,31 +190,59 @@ const emit = defineEmits<{
 
 /* Физическая маска перфорированных зубцов по верхнему и нижнему краю чека */
 .receipt-card {
+  /* Автоматически вычисляемые параметры сетки зубцов из пропсов/переменных */
+  --receipt-tooth-pitch: calc(
+    var(--receipt-notch-radius, 13px) * 2 + var(--receipt-tooth-width, 23px)
+  );
+  --receipt-tooth-center: calc(var(--receipt-tooth-pitch) / 2);
+  --receipt-notch-smooth: calc(var(--receipt-notch-radius, 13px) + 0.5px);
+  --receipt-body-cut: calc(var(--receipt-notch-height, 15px) * 2);
+
   -webkit-mask-image:
-    radial-gradient(13px 15px at 24.5px 0px, transparent 13px, #000 13.5px),
+    radial-gradient(
+      var(--receipt-notch-radius) var(--receipt-notch-height) at
+        var(--receipt-tooth-center) 0px,
+      transparent var(--receipt-notch-radius),
+      #000 var(--receipt-notch-smooth)
+    ),
     linear-gradient(to bottom, #000, #000),
-    radial-gradient(13px 15px at 24.5px 15px, transparent 13px, #000 13.5px);
+    radial-gradient(
+      var(--receipt-notch-radius) var(--receipt-notch-height) at
+        var(--receipt-tooth-center) var(--receipt-notch-height),
+      transparent var(--receipt-notch-radius),
+      #000 var(--receipt-notch-smooth)
+    );
   -webkit-mask-size:
-    49px 15px,
-    100% calc(100% - 30px),
-    49px 15px;
+    var(--receipt-tooth-pitch) var(--receipt-notch-height),
+    100% calc(100% - var(--receipt-body-cut)),
+    var(--receipt-tooth-pitch) var(--receipt-notch-height);
   -webkit-mask-position:
     center top,
-    center 15px,
+    center var(--receipt-notch-height),
     center bottom;
   -webkit-mask-repeat: repeat-x, no-repeat, repeat-x;
 
   mask-image:
-    radial-gradient(13px 15px at 24.5px 0px, transparent 13px, #000 13.5px),
+    radial-gradient(
+      var(--receipt-notch-radius) var(--receipt-notch-height) at
+        var(--receipt-tooth-center) 0px,
+      transparent var(--receipt-notch-radius),
+      #000 var(--receipt-notch-smooth)
+    ),
     linear-gradient(to bottom, #000, #000),
-    radial-gradient(13px 15px at 24.5px 15px, transparent 13px, #000 13.5px);
+    radial-gradient(
+      var(--receipt-notch-radius) var(--receipt-notch-height) at
+        var(--receipt-tooth-center) var(--receipt-notch-height),
+      transparent var(--receipt-notch-radius),
+      #000 var(--receipt-notch-smooth)
+    );
   mask-size:
-    49px 15px,
-    100% calc(100% - 30px),
-    49px 15px;
+    var(--receipt-tooth-pitch) var(--receipt-notch-height),
+    100% calc(100% - var(--receipt-body-cut)),
+    var(--receipt-tooth-pitch) var(--receipt-notch-height);
   mask-position:
     center top,
-    center 15px,
+    center var(--receipt-notch-height),
     center bottom;
   mask-repeat: repeat-x, no-repeat, repeat-x;
 }

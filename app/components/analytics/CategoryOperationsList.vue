@@ -87,6 +87,9 @@ function handleEdit(tx: Transaction) {
     :amount-text="filteredAmountText"
     :has-more="hasMoreTransactions"
     :remaining-count="remainingCount"
+    tooth-width="20px"
+    notch-radius="12.5px"
+    notch-height="12.5px"
     :on-trigger-mounted="(el) => (loadMoreTriggerRef = el)"
     class="relative z-10 w-full"
     @load-more="loadMore"
@@ -95,7 +98,7 @@ function handleEdit(tx: Transaction) {
     <div class="px-3">
       <!-- Скелетоны транзакций при загрузке -->
       <div v-if="isEffectiveLoading" class="flex flex-col gap-2 px-2 py-1">
-        <TransactionsSkeletonList :count="3" mode="list" />
+        <TransactionsSkeletonList :count="3" mode="list" :show-icon="false" />
       </div>
 
       <!-- Список позиций в чеке -->
@@ -108,11 +111,9 @@ function handleEdit(tx: Transaction) {
             tx.amount,
             tx.name,
             tx.date,
-            tx.categoryIcon,
             tx.type,
           ]"
           variant="receipt"
-          :icon="tx.categoryIcon"
           :title="tx.name || tx.categoryName"
           :amount="tx.amount"
           :type="tx.type"

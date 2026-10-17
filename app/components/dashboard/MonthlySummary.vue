@@ -26,21 +26,21 @@ const isIncomeBigger = computed(() => {
   <div class="flex items-center justify-center w-5/6 mx-auto">
     <!-- Доход -->
     <div
-      class="relative flex-1 flex flex-col items-center justify-center gap-px py-3 rounded-4xl transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] bg-transparent!"
+      class="relative flex-1 flex flex-col items-center justify-center gap-px py-3 rounded-4xl transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)]"
       :class="[
         isLoading
           ? 'z-10 scale-95 opacity-90'
           : isIncomeBigger
-            ? 'z-20 scale-100 opacity-100 shadow-[0_4px_20px_rgba(34,197,94,0.3)]! blur-0'
-            : 'z-10 scale-90 blur-[0.5px]',
+            ? 'z-20 scale-100 opacity-100'
+            : 'z-10 scale-90 opacity-75',
       ]"
     >
       <div
         class="absolute inset-0 rounded-4xl transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] -z-10"
         :class="[
           isLoading || isIncomeBigger
-            ? 'glass-pill'
-            : 'bg-white/40 border border-transparent',
+            ? 'glass-pill shadow-[0_4px_20px_rgba(34,197,94,0.3)]'
+            : 'bg-white/40 border border-transparent shadow-none',
         ]"
       />
       <div
@@ -68,21 +68,21 @@ const isIncomeBigger = computed(() => {
 
     <!-- Трата -->
     <div
-      class="relative flex-1 flex flex-col items-center justify-center gap-px py-3 rounded-4xl transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] -ml-4 bg-transparent!"
+      class="relative flex-1 flex flex-col items-center justify-center gap-px py-3 rounded-4xl transition-[transform,opacity] duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] -ml-4"
       :class="[
         isLoading
           ? 'z-10 scale-95 opacity-90'
           : !isIncomeBigger
-            ? 'z-20 scale-100 opacity-100 shadow-[0_4px_20px_rgba(225,29,72,0.3)]! blur-0'
-            : 'z-10 scale-90 blur-[0.5px]',
+            ? 'z-20 scale-100 opacity-100'
+            : 'z-10 scale-90 opacity-75',
       ]"
     >
       <div
         class="absolute inset-0 rounded-4xl transition-all duration-300 ease-[cubic-bezier(0.2,0.8,0.2,1)] -z-10"
         :class="[
           isLoading || !isIncomeBigger
-            ? 'glass-pill'
-            : 'bg-white/40 border border-transparent',
+            ? 'glass-pill shadow-[0_4px_20px_rgba(225,29,72,0.3)]'
+            : 'bg-white/40 border border-transparent shadow-none',
         ]"
       />
       <div

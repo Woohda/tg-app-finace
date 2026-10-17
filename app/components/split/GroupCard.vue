@@ -132,31 +132,31 @@ defineProps<{
 /* Сквозные фигурные вырезы билета (нотчи) */
 .ticket-card {
   -webkit-mask-image:
-    radial-gradient(circle 12px at 0% 50%, transparent 11.5px, #000 12px),
-    radial-gradient(circle 12px at 100% 50%, transparent 11.5px, #000 12px),
+    radial-gradient(circle 13px at 0% 50%, transparent 12.5px, #000 13px),
+    radial-gradient(circle 13px at 100% 50%, transparent 12.5px, #000 13px),
     radial-gradient(
       circle 8px at calc(100% - 74px) 0%,
-      transparent 6.5px,
-      #000 7px
+      transparent 7.5px,
+      #000 8px
     ),
     radial-gradient(
-      circle 7px at calc(100% - 74px) 100%,
-      transparent 6.5px,
-      #000 7px
+      circle 8px at calc(100% - 74px) 100%,
+      transparent 7.5px,
+      #000 8px
     );
   -webkit-mask-composite: source-in, source-in, source-in;
   mask-image:
-    radial-gradient(circle 12px at 0% 50%, transparent 11.5px, #000 12px),
-    radial-gradient(circle 12px at 100% 50%, transparent 11.5px, #000 12px),
+    radial-gradient(circle 13px at 0% 50%, transparent 12.5px, #000 13px),
+    radial-gradient(circle 13px at 100% 50%, transparent 12.5px, #000 13px),
     radial-gradient(
-      circle 7px at calc(100% - 73.5px) 0%,
-      transparent 6.5px,
-      #000 7px
+      circle 8px at calc(100% - 74px) 0%,
+      transparent 7.5px,
+      #000 8px
     ),
     radial-gradient(
-      circle 7px at calc(100% - 73.5px) 100%,
-      transparent 6.5px,
-      #000 7px
+      circle 8px at calc(100% - 74px) 100%,
+      transparent 7.5px,
+      #000 8px
     );
   mask-composite: intersect;
 }
