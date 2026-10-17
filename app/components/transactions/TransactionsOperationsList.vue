@@ -1,23 +1,23 @@
 <script setup lang="ts">
 /**
  * @module app/components/transactions/TransactionsOperationsList
- * @fileoverview Пагинированный список финансовых операций и транзакций с поиском и фильтрацией
+ * @fileoverview Пагинированный список финансовых операций, оформленный как кассовый чек
  * @description
- * Отображает список операций раздела «Финансовый отчет»:
- * - переключатель временного интервала (День, Неделя, Месяц) через GlassSegmentedControl;
+ * Отображает список операций раздела «Финансовый отчет» в аутентичном стиле кассового чека:
+ * - верхний контрастный штрихкод (ReceiptBarcode) и метаданные чека (номер, статус, дата);
+ * - общая сумма выборки и переключатель временного интервала (День, Неделя, Месяц);
  * - контекстная строка поиска с очисткой по названию и категории;
+ * - позиции чека с отточиями (dot leaders), иконками категорий и суммами;
+ * - нижняя перфорированная линия отрыва с боковыми вырезами билета (ReceiptCard);
  * - пагинация порциями по 10 элементов с автоматической подгрузкой через IntersectionObserver;
- * - скелетоны загрузки транзакций;
- * - интерактивные элементы транзакций (удаление, редактирование);
- * - сводный бейдж с количеством и объемом трат/доходов;
- * - информативное состояние при отсутствии операций.
+ * - подтверждение удаления операции через ConfirmDeleteModal.
  * ---
  * ### Логика работы:
- * 1. Принимает отфильтрованный список транзакций `transactions`, вычисляет их сумму и выводит счетчик в шапке.
- * 2. Синхронизирует выбранный период `activePeriod` и поисковый запрос `searchQuery` с родителем через v-model.
- * 3. Ограничивает видимый срез `displayedTransactions` размером страницы `displayedLimit` для сохранения 60 FPS.
- * 4. Автоматически подгружает следующую страницу при приближении к концу списка через `IntersectionObserver`.
- * 5. Предоставляет удаление с блокировкой строки и редактирование транзакций через модальное окно.
+ * 1. Форматирует номер чека на основе общего количества транзакций.
+ * 2. Синхронизирует период `activePeriod` и поисковый запрос `searchQuery` с родителем.
+ * 3. Ограничивает видимый срез `displayedTransactions` размером страницы `displayedLimit`.
+ * 4. Автоматически подгружает следующую порцию при скролле к триггеру в футере чека.
+ * 5. Предоставляет свайп для удаления и открытие модального окна редактирования по тапу.
  */
 import { ref, computed, watch, toRef } from "vue";
 import { Search, X } from "@lucide/vue";
@@ -26,11 +26,12 @@ import type {
   PeriodType,
   PeriodOption,
 } from "~/composables/useTransactionView";
+import { formatAmount } from "~/utils/format";
 
 interface Props {
   transactions: Transaction[];
-  activePeriod: PeriodType;
-  periods: PeriodOption[];
+  activePeriod?: PeriodType;
+  periods?: PeriodOption[];
   searchQuery?: string;
   emptyMessage?: string;
   isLoading?: boolean;
@@ -39,6 +40,8 @@ interface Props {
 }
 
 const props = withDefaults(defineProps<Props>(), {
+  activePeriod: undefined,
+  periods: undefined,
   searchQuery: "",
   emptyMessage: "За этот период трат нет",
   isLoading: false,
@@ -47,18 +50,12 @@ const props = withDefaults(defineProps<Props>(), {
 });
 
 const emit = defineEmits<{
-  (e: "update:activePeriod", value: PeriodType): void;
   (e: "update:searchQuery", value: string): void;
   (e: "retry"): void;
 }>();
 
 const { deleteTransaction } = useTransactions();
 const { openModal } = useTransactionModal();
-
-const localPeriod = computed({
-  get: () => props.activePeriod,
-  set: (val: PeriodType) => emit("update:activePeriod", val),
-});
 
 const localSearchQuery = computed({
   get: () => props.searchQuery,
@@ -116,47 +113,22 @@ async function handleDeleteTransaction() {
 function handleEdit(tx: Transaction) {
   openModal(tx);
 }
-
-/**
- * Текст бейджа в шапке списка транзакций (количество и сумма).
- */
-const summaryBadgeText = computed(() => {
-  if (props.transactions.length === 0) {
-    return props.searchQuery.trim() ? "Найдено: 0" : "";
-  }
-  if (props.searchQuery.trim()) {
-    return `Найдено: ${props.transactions.length} • ${filteredAmountText.value}`;
-  }
-  return `${props.transactions.length} оп. • ${filteredAmountText.value}`;
-});
 </script>
 
 <template>
-  <GlassCard class="relative z-10 pb-2">
-    <div class="flex flex-col gap-3 mb-3">
-      <div class="flex items-center justify-between gap-2">
-        <h2
-          class="text-base font-bold text-text-primary uppercase tracking-wide truncate"
-        >
-          Все транзакции:
-        </h2>
-        <span
-          v-if="summaryBadgeText"
-          class="text-xs font-semibold text-text-secondary glass-pill px-2.5 py-0.5 rounded-full shrink-0 max-w-[80%] truncate text-right"
-        >
-          {{ summaryBadgeText }}
-        </span>
-      </div>
-
-      <!-- Переключатель периодов -->
-      <GlassSegmentedControl
-        v-model="localPeriod"
-        :options="periods"
-        size="md"
-      />
-
-      <!-- Поисковая строка -->
-      <div v-if="isSearchVisible" class="relative flex items-center w-full">
+  <ReceiptCard
+    title="Все операции"
+    :count="transactions.length"
+    :amount-text="filteredAmountText"
+    :has-more="hasMoreTransactions"
+    :remaining-count="remainingCount"
+    :on-trigger-mounted="(el) => (loadMoreTriggerRef = el)"
+    class="relative z-10 w-full"
+    @load-more="loadMore"
+  >
+    <!-- Поисковая строка -->
+    <div v-if="isSearchVisible" class="px-5">
+      <div class="relative flex items-center w-full my-2.5">
         <GlassInput
           v-model="localSearchQuery"
           type="text"
@@ -177,81 +149,70 @@ const summaryBadgeText = computed(() => {
       </div>
     </div>
 
-    <!-- Скелетоны транзакций (загрузка) -->
-    <div v-if="isLoading" class="flex flex-col gap-3">
-      <TransactionsSkeletonList :count="4" mode="list" />
-    </div>
+    <!-- ПУНКТИР ПЕРЕД СПИСКОМ ПОЗИЦИЙ (ЕСЛИ БЫЛ ПОИСК) -->
+    <ReceiptDivider v-if="isSearchVisible" variant="dotted" class="px-5" />
 
-    <!-- Список транзакций -->
-    <div
-      v-else-if="displayedTransactions.length > 0"
-      class="flex flex-col gap-2"
-    >
-      <TransactionItem
-        v-for="tx in displayedTransactions"
-        :key="tx.id"
-        v-memo="[
-          tx.id,
-          tx.amount,
-          tx.name,
-          tx.date,
-          tx.categoryIcon,
-          tx.type,
-        ]"
-        :icon="tx.categoryIcon"
-        :title="tx.name || tx.categoryName"
-        :subtitle="tx.name ? tx.categoryName : ''"
-        :amount="tx.amount"
-        :type="tx.type"
-        :date="tx.date"
-        interactive
-        @click="handleEdit(tx)"
-        @delete="confirmDelete(tx)"
+    <!-- ТЕЛО ЧЕКА: СПИСОК ОПЕРАЦИЙ -->
+    <div class="px-3">
+      <!-- Скелетоны при загрузке -->
+      <div v-if="isLoading" class="flex flex-col gap-2 px-2 py-1">
+        <TransactionsSkeletonList :count="4" mode="list" />
+      </div>
+
+      <!-- Список позиций в чеке -->
+      <div v-else-if="displayedTransactions.length > 0" class="flex flex-col">
+        <TransactionItem
+          v-for="tx in displayedTransactions"
+          :key="tx.id"
+          v-memo="[
+            tx.id,
+            tx.amount,
+            tx.name,
+            tx.date,
+            tx.categoryIcon,
+            tx.type,
+          ]"
+          variant="receipt"
+          :icon="tx.categoryIcon"
+          :title="tx.name || tx.categoryName"
+          :subtitle="tx.name ? tx.categoryName : ''"
+          :amount="tx.amount"
+          :type="tx.type"
+          :date="tx.date"
+          interactive
+          @click="handleEdit(tx)"
+          @delete="confirmDelete(tx)"
+        />
+      </div>
+
+      <!-- Ошибка загрузки -->
+      <GlassErrorState
+        v-else-if="error && displayedTransactions.length === 0"
+        :as-card="false"
+        title="Не удалось загрузить операции"
+        :error="error"
+        @retry="emit('retry')"
       />
 
-      <!-- Ленивая подгрузка (триггер скролла / кнопка) -->
+      <!-- Пустое состояние -->
       <div
-        v-if="hasMoreTransactions"
-        ref="loadMoreTriggerRef"
-        class="flex flex-col items-center justify-center pt-2.5 pb-1"
+        v-else
+        class="flex flex-col items-center justify-center text-center p-4 gap-2"
       >
+        <p class="text-text-secondary text-sm font-medium">
+          {{ emptyMessage }}
+        </p>
         <button
+          v-if="searchQuery.trim()"
           type="button"
-          class="text-xs font-semibold text-text-accent hover:text-text-primary active:scale-95 transition-all py-1.5 px-4 rounded-full glass-pill cursor-pointer flex items-center gap-1.5 a11y-focus"
-          @click="loadMore"
+          class="text-xs font-semibold text-text-accent active:scale-95 transition-transform underline underline-offset-3 cursor-pointer"
+          @click="clearSearch"
         >
-          <span>Показать ещё (ещё {{ remainingCount }})</span>
+          Сбросить поиск
         </button>
       </div>
     </div>
-
-    <!-- Ошибка загрузки -->
-    <GlassErrorState
-      v-else-if="error && displayedTransactions.length === 0"
-      :as-card="false"
-      title="Не удалось загрузить операции"
-      :error="error"
-      @retry="emit('retry')"
-    />
-
-    <!-- Пустое состояние при отсутствии трат -->
-    <div
-      v-else
-      class="flex flex-col items-center justify-center text-center pb-5 gap-2"
-    >
-      <p class="text-text-secondary text-sm font-medium">
-        {{ emptyMessage }}
-      </p>
-      <button
-        v-if="searchQuery.trim()"
-        type="button"
-        class="text-xs font-semibold text-text-accent active:scale-95 transition-transform underline underline-offset-3 cursor-pointer"
-        @click="clearSearch"
-      >
-        Сбросить поиск
-      </button>
-    </div>
-  </GlassCard>
+  </ReceiptCard>
 
   <!-- Модалка удаления транзакции -->
   <ConfirmDeleteModal

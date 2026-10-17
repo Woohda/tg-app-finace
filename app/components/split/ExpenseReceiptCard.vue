@@ -152,380 +152,236 @@ const handleDelete = () => {
 </script>
 
 <template>
-  <div class="receipt-wrapper w-full">
-    <div class="receipt-side-cuts w-full">
-      <GlassCard
-        class="receipt-card p-0 relative text-text-primary transition-all duration-300 rounded-none"
-      >
-        <!-- ШТРИХКОД И СТАТУС ОПЛАТЫ -->
+  <ReceiptCard side-cut-offset="70px" class="w-full">
+    <!-- ШТРИХКОД И СТАТУС ОПЛАТЫ -->
+    <div
+      class="flex flex-col gap-1 items-center justify-center pt-5 cursor-pointer select-none"
+      @click="toggleExpand"
+    >
+      <ReceiptBarcode />
+      <div class="w-full px-5" @click="toggleExpand">
+        <div class="flex items-center justify-between">
+          <span class="pt-1 text-[13px] font-semibold text-text-secondary"
+            >Чек №{{ formattedReceiptNumber }}</span
+          >
+          <span
+            class="text-[15px] font-semibold text-black tracking-[0.2em] uppercase"
+          >
+            Оплачено
+          </span>
+          <span class="pt-1 text-[13px] font-semibold text-text-secondary">
+            {{ displayDate }}
+          </span>
+        </div>
         <div
-          class="flex flex-col gap-1 items-center justify-center pt-5 cursor-pointer select-none"
-          @click="toggleExpand"
+          class="text-left text-text-secondary text-sm truncate"
+          :title="`Оплатил: ${payerDisplayName} • ${displayDate}`"
         >
+          Оплатил:
+          <strong class="text-text-primary font-semibold">
+            {{ payerDisplayName }}
+          </strong>
+        </div>
+      </div>
+    </div>
+
+    <!-- ШАПКА ЧЕКА: НАЗВАНИЕ, ОБЩАЯ СУММА, ПЛАТЕЛЬЩИК И ДАТА -->
+    <div class="mt-1 px-5 cursor-pointer select-none" @click="toggleExpand">
+      <div class="flex items-baseline justify-between gap-3">
+        <div class="min-w-0 flex-1">
+          <span
+            class="text-text-primary font-bold text-xl truncate"
+            :title="expense.title"
+          >
+            {{ expense.title }}
+          </span>
+        </div>
+        <div class="text-right shrink-0">
+          <span
+            class="font-bold text-lg text-text-primary whitespace-nowrap tabular-nums"
+          >
+            {{ formatAmount(expense.amount) }}
+          </span>
+        </div>
+      </div>
+    </div>
+
+    <!-- ВЕРХНИЙ ПУНКТИРНЫЙ РАЗДЕЛИТЕЛЬ -->
+    <ReceiptDivider variant="dotted" class="px-5 my-2" />
+
+    <!-- ИНТЕРАКТИВНЫЙ ПЕРЕКЛЮЧАТЕЛЬ СЕРЕДИНЫ (ЧИСЛО УЧАСТНИКОВ) -->
+    <button
+      type="button"
+      class="w-full px-5 flex items-center justify-between text-xs text-text-secondary hover:text-text-primary transition-colors cursor-pointer select-none"
+      @click="toggleExpand"
+    >
+      <span class="font-medium text-[14px]">
+        {{ expense.shares.length }}
+        {{
+          pluralize(expense.shares.length, [
+            "участник",
+            "участника",
+            "участников",
+          ])
+        }}
+      </span>
+      <span
+        class="inline-flex items-center gap-0.5 text-xs text-text-accent font-semibold"
+      >
+        <span>{{ isExpanded ? "Свернуть" : "Раскрыть" }}</span>
+        <component
+          :is="isExpanded ? ChevronUp : ChevronDown"
+          class="size-3.5 transition-transform duration-200"
+        />
+      </span>
+    </button>
+
+    <!-- СЕРЕДИНА ЧЕКА (РАСКРЫВАЮЩАЯСЯ ДЕТАЛИЗАЦИЯ ДОЛЕЙ) -->
+    <div
+      class="grid transition-all duration-300 ease-in-out"
+      :class="
+        isExpanded
+          ? 'grid-rows-[1fr] opacity-100'
+          : 'grid-rows-[0fr] opacity-0 pointer-events-none'
+      "
+    >
+      <div class="overflow-hidden px-5 flex flex-col gap-2 pb-2">
+        <!-- Список долей с ресторанными отточиями (Dot Leaders) -->
+        <div class="flex flex-col gap-1.5 pt-1.5">
+          <div
+            v-for="(g, idx) in groupedShares"
+            :key="idx"
+            class="flex items-baseline justify-between text-xs text-text-secondary w-full"
+          >
+            <!-- Имена участников (сгруппированные через запятую) -->
+            <span
+              class="text-text-primary font-medium min-w-0 truncate shrink"
+              :title="g.members.map((m) => m.displayName).join(', ')"
+            >
+              {{ g.members.map((m) => m.displayName).join(", ") }}
+            </span>
+
+            <!-- Пунктирные отточия между именем и ценой -->
+            <span
+              class="flex-1 border-b border-dotted border-text-secondary/40 mx-0.5 mb-1 min-w-5"
+            />
+
+            <!-- Блок суммы доли с выравниванием чисел строго друг под другом -->
+            <div class="flex items-baseline shrink-0">
+              <span
+                v-if="g.members.length > 1"
+                class="text-text-secondary font-normal text-[11px] shrink-0 tabular-nums mr-1"
+              >
+                {{ g.members.length > 1 ? "по" : "" }}
+              </span>
+              <span
+                class="font-bold text-text-primary shrink-0 tabular-nums whitespace-nowrap text-right"
+              >
+                {{ formatAmount(g.amount) }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Выделенный блок «Ваша доля» в виде реалистичного мазка маркера-выделителя -->
+        <div
+          v-if="myShare > 0"
+          class="relative mx-auto px-2 py-1 inline-flex items-center justify-center select-none rotate-[-0.5deg]"
+        >
+          <!-- Скошенный полупрозрачный след маркера (Chisel-Tip Highlighter) -->
           <svg
-            class="w-36 h-8 text-black shrink-0"
-            viewBox="0 0 144 28"
-            fill="currentColor"
-            xmlns="http://www.w3.org/2000/svg"
+            class="absolute -inset-x-2 -inset-y-0.5 w-[calc(100%+16px)] h-[calc(100%+4px)] pointer-events-none z-0"
+            viewBox="0 0 220 32"
+            preserveAspectRatio="none"
+            fill="none"
             aria-hidden="true"
           >
-            <rect x="0" y="0" width="2" height="28" />
-            <rect x="4" y="0" width="1.5" height="28" />
-            <rect x="8" y="0" width="3" height="28" />
-            <rect x="13" y="0" width="1" height="28" />
-            <rect x="16" y="0" width="2" height="28" />
-            <rect x="20" y="0" width="3.5" height="28" />
-            <rect x="26" y="0" width="1.5" height="28" />
-            <rect x="30" y="0" width="2" height="28" />
-            <rect x="34" y="0" width="1" height="28" />
-            <rect x="37" y="0" width="3" height="28" />
-            <rect x="42" y="0" width="2" height="28" />
-            <rect x="46" y="0" width="1" height="28" />
-            <rect x="49" y="0" width="3.5" height="28" />
-            <rect x="55" y="0" width="2" height="28" />
-            <rect x="59" y="0" width="1" height="28" />
-            <rect x="62" y="0" width="3" height="28" />
-            <rect x="67" y="0" width="1.5" height="28" />
-            <rect x="71" y="0" width="2" height="28" />
-            <rect x="75" y="0" width="3.5" height="28" />
-            <rect x="81" y="0" width="1" height="28" />
-            <rect x="84" y="0" width="3" height="28" />
-            <rect x="89" y="0" width="2" height="28" />
-            <rect x="93" y="0" width="1" height="28" />
-            <rect x="96" y="0" width="3.5" height="28" />
-            <rect x="102" y="0" width="2" height="28" />
-            <rect x="106" y="0" width="1.5" height="28" />
-            <rect x="110" y="0" width="3" height="28" />
-            <rect x="115" y="0" width="2" height="28" />
-            <rect x="119" y="0" width="1" height="28" />
-            <rect x="122" y="0" width="3.5" height="28" />
-            <rect x="128" y="0" width="2" height="28" />
-            <rect x="132" y="0" width="1" height="28" />
-            <rect x="135" y="0" width="2" height="28" />
-            <rect x="139" y="0" width="1.5" height="28" />
-            <rect x="142" y="0" width="2" height="28" />
-          </svg>
-          <div class="w-full px-5">
-            <div class="flex items-center justify-between">
-              <span class="pt-1 text-[13px] font-semibold text-text-secondary"
-                >Чек №{{ formattedReceiptNumber }}</span
+            <defs>
+              <linearGradient
+                :id="`marker-highlight-${expense.id}`"
+                x1="0%"
+                y1="0%"
+                x2="100%"
+                y2="0%"
               >
-              <span
-                class="text-[15px] font-semibold text-black tracking-[0.2em] uppercase"
-              >
-                Оплачено
-              </span>
-              <span class="pt-1 text-[13px] font-semibold text-text-secondary">
-                {{ displayDate }}
-              </span>
-            </div>
-            <div
-              class="text-left text-text-secondary text-sm truncate"
-              :title="`Оплатил: ${payerDisplayName} • ${displayDate}`"
-            >
-              Оплатил:
-              <strong class="text-text-primary font-semibold">
-                {{ payerDisplayName }}
-              </strong>
-            </div>
-          </div>
-        </div>
-
-        <!-- ШАПКА ЧЕКА: НАЗВАНИЕ, ОБЩАЯ СУММА, ПЛАТЕЛЬЩИК И ДАТА -->
-        <div class="mt-1 px-5 cursor-pointer select-none" @click="toggleExpand">
-          <div class="flex items-baseline justify-between gap-3">
-            <div class="min-w-0 flex-1">
-              <span
-                class="text-text-primary font-bold text-xl truncate"
-                :title="expense.title"
-              >
-                {{ expense.title }}
-              </span>
-            </div>
-            <div class="text-right shrink-0">
-              <span
-                class="font-bold text-lg text-text-primary whitespace-nowrap tabular-nums"
-              >
-                {{ formatAmount(expense.amount) }}
-              </span>
-            </div>
-          </div>
-        </div>
-
-        <!-- ВЕРХНИЙ ПУНКТИРНЫЙ РАЗДЕЛИТЕЛЬ -->
-        <div class="px-5 my-2.75">
-          <div class="border-t-2 border-dotted border-text-secondary/50" />
-        </div>
-
-        <!-- ИНТЕРАКТИВНЫЙ ПЕРЕКЛЮЧАТЕЛЬ СЕРЕДИНЫ (ЧИСЛО УЧАСТНИКОВ) -->
-        <button
-          type="button"
-          class="w-full px-5 py-0.5 flex items-center justify-between text-xs text-text-secondary hover:text-text-primary transition-colors cursor-pointer select-none"
-          @click="toggleExpand"
-        >
-          <span class="font-medium text-[14px]">
-            {{ expense.shares.length }}
-            {{
-              pluralize(expense.shares.length, [
-                "участник",
-                "участника",
-                "участников",
-              ])
-            }}
-          </span>
-          <span
-            class="inline-flex items-center gap-0.5 text-xs text-text-accent font-semibold"
-          >
-            <span>{{ isExpanded ? "Свернуть" : "Раскрыть" }}</span>
-            <component
-              :is="isExpanded ? ChevronUp : ChevronDown"
-              class="size-3.5 transition-transform duration-200"
+                <stop offset="0%" stop-color="#be123c" stop-opacity="0.18" />
+                <stop offset="75%" stop-color="#be123c" stop-opacity="0.23" />
+                <stop offset="100%" stop-color="#be123c" stop-opacity="0.3" />
+              </linearGradient>
+            </defs>
+            <!-- След войлочного пера маркера со скошенными краями (~20°) и наплывом чернил -->
+            <path
+              d="M 10,4.5
+                 C 10,4.5 120,3.2 214,4
+                 C 217,4.2 218,6 217,9
+                 L 211,26
+                 C 210,28 208,28.5 205,28.5
+                 C 130,29 30,28.5 6,28
+                 C 3,28 2,26 3,23
+                 L 8,6
+                 C 8.5,4.8 9.2,4.5 10,4.5 Z"
+              :fill="`url(#marker-highlight-${expense.id})`"
             />
-          </span>
-        </button>
+          </svg>
 
-        <!-- СЕРЕДИНА ЧЕКА (РАСКРЫВАЮЩАЯСЯ ДЕТАЛИЗАЦИЯ ДОЛЕЙ) -->
-        <div
-          class="grid transition-all duration-300 ease-in-out"
-          :class="
-            isExpanded
-              ? 'grid-rows-[1fr] opacity-100'
-              : 'grid-rows-[0fr] opacity-0 pointer-events-none'
-          "
-        >
-          <div class="overflow-hidden px-5 flex flex-col gap-2 pb-2">
-            <!-- Список долей с ресторанными отточиями (Dot Leaders) -->
-            <div class="flex flex-col gap-1.5 pt-1.5">
-              <div
-                v-for="(g, idx) in groupedShares"
-                :key="idx"
-                class="flex items-baseline justify-between text-xs text-text-secondary w-full"
-              >
-                <!-- Имена участников (сгруппированные через запятую) -->
-                <span
-                  class="text-text-primary font-medium min-w-0 truncate shrink"
-                  :title="g.members.map((m) => m.displayName).join(', ')"
-                >
-                  {{ g.members.map((m) => m.displayName).join(", ") }}
-                </span>
-
-                <!-- Пунктирные отточия между именем и ценой -->
-                <span
-                  class="flex-1 border-b border-dotted border-text-secondary/40 mx-0.5 mb-1 min-w-5"
-                />
-
-                <!-- Блок суммы доли с выравниванием чисел строго друг под другом -->
-                <div class="flex items-baseline shrink-0">
-                  <span
-                    v-if="g.members.length > 1"
-                    class="text-text-secondary font-normal text-[11px] shrink-0 tabular-nums mr-1"
-                  >
-                    {{ g.members.length > 1 ? "по" : "" }}
-                  </span>
-                  <span
-                    class="font-bold text-text-primary shrink-0 tabular-nums whitespace-nowrap text-right"
-                  >
-                    {{ formatAmount(g.amount) }}
-                  </span>
-                </div>
-              </div>
-            </div>
-
-            <!-- Выделенный блок «Ваша доля» в виде реалистичного мазка маркера-выделителя -->
-            <div
-              v-if="myShare > 0"
-              class="relative mx-auto px-2 py-1 inline-flex items-center justify-center select-none rotate-[-0.5deg]"
+          <!-- Текст поверх маркера -->
+          <div class="relative z-10 flex items-baseline gap-1.5">
+            <span class="text-xs text-text-secondary"> Ваша доля: </span>
+            <span
+              class="font-bold text-text-accent tracking-wide"
+              :class="amountsTextSize"
             >
-              <!-- Скошенный полупрозрачный след маркера (Chisel-Tip Highlighter) -->
-              <svg
-                class="absolute -inset-x-2 -inset-y-0.5 w-[calc(100%+16px)] h-[calc(100%+4px)] pointer-events-none z-0"
-                viewBox="0 0 220 32"
-                preserveAspectRatio="none"
-                fill="none"
-                aria-hidden="true"
-              >
-                <defs>
-                  <linearGradient
-                    :id="`marker-highlight-${expense.id}`"
-                    x1="0%"
-                    y1="0%"
-                    x2="100%"
-                    y2="0%"
-                  >
-                    <stop
-                      offset="0%"
-                      stop-color="#be123c"
-                      stop-opacity="0.18"
-                    />
-                    <stop
-                      offset="75%"
-                      stop-color="#be123c"
-                      stop-opacity="0.23"
-                    />
-                    <stop
-                      offset="100%"
-                      stop-color="#be123c"
-                      stop-opacity="0.3"
-                    />
-                  </linearGradient>
-                </defs>
-                <!-- След войлочного пера маркера со скошенными краями (~20°) и наплывом чернил -->
-                <path
-                  d="M 10,4.5
-                     C 10,4.5 120,3.2 214,4
-                     C 217,4.2 218,6 217,9
-                     L 211,26
-                     C 210,28 208,28.5 205,28.5
-                     C 130,29 30,28.5 6,28
-                     C 3,28 2,26 3,23
-                     L 8,6
-                     C 8.5,4.8 9.2,4.5 10,4.5 Z"
-                  :fill="`url(#marker-highlight-${expense.id})`"
-                />
-              </svg>
-
-              <!-- Текст поверх маркера -->
-              <div class="relative z-10 flex items-baseline gap-1.5">
-                <span class="text-xs text-text-secondary"> Ваша доля: </span>
-                <span
-                  class="font-bold text-text-accent tracking-wide"
-                  :class="amountsTextSize"
-                >
-                  {{ formatAmount(myShare) }}
-                </span>
-              </div>
-            </div>
+              {{ formatAmount(myShare) }}
+            </span>
           </div>
         </div>
-
-        <!-- НИЖНИЙ РАЗДЕЛИТЕЛЬ С ПЕРФОРАЦИЕЙ БИЛЕТА -->
-        <div class="relative py-2 pt-0.5">
-          <!-- Перфорированная линия отрыва билета -->
-          <div class="border-t-2 border-dashed border-text-secondary/50 mx-5" />
-        </div>
-
-        <!-- НИЖНИЕ КНОПКИ ДЕЙСТВИЙ (В СТИЛЕ GLASS-PILL) -->
-        <div class="px-5 pt-1 pb-5.5 flex items-center justify-between gap-2.5">
-          <!-- Кнопка «Записать себе» в личный бюджет FINO -->
-          <GlassButton
-            v-if="myShare > 0"
-            type="button"
-            variant="soft"
-            size="sm"
-            class="h-auto flex-1 px-4 py-2 text-text-accent text-sm transition-all flex items-center justify-center gap-1.5"
-            title="Внести свою долю в расходы FINO"
-            @click.stop="handleExport"
-          >
-            <NotebookPen class="size-4 shrink-0" :stroke-width="1.5" />
-            <span>Записать себе</span>
-          </GlassButton>
-
-          <!-- Заглушка для центрирования, если доли нет -->
-          <div v-else class="flex-1" />
-
-          <!-- Кнопка редактирования расхода -->
-          <GlassButton
-            type="button"
-            variant="soft"
-            class="h-auto p-2.5 rounded-full text-text-secondary hover:text-text-primary transition-all flex items-center justify-center shrink-0"
-            title="Редактировать расход"
-            @click.stop="handleEdit"
-          >
-            <Pencil class="size-4.25" :stroke-width="1.75" />
-          </GlassButton>
-
-          <!-- Кнопка удаления расхода -->
-          <GlassButton
-            type="button"
-            variant="soft"
-            class="h-auto p-2.5 rounded-full text-text-accent transition-all flex items-center justify-center shrink-0"
-            title="Удалить расход"
-            @click.stop="handleDelete"
-          >
-            <Trash2 class="size-4.25" :stroke-width="1.75" />
-          </GlassButton>
-        </div>
-      </GlassCard>
+      </div>
     </div>
-  </div>
+
+    <!-- НИЖНИЕ КНОПКИ ДЕЙСТВИЙ (В СТИЛЕ GLASS-PILL) -->
+    <template #footer>
+      <div class="px-5 pt-2 pb-5.5 flex items-center justify-between gap-2.5">
+        <!-- Кнопка «Записать себе» в личный бюджет FINO -->
+        <GlassButton
+          v-if="myShare > 0"
+          type="button"
+          variant="soft"
+          size="sm"
+          class="h-auto flex-1 px-4 py-2 text-text-accent text-sm transition-all flex items-center justify-center gap-1.5"
+          title="Внести свою долю в расходы FINO"
+          @click.stop="handleExport"
+        >
+          <NotebookPen class="size-4 shrink-0" :stroke-width="1.5" />
+          <span>Записать себе</span>
+        </GlassButton>
+
+        <!-- Заглушка для центрирования, если доли нет -->
+        <div v-else class="flex-1" />
+
+        <!-- Кнопка редактирования расхода -->
+        <GlassButton
+          type="button"
+          variant="soft"
+          class="h-auto p-2.5 rounded-full text-text-secondary hover:text-text-primary transition-all flex items-center justify-center shrink-0"
+          title="Редактировать расход"
+          @click.stop="handleEdit"
+        >
+          <Pencil class="size-4.25" :stroke-width="1.75" />
+        </GlassButton>
+
+        <!-- Кнопка удаления расхода -->
+        <GlassButton
+          type="button"
+          variant="soft"
+          class="h-auto p-2.5 rounded-full text-text-accent transition-all flex items-center justify-center shrink-0"
+          title="Удалить расход"
+          @click.stop="handleDelete"
+        >
+          <Trash2 class="size-4.25" :stroke-width="1.75" />
+        </GlassButton>
+      </div>
+    </template>
+  </ReceiptCard>
 </template>
 
-<style scoped>
-/* Тень обертки, повторяющая контур маски чека и боковых вырезов */
-.receipt-wrapper {
-  filter: drop-shadow(0 5px 10px rgba(130, 115, 105, 0.1))
-    drop-shadow(0 1px 1px rgba(255, 255, 255, 0.8));
-}
-
-/* Сквозные боковые полукруглые вырезы на линии перфорации билета (без подслойки) */
-.receipt-side-cuts {
-  -webkit-mask-image:
-    radial-gradient(
-      circle 16px at 0 calc(100% - 76px),
-      transparent 15.5px,
-      #000 16px
-    ),
-    radial-gradient(
-      circle 16px at 100% calc(100% - 76px),
-      transparent 15.5px,
-      #000 16px
-    );
-  -webkit-mask-size:
-    50% 100%,
-    50% 100%;
-  -webkit-mask-position:
-    left top,
-    right top;
-  -webkit-mask-repeat: no-repeat, no-repeat;
-
-  mask-image:
-    radial-gradient(
-      circle 16px at 0 calc(100% - 75.5px),
-      transparent 15.5px,
-      #000 16px
-    ),
-    radial-gradient(
-      circle 16px at 100% calc(100% - 75.5px),
-      transparent 15.5px,
-      #000 16px
-    );
-  mask-size:
-    50% 100%,
-    50% 100%;
-  mask-position:
-    left top,
-    right top;
-  mask-repeat: no-repeat, no-repeat;
-}
-
-/* Физическая маска перфорированных зубцов по верхнему и нижнему краю чека */
-.receipt-card {
-  -webkit-mask-image:
-    radial-gradient(13px 15px at 24.5px 0px, transparent 13px, #000 13.5px),
-    linear-gradient(to bottom, #000, #000),
-    radial-gradient(13px 15px at 24.5px 15px, transparent 13px, #000 13.5px);
-  -webkit-mask-size:
-    49px 15px,
-    100% calc(100% - 30px),
-    49px 15px;
-  -webkit-mask-position:
-    center top,
-    center 15px,
-    center bottom;
-  -webkit-mask-repeat: repeat-x, no-repeat, repeat-x;
-
-  mask-image:
-    radial-gradient(13px 15px at 24.5px 0px, transparent 13px, #000 13.5px),
-    linear-gradient(to bottom, #000, #000),
-    radial-gradient(13px 15px at 24.5px 15px, transparent 13px, #000 13.5px);
-  mask-size:
-    49px 15px,
-    100% calc(100% - 30px),
-    49px 15px;
-  mask-position:
-    center top,
-    center 15px,
-    center bottom;
-  mask-repeat: repeat-x, no-repeat, repeat-x;
-}
-</style>
+<style scoped></style>

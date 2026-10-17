@@ -73,8 +73,10 @@ export const useTransactionView = (
     if (activePeriod.value !== "month") {
       const base = toSafeDate(options?.currentDate?.value);
       const isCurrent = isCurrentMonth(base);
-      const targetDate = isCurrent ? getNow() : endOfMonthSafe(base);
-      const periodStart = getPeriodStart(activePeriod.value, targetDate);
+      if (!isCurrent) {
+        return [];
+      }
+      const periodStart = getPeriodStart(activePeriod.value, getNow());
       list = list.filter((t) => toSafeDate(t.date) >= periodStart);
     }
 

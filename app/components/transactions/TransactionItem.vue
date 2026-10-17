@@ -21,7 +21,7 @@ interface Props {
   date: string;
   interactive?: boolean;
   showFullDate?: boolean;
-  variant?: "default" | "analytics";
+  variant?: "default" | "analytics" | "receipt";
 }
 
 const props = withDefaults(defineProps<Props>(), {
@@ -67,8 +67,12 @@ function onItemClick() {
     "
     :content-class="
       cn(
-        'transaction-content flex items-center bg-transparent border-b border-black/6 group-last:border-none',
-        variant === 'analytics' ? 'justify-between gap-3 p-2' : 'gap-2 pb-2',
+        'transaction-content flex items-center bg-transparent',
+        variant === 'analytics'
+          ? 'justify-between gap-3 p-2 border-b border-black/7 group-last:border-none'
+          : variant === 'receipt'
+            ? 'gap-2 py-3 px-2 transition-colors hover:bg-black/3 border-b border-dotted border-text-secondary/20 group-last:border-none'
+            : 'gap-2 pb-3 border-b border-black/6 group-last:border-none',
         interactive && 'cursor-pointer active:opacity-80',
       )
     "
@@ -99,6 +103,43 @@ function onItemClick() {
         >
           {{ formattedAmount }}
         </p>
+      </div>
+    </template>
+
+    <!-- Режим receipt: позиция кассового чека -->
+    <template v-else-if="variant === 'receipt'">
+      <!-- Иконка категории в стеклянном бейдже -->
+      <div
+        v-if="icon"
+        class="shrink-0 size-8.5 rounded-xl flex items-center justify-center text-lg glass-pill"
+      >
+        {{ icon }}
+      </div>
+
+      <!-- Центральная колонка: Название и дата/подпись с защитой от переполнения -->
+      <div class="flex-1 min-w-0 flex flex-col justify-center">
+        <p
+          class="text-[14px] font-semibold text-text-primary tracking-tight truncate leading-snug"
+          :title="title"
+        >
+          {{ title }}
+        </p>
+        <div
+          class="flex items-center text-xs text-text-secondary mt-0.5 min-w-0"
+        >
+          <span class="shrink-0">{{ formattedDate }}</span>
+          <span v-if="subtitle" class="truncate">,&nbsp;{{ subtitle }}</span>
+        </div>
+      </div>
+
+      <!-- Сумма справа: фиксированная ширина содержимого, не сжимается и не переносится -->
+      <div class="text-right shrink-0">
+        <span
+          class="font-bold text-[14px] tabular-nums whitespace-nowrap"
+          :class="type === 'income' ? 'text-text-accent' : 'text-text-primary'"
+        >
+          {{ formattedAmount }}
+        </span>
       </div>
     </template>
 

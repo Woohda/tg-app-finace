@@ -1,22 +1,27 @@
 <script setup lang="ts">
 /**
  * @module app/components/analytics/CategoryOperationsList
- * @fileoverview Пагинированный список операций категории с бесконечным скроллом
+ * @fileoverview Пагинированный список операций категории, оформленный как кассовый чек
  * @description
- * Отображает список транзакций категории:
- * - пагинация порциями по 10 элементов с автоматической дозагрузкой через IntersectionObserver;
- * - скелетоны во время загрузки или переключения периодов;
- * - интерактивные элементы транзакций с поддержкой удаления и редактирования;
- * - информативное сообщение при отсутствии операций.
+ * Отображает список транзакций категории в аутентичном стиле кассового чека:
+ * - верхний штрихкод (ReceiptBarcode) и заголовок выборки/категории;
+ * - общее количество операций и суммарный объем трат;
+ * - верхний точечный разделитель (ReceiptDivider variant="dotted");
+ * - скелетоны при загрузке или переключении периодов;
+ * - позиции чека с отточиями (Dot Leaders), иконками и суммами (TransactionItem variant="receipt");
+ * - нижняя перфорированная линия отрыва билета (ReceiptDivider variant="dashed") с боковыми вырезами (ReceiptCard);
+ * - пагинация порциями по 10 элементов с автоматической подгрузкой через IntersectionObserver;
+ * - подтверждение удаления транзакции через ConfirmDeleteModal.
  * ---
  * ### Логика работы:
- * 1. Получает отсортированный массив транзакций `transactions`, вычисляет их суммарный объем и отображает количество и сумму в шапке списка (как в finreports).
+ * 1. Получает отсортированный массив транзакций `transactions`, вычисляет суммарный объем.
  * 2. Ограничивает видимый срез `displayedTransactions` размером страницы `displayedLimit`.
  * 3. Отслеживает пересечение триггера внизу списка через `IntersectionObserver` и подгружает следующую порцию.
- * 4. Предоставляет методы удаления (с визуальной индикацией) и редактирования через модальное окно транзакции.
+ * 4. Предоставляет свайп для удаления и открытие модального окна редактирования по тапу.
  */
 import { ref, computed, toRef } from "vue";
 import type { Transaction } from "~/composables/useTransactions";
+import { formatAmount } from "~/utils/format";
 
 interface Props {
   transactions: Transaction[];
@@ -73,80 +78,62 @@ async function handleDeleteTransaction() {
 function handleEdit(tx: Transaction) {
   openModal(tx);
 }
-
-/**
- * Текст бейджа в шапке списка операций (количество и сумма).
- */
-const summaryBadgeText = computed(() => {
-  if (props.transactions.length === 0) return "";
-  return `${props.transactions.length} оп. • ${filteredAmountText.value}`;
-});
 </script>
 
 <template>
-  <GlassCard class="p-4 flex flex-col gap-px pb-1">
-    <div class="flex justify-between items-center px-1 mb-1">
-      <h3
-        class="text-text-secondary font-bold text-xs uppercase tracking-wider truncate"
-      >
-        {{ title }}
-      </h3>
-      <span
-        v-if="summaryBadgeText"
-        class="text-xs font-semibold text-text-secondary glass-pill px-2.5 py-0.5 rounded-full shrink-0 max-w-[65%] truncate text-right"
-      >
-        {{ summaryBadgeText }}
-      </span>
-    </div>
+  <ReceiptCard
+    :title="title"
+    :count="transactions.length"
+    :amount-text="filteredAmountText"
+    :has-more="hasMoreTransactions"
+    :remaining-count="remainingCount"
+    :on-trigger-mounted="(el) => (loadMoreTriggerRef = el)"
+    class="relative z-10 w-full"
+    @load-more="loadMore"
+  >
+    <!-- ТЕЛО ЧЕКА: СПИСОК ОПЕРАЦИЙ -->
+    <div class="px-3">
+      <!-- Скелетоны транзакций при загрузке -->
+      <div v-if="isEffectiveLoading" class="flex flex-col gap-2 px-2 py-1">
+        <TransactionsSkeletonList :count="3" mode="list" />
+      </div>
 
-    <!-- Скелетоны транзакций при загрузке -->
-    <div v-if="isEffectiveLoading" class="flex flex-col">
-      <TransactionsSkeletonList :count="3" mode="list" :show-icon="false" />
-    </div>
+      <!-- Список позиций в чеке -->
+      <div v-else-if="displayedTransactions.length > 0" class="flex flex-col">
+        <TransactionItem
+          v-for="tx in displayedTransactions"
+          :key="tx.id"
+          v-memo="[
+            tx.id,
+            tx.amount,
+            tx.name,
+            tx.date,
+            tx.categoryIcon,
+            tx.type,
+          ]"
+          variant="receipt"
+          :icon="tx.categoryIcon"
+          :title="tx.name || tx.categoryName"
+          :amount="tx.amount"
+          :type="tx.type"
+          :date="tx.date"
+          interactive
+          @click="handleEdit(tx)"
+          @delete="confirmDelete(tx)"
+        />
+      </div>
 
-    <!-- Список транзакций -->
-    <div v-else-if="displayedTransactions.length > 0" class="flex flex-col">
-      <TransactionItem
-        v-for="tx in displayedTransactions"
-        :key="tx.id"
-        v-memo="[
-          tx.id,
-          tx.amount,
-          tx.name,
-          tx.date,
-          tx.type,
-        ]"
-        variant="analytics"
-        :title="tx.name || tx.categoryName"
-        :amount="tx.amount"
-        :type="tx.type"
-        :date="tx.date"
-        interactive
-        @click="handleEdit(tx)"
-        @delete="confirmDelete(tx)"
-      />
-
-      <!-- Ленивая подгрузка (триггер скролла / кнопка) -->
+      <!-- Пустое состояние при отсутствии трат -->
       <div
-        v-if="hasMoreTransactions"
-        ref="loadMoreTriggerRef"
-        class="flex flex-col items-center justify-center pt-2.5 pb-1"
+        v-else
+        class="flex flex-col items-center justify-center text-center py-6 px-4 gap-2"
       >
-        <button
-          type="button"
-          class="text-xs font-semibold text-text-accent hover:text-text-primary active:scale-95 transition-all py-1.5 px-4 rounded-full glass-pill cursor-pointer flex items-center gap-1.5 a11y-focus"
-          @click="loadMore"
-        >
-          <span>Показать ещё (ещё {{ remainingCount }})</span>
-        </button>
+        <p class="text-text-secondary text-sm font-medium">
+          {{ emptyText }}
+        </p>
       </div>
     </div>
-
-    <!-- Пустое состояние при отсутствии трат -->
-    <p v-else class="text-text-secondary text-xs text-center py-2 px-5">
-      {{ emptyText }}
-    </p>
-  </GlassCard>
+  </ReceiptCard>
 
   <!-- Модалка удаления транзакции -->
   <ConfirmDeleteModal
@@ -178,3 +165,5 @@ const summaryBadgeText = computed(() => {
     </p>
   </ConfirmDeleteModal>
 </template>
+
+<style scoped></style>

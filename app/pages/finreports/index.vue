@@ -55,6 +55,10 @@ const currentAmount = computed(() =>
 const currentLabel = computed(() =>
   viewMode.value === "budget" ? "Бюджет на этот месяц" : "Потрачено за период",
 );
+
+const isCurrentMonthSelected = computed(() =>
+  isCurrentMonth(currentDate.value),
+);
 </script>
 
 <template>
@@ -115,11 +119,18 @@ const currentLabel = computed(() =>
         class="z-0"
       />
     </GlassCard>
-
+    <!-- УПРАВЛЕНИЕ: СЕГМЕНТ И СПИСОК ОПЕРАЦИЙ -->
+    <!-- Переключатель периодов (только для текущего месяца) -->
+    <GlassSegmentedControl
+      v-if="isCurrentMonthSelected"
+      v-model="activePeriod"
+      :options="periods"
+      size="md"
+    />
     <!-- Финансовый раздел: Список операций -->
     <TransactionsOperationsList
-      v-model:active-period="activePeriod"
       v-model:search-query="searchQuery"
+      :active-period="activePeriod"
       :periods="periods"
       :transactions="filteredTransactions"
       :empty-message="emptyMessage"
